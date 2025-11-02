@@ -4,6 +4,21 @@ import path from 'node:path';
 import process from 'node:process';
 
 const JSON_SPACING = 2;
+const DEFAULT_ADMIN_CONFIG = {
+  ai: {
+    provider: '',
+    systemPrompt: '',
+    temperature: null,
+    model: '',
+    location: '',
+    openai: {
+      apiKey: '',
+      model: '',
+      baseUrl: '',
+      organization: ''
+    }
+  }
+};
 
 function resolveLocalPath(rootDir, relativePath) {
   return path.resolve(rootDir, relativePath);
@@ -64,6 +79,7 @@ export async function createDataStore(config) {
       await fs.mkdir(resolveLocalPath(localRoot, 'sessions'), { recursive: true });
       await fs.mkdir(resolveLocalPath(localRoot, 'chats/ai'), { recursive: true });
       await fs.mkdir(resolveLocalPath(localRoot, 'chats/peer'), { recursive: true });
+      await fs.mkdir(resolveLocalPath(localRoot, 'settings'), { recursive: true });
     }
   }
 
@@ -131,6 +147,25 @@ export async function createDataStore(config) {
     });
   }
 
+  async function getAdminConfig() {
+    return readJson('settings/admin-config.json', DEFAULT_ADMIN_CONFIG);
+  }
+
+  async function saveAdminConfig(data) {
+    const payload = {
+      ai: {
+        ...DEFAULT_ADMIN_CONFIG.ai,
+        ...(data.ai || {}),
+        openai: {
+          ...DEFAULT_ADMIN_CONFIG.ai.openai,
+          ...((data.ai && data.ai.openai) || {})
+        }
+      }
+    };
+    await writeJson('settings/admin-config.json', payload);
+    return payload;
+  }
+
   async function getServerDiag() {
     const sessions = await listSessions();
     return {
@@ -150,6 +185,8 @@ export async function createDataStore(config) {
     getChatMessages,
     getChatHistory,
     getPublicSettings,
+    getAdminConfig,
+    saveAdminConfig,
     getServerDiag
   };
 }

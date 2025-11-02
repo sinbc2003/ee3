@@ -71,6 +71,7 @@ export function createSessionService(dataStore) {
     const peerSessionId = uuid();
     const base = {
       sessionKey,
+      createdAt: now,
       mode: normalizedGroup,
       you: { id: studentId.trim(), name: studentName.trim() },
       stage: 1,
@@ -105,6 +106,28 @@ export function createSessionService(dataStore) {
       throw createError(404, '세션을 찾을 수 없습니다.');
     }
     return session;
+  }
+
+  async function listSessions() {
+    const keys = await dataStore.listSessions();
+    if (!keys.length) return [];
+    const sessions = await Promise.all(keys.map((key) => dataStore.getSession(key)));
+    return sessions
+      .filter(Boolean)
+      .map((session) => ({
+        sessionKey: session.sessionKey,
+        group: session.mode,
+        user: session.you,
+        stage: session.stage,
+        createdAt: Number(session.createdAt || session.updatedAt || 0),
+        updatedAt: Number(session.updatedAt || 0),
+        writing: {
+          prewritingSubmittedAt: Number(session.writing?.prewriting?.submittedAt || 0),
+          draftSavedAt: Number(session.writing?.draft?.savedAt || 0),
+          notesUpdatedAt: Number(session.writing?.notes?.updatedAt || 0),
+          finalSubmittedAt: Number(session.writing?.final?.submittedAt || 0)
+        }
+      }));
   }
 
   async function submitPrewriting(sessionKey, text) {
@@ -224,6 +247,7 @@ export function createSessionService(dataStore) {
 
   return {
     startSession,
+    listSessions,
     getSessionState,
     submitPrewriting,
     saveDraft,

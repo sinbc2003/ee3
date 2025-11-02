@@ -50,8 +50,15 @@ npm run dev  # nodemon으로 8080 포트에서 실행
 DATA_BUCKET=writingresearch-app-data
 API_KEY=선택_값 (프론트엔드에서 X-API-KEY 헤더로 전달)
 ALLOWED_ORIGINS=https://your-frontend-domain.com
-VERTEX_MODEL=gemini-1.5-flash   # Vertex AI 사용 시 필수
-VERTEX_LOCATION=us-central1
+AI_PROVIDER=openai # 또는 vertex / (미지정 시 자동 선택)
+AI_SYSTEM_PROMPT=당신은 영어 글쓰기 튜터입니다
+AI_TEMPERATURE=0.6
+VERTEX_MODEL=gemini-1.5-flash          # Vertex AI 사용 시
+VERTEX_LOCATION=us-central1            # Vertex AI 리전
+OPENAI_API_KEY=sk-...                  # OpenAI 사용 시
+OPENAI_MODEL=gpt-4o-mini               # OpenAI 모델 이름
+OPENAI_BASE_URL=https://api.openai.com/v1  # 필요 시 커스텀
+OPENAI_ORG=org-...                     # (선택) 조직 ID
 LIBRE_TRANSLATE_URL=https://libretranslate.de/translate  # 사전 번역용 (선택)
 ```
 
@@ -83,8 +90,15 @@ window.APP_CONFIG = {
 | `DATA_BUCKET` | Cloud Storage 버킷 이름 |
 | `API_KEY` | (선택) 프론트엔드 요청 검증용 키 |
 | `ALLOWED_ORIGINS` | CORS 허용 도메인 (쉼표 구분) |
+| `AI_PROVIDER` | `openai` 또는 `vertex` (공백이면 자동 감지) |
+| `AI_SYSTEM_PROMPT` | (선택) AI 역활 지침 |
+| `AI_TEMPERATURE` | (선택) 0~1 사이 숫자 |
 | `VERTEX_MODEL` | (선택) Vertex AI 모델 이름 |
 | `VERTEX_LOCATION` | (선택) Vertex AI 위치 |
+| `OPENAI_API_KEY` | (선택) OpenAI 키 |
+| `OPENAI_MODEL` | (선택) OpenAI 모델 이름 |
+| `OPENAI_BASE_URL` | (선택) OpenAI 호스트 URL |
+| `OPENAI_ORG` | (선택) OpenAI 조직 ID |
 | `LIBRE_TRANSLATE_URL` | (선택) 번역 API 엔드포인트 |
 
 > **참고**: Cloud Run 서비스, Artifact Registry 리포지토리, 버킷 이름은 실제 생성한 값으로 맞춰 주세요.
