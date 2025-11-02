@@ -295,6 +295,20 @@ export function createSessionService(dataStore) {
     regressStage,
     touchPresence,
     postPresenceLeave,
+    getAllSessionsWithDetails: async () => {
+      const list = await listSessions();
+      const detailed = await Promise.all(
+        list.map(async (record) => {
+          try {
+            const session = await getSessionState(record.sessionKey);
+            return session;
+          } catch (error) {
+            return null;
+          }
+        })
+      );
+      return detailed.filter(Boolean);
+    },
     getPublicSettings,
     getServerDiag
   };

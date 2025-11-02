@@ -79,8 +79,41 @@ export function createAdminRouter({ adminService, sessionService, chatService })
     try {
       const { sessionKey, channel } = req.params;
       const normalizedChannel = channel === 'peer' || channel === 'peer-chat' ? 'peer' : 'ai';
-      const history = await chatService.getChatHistory(sessionKey, normalizedChannel);
+      const session = await sessionService.getSessionState(sessionKey);
+      const chatId = normalizedChannel === 'peer' ? session.peerSessionId : session.aiSessionId;
+      if (!chatId) {
+        res.json({ messages: [] });
+        return;
+      }
+      const history = await chatService.getChatHistory(chatId, normalizedChannel);
       res.json({ messages: history });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  router.get('/sessions/export/json', async (req, res, next) => {
+    try {
+      const sessions = await sessionService.getAllSessionsWithDetails();
+      const payload = await Promise.all(
+        sessions.map(async (session) => {
+          const aiHistory = session.aiSessionId ? await chatService.getChatHistory(session.aiSessionId, 'ai') : [];
+          const peerHistory = session.peerSessionId ? await chatService.getChatHistory(session.peerSessionId, 'peer') : [];
+          return {
+            ...session,
+            aiChat: aiHistory,
+            peerChat: peerHistory
+          };
+        })
+      );
+      const result = {
+        exportedAt: Date.now(),
+        total: payload.length,
+        sessions: payload
+      };
+      res.setHeader('Content-Type', 'application/json; charset=utf-8');
+      res.setHeader('Content-Disposition', 'attachment; filename="writingresearch-export.json"');
+      res.send(JSON.stringify(result, null, 2));
     } catch (error) {
       next(error);
     }

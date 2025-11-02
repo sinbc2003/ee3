@@ -154,8 +154,12 @@
       .match-form {
         display: grid;
         gap: 16px;
-        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-        align-items: end;
+      }
+      .match-form textarea {
+        width: 100%;
+        min-height: 100px;
+        resize: vertical;
+        font-family: inherit;
       }
       .match-actions {
         display: flex;
@@ -274,6 +278,7 @@
         <div class="toolbar">
           <button id="btnReloadSessions" class="secondary" type="button">세션 새로고침</button>
           <button id="btnReloadConfig" class="secondary" type="button">설정 새로고침</button>
+          <button id="btnDownloadExport" class="secondary" type="button">데이터 다운로드</button>
           <button id="btnLogout" class="danger" type="button">로그아웃</button>
         </div>
 
@@ -331,21 +336,10 @@
         <section class="card hidden" id="partnerSection">
           <h2>동료 매칭</h2>
           <p class="muted" style="margin-bottom: 12px;">세션을 선택한 후 동료의 세션 키를 지정하거나 이름/식별 번호를 직접 입력해 매칭하세요.</p>
-          <div class="match-form">
-            <div>
-              <label for="partnerSessionInput">동료 세션 키</label>
-              <input list="sessionOptions" id="partnerSessionInput" placeholder="세션 키 또는 직접 입력" />
-            </div>
-            <div>
-              <label for="partnerNameInput">동료 이름</label>
-              <input id="partnerNameInput" type="text" placeholder="자동 입력 또는 직접 입력" />
-            </div>
-            <div>
-              <label for="partnerIdInput">동료 식별번호</label>
-              <input id="partnerIdInput" type="text" placeholder="자동 입력 또는 직접 입력" />
-            </div>
-          </div>
+          <textarea id="partnerBulkInput" placeholder="세션키, 이름, 식별번호 순으로 한 줄에 입력하세요.
+예) SessionA, 홍길동, A10100"></textarea>
           <div class="match-actions" style="margin-top: 16px;">
+            <button id="btnParseBulk" class="secondary" type="button">붙여넣기 분석</button>
             <button id="btnAssignPartner" class="primary" type="button" disabled>동료 저장</button>
             <button id="btnClearPartner" class="secondary" type="button" disabled>동료 연결 해제</button>
             <button id="btnJumpPartner" class="link-button" type="button" disabled>동료 세션 열기</button>
@@ -737,6 +731,7 @@
             setStatus(error.message || 'AI 설정을 불러오지 못했습니다.', 'error');
           }
         });
+        $('btnDownloadExport').addEventListener('click', downloadExport);
         $('btnSaveConfig').addEventListener('click', saveConfig);
         $('btnClearOpenAiKey').addEventListener('click', () => {
           clearOpenAiKey = true;
@@ -744,10 +739,8 @@
           setStatus('OpenAI 키를 삭제하도록 설정했습니다. 저장을 눌러 반영하세요.', '');
         });
 
-        $('partnerSessionInput').addEventListener('change', handlePartnerSessionSelect);
-        ['partnerSessionInput', 'partnerNameInput', 'partnerIdInput'].forEach((id) => {
-          $(id).addEventListener('input', handlePartnerFormChange);
-        });
+        $('btnParseBulk').addEventListener('click', () => parseBulkPartnerInput(false));
+        $('partnerBulkInput').addEventListener('input', () => parseBulkPartnerInput(true));
         $('btnAssignPartner').addEventListener('click', assignPartner);
         $('btnClearPartner').addEventListener('click', clearPartner);
         $('btnJumpPartner').addEventListener('click', jumpToPartner);
@@ -760,13 +753,8 @@
           $('sessionDetail').textContent = '세션을 선택하면 내용이 표시됩니다.';
           $('aiChatLog').textContent = '세션을 선택하세요.';
           $('peerChatLog').textContent = '세션을 선택하세요.';
-          $('partnerSessionInput').value = '';
-          $('partnerNameInput').value = '';
-          $('partnerIdInput').value = '';
-          $('btnAssignPartner').disabled = true;
+          setParsedPartnerValues('', '', '');
           $('btnClearPartner').disabled = true;
-          $('btnJumpPartner').disabled = true;
-          $('btnJumpPartner').dataset.sessionKey = '';
         }
 
         function showDetailPanels(){
@@ -850,60 +838,43 @@
           const assignBtn = $('btnAssignPartner');
           const clearBtn = $('btnClearPartner');
           const jumpBtn = $('btnJumpPartner');
-          const sessionInput = $('partnerSessionInput');
-          const nameInput = $('partnerNameInput');
-          const idInput = $('partnerIdInput');
+          const bulkInput = $('partnerBulkInput');
 
           if (!session) {
             assignBtn.disabled = true;
             clearBtn.disabled = true;
             jumpBtn.disabled = true;
             jumpBtn.dataset.sessionKey = '';
-            sessionInput.value = '';
-            nameInput.value = '';
-            idInput.value = '';
+            bulkInput.value = '';
+            bulkInput.dataset.sessionKey = '';
+            bulkInput.dataset.name = '';
+            bulkInput.dataset.id = '';
             return;
           }
 
           const partner = session.partner || null;
-          sessionInput.value = partner?.sessionKey || '';
-          nameInput.value = partner?.name || '';
-          idInput.value = partner?.id || '';
-          assignBtn.disabled = true;
+          if (partner) {
+            const suggestion = [partner.sessionKey || '', partner.name || '', partner.id || '']
+              .filter(Boolean)
+              .join(', ');
+            bulkInput.value = suggestion;
+            setParsedPartnerValues(partner.sessionKey || '', partner.name || '', partner.id || '');
+          } else {
+            bulkInput.value = '';
+            setParsedPartnerValues('', '', '');
+          }
           clearBtn.disabled = !partner;
           jumpBtn.disabled = !partner?.sessionKey;
           jumpBtn.dataset.sessionKey = partner?.sessionKey || '';
         }
 
-        function handlePartnerSessionSelect(){
-          const key = $('partnerSessionInput').value.trim();
-          if (!key) return;
-          const info = sessionCache.get(key);
-          if (!info) return;
-          if (!$('partnerNameInput').value) $('partnerNameInput').value = info.user?.name || '';
-          if (!$('partnerIdInput').value) $('partnerIdInput').value = info.user?.id || '';
-          handlePartnerFormChange();
-        }
-
-        function handlePartnerFormChange(){
-          if (!currentSessionDetail) return;
-          const sessionValue = $('partnerSessionInput').value.trim();
-          const nameValue = $('partnerNameInput').value.trim();
-          const idValue = $('partnerIdInput').value.trim();
-          const existing = currentSessionDetail.partner || {};
-          const changed =
-            sessionValue !== (existing.sessionKey || '') ||
-            nameValue !== (existing.name || '') ||
-            idValue !== (existing.id || '');
-          $('btnAssignPartner').disabled = !(changed && (sessionValue || nameValue || idValue));
-        }
-
         async function assignPartner(){
           if (!selectedSessionKey) return;
+          parseBulkPartnerInput(true);
           const payload = {};
-          const sessionValue = $('partnerSessionInput').value.trim();
-          const nameValue = $('partnerNameInput').value.trim();
-          const idValue = $('partnerIdInput').value.trim();
+          const sessionValue = $('partnerBulkInput').dataset.sessionKey?.trim() || '';
+          const nameValue = $('partnerBulkInput').dataset.name?.trim() || '';
+          const idValue = $('partnerBulkInput').dataset.id?.trim() || '';
           if (sessionValue) payload.partnerSessionKey = sessionValue;
           if (nameValue) payload.partnerName = nameValue;
           if (idValue) payload.partnerId = idValue;
@@ -915,6 +886,7 @@
             setStatus('동료 정보를 저장했습니다.', 'success');
             populatePartnerForm(currentSessionDetail);
             renderSessionDetail(currentSessionDetail);
+            setParsedPartnerValues(sessionValue, nameValue, idValue);
             await loadSessions();
           } catch (error) {
             setStatus(error.message || '동료 정보를 저장하지 못했습니다.', 'error');
@@ -930,6 +902,7 @@
             setStatus('동료 연결을 해제했습니다.', 'success');
             populatePartnerForm(currentSessionDetail);
             renderSessionDetail(currentSessionDetail);
+            setParsedPartnerValues('', '', '');
             await loadSessions();
           } catch (error) {
             setStatus(error.message || '동료 연결을 해제하지 못했습니다.', 'error');
@@ -940,6 +913,28 @@
           const key = $('btnJumpPartner').dataset.sessionKey;
           if (!key) return;
           selectSession(key);
+        }
+
+        function parseBulkPartnerInput(silent = false){
+          const textarea = $('partnerBulkInput');
+          const raw = textarea.value.trim();
+          if (!raw) {
+            setParsedPartnerValues('', '', '');
+            return;
+          }
+          const firstLine = raw.split(/\r?\n/)[0];
+          const normalized = firstLine.replace(/\t/g, ',');
+          const pieces = normalized.split(',').map((part) => part.trim());
+          const sessionKey = pieces[0] || '';
+          const candidate = sessionCache.get(sessionKey);
+          const nameValue = pieces[1] || candidate?.user?.name || '';
+          const idValue = pieces[2] || candidate?.user?.id || '';
+          const rebuilt = [sessionKey, nameValue, idValue].filter(Boolean).join(', ');
+          textarea.value = rebuilt;
+          setParsedPartnerValues(sessionKey, nameValue, idValue);
+          if (!silent) {
+            setStatus('입력한 동료 정보를 불러왔습니다.', 'success');
+          }
         }
 
         function formatDateTime(ms){
@@ -954,6 +949,58 @@
             .replace(/>/g, '&gt;')
             .replace(/"/g, '&quot;')
             .replace(/'/g, '&#039;');
+        }
+
+        function setParsedPartnerValues(sessionKey, name, id){
+          const textarea = $('partnerBulkInput');
+          textarea.dataset.sessionKey = sessionKey || '';
+          textarea.dataset.name = name || '';
+          textarea.dataset.id = id || '';
+          const existing = currentSessionDetail?.partner || {};
+          const changed =
+            (sessionKey || '') !== (existing.sessionKey || '') ||
+            (name || '') !== (existing.name || '') ||
+            (id || '') !== (existing.id || '');
+          const hasValue = Boolean(sessionKey || name || id);
+          $('btnAssignPartner').disabled = !(changed && hasValue);
+          $('btnJumpPartner').disabled = !sessionKey;
+          $('btnJumpPartner').dataset.sessionKey = sessionKey || '';
+        }
+
+        async function downloadExport(){
+          if (!authToken) {
+            setStatus('로그인 후 이용하세요.', 'error');
+            return;
+          }
+          const button = $('btnDownloadExport');
+          button.disabled = true;
+          try {
+            setStatus('전체 데이터를 준비 중입니다...', '');
+            const url = new URL('sessions/export/json', API_BASE).toString();
+            const headers = { Accept: 'application/json' };
+            if (authToken) headers['Authorization'] = `Bearer ${authToken}`;
+            const response = await fetch(url, { headers });
+            if (!response.ok) {
+              const text = await response.text();
+              throw new Error(text || '데이터를 내보내지 못했습니다.');
+            }
+            const blob = await response.blob();
+            const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+            const fileName = `writingresearch-export-${stamp}.json`;
+            const blobUrl = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = blobUrl;
+            link.download = fileName;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(blobUrl);
+            setStatus('데이터 내보내기가 완료되었습니다.', 'success');
+          } catch (error) {
+            setStatus(error.message || '데이터 내보내기에 실패했습니다.', 'error');
+          } finally {
+            button.disabled = false;
+          }
         }
 
         attemptAutoLogin();
