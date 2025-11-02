@@ -48,21 +48,21 @@ jobs:
       - name: Prepare Cloud Run environment variables
         run: |
           cat <<'EOF' > backend/.cloudrun-env
-          DATA_BUCKET=${{ secrets.DATA_BUCKET }}
-          API_KEY=${{ secrets.API_KEY }}
-          ALLOWED_ORIGINS=${{ secrets.ALLOWED_ORIGINS }}
-          AI_PROVIDER=${{ secrets.AI_PROVIDER }}
-          AI_SYSTEM_PROMPT=${{ secrets.AI_SYSTEM_PROMPT }}
-          AI_TEMPERATURE=${{ secrets.AI_TEMPERATURE }}
-          ADMIN_PASSWORD=${{ secrets.ADMIN_PASSWORD }}
-          VERTEX_MODEL=${{ secrets.VERTEX_MODEL }}
-          VERTEX_LOCATION=${{ secrets.VERTEX_LOCATION }}
-          OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}
-          OPENAI_MODEL=${{ secrets.OPENAI_MODEL }}
-          OPENAI_BASE_URL=${{ secrets.OPENAI_BASE_URL }}
-          OPENAI_ORG=${{ secrets.OPENAI_ORG }}
-          LIBRE_TRANSLATE_URL=${{ secrets.LIBRE_TRANSLATE_URL }}
-          EOF
+DATA_BUCKET=${{ secrets.DATA_BUCKET }}
+API_KEY=${{ secrets.API_KEY }}
+ALLOWED_ORIGINS=${{ secrets.ALLOWED_ORIGINS }}
+AI_PROVIDER=${{ secrets.AI_PROVIDER }}
+AI_SYSTEM_PROMPT=${{ secrets.AI_SYSTEM_PROMPT }}
+AI_TEMPERATURE=${{ secrets.AI_TEMPERATURE }}
+ADMIN_PASSWORD=${{ secrets.ADMIN_PASSWORD }}
+VERTEX_MODEL=${{ secrets.VERTEX_MODEL }}
+VERTEX_LOCATION=${{ secrets.VERTEX_LOCATION }}
+OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }}
+OPENAI_MODEL=${{ secrets.OPENAI_MODEL }}
+OPENAI_BASE_URL=${{ secrets.OPENAI_BASE_URL }}
+OPENAI_ORG=${{ secrets.OPENAI_ORG }}
+LIBRE_TRANSLATE_URL=${{ secrets.LIBRE_TRANSLATE_URL }}
+EOF
 
       - name: Deploy to Cloud Run
         run: |
