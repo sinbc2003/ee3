@@ -57,14 +57,92 @@ function computeNextStageForAdvance(session) {
 export function createSessionService(dataStore) {
   if (!dataStore) throw new Error('dataStore가 필요합니다.');
 
-  async function startSession({ group, studentId, studentName }) {
-    const normalizedGroup = normalizeGroup(group);
-    if (!studentId || !studentId.trim()) {
+  let rosterCache = null;
+  let rosterFetchedAt = 0;
+  const ROSTER_CACHE_TTL = 60 * 1000;
+
+  function normalizeId(value) {
+    return String(value || '').trim();
+  }
+
+  function normalizeIdForCompare(value) {
+    return normalizeId(value).toLowerCase();
+  }
+
+  function normalizeName(value) {
+    return String(value || '').trim();
+  }
+
+  async function fetchRosterStudents(forceReload = false) {
+    if (!dataStore.getRoster) {
+      throw createError(500, '학생 명단 기능이 활성화되지 않았습니다.');
+    }
+    const now = Date.now();
+    if (!forceReload && rosterCache && now - rosterFetchedAt < ROSTER_CACHE_TTL) {
+      return rosterCache;
+    }
+    const roster = await dataStore.getRoster();
+    const students = Array.isArray(roster?.students) ? roster.students : [];
+    rosterCache = students.map((item) => ({
+      id: normalizeId(item.id),
+      name: normalizeName(item.name)
+    }));
+    rosterFetchedAt = now;
+    return rosterCache;
+  }
+
+  async function ensureStudentAllowed(studentId, studentName) {
+    const id = normalizeId(studentId);
+    const name = normalizeName(studentName);
+    if (!id) {
       throw createError(400, '식별 번호를 입력하세요.');
     }
-    if (!studentName || !studentName.trim()) {
+    if (!name) {
       throw createError(400, '이름을 입력하세요.');
     }
+    const roster = await fetchRosterStudents();
+    if (!roster.length) {
+      throw createError(403, '학생 명단이 비어 있습니다. 관리자에게 문의하세요.');
+    }
+    const matched = roster.find((student) => normalizeIdForCompare(student.id) === normalizeIdForCompare(id));
+    if (!matched) {
+      throw createError(403, '등록되지 않은 식별 번호입니다. 관리자에게 문의하세요.');
+    }
+    if (matched.name && normalizeName(matched.name) && normalizeName(matched.name) !== name) {
+      throw createError(403, '등록된 이름과 일치하지 않습니다. 관리자에게 문의하세요.');
+    }
+    return {
+      id: matched.id || id,
+      name: matched.name || name
+    };
+  }
+
+  async function ensurePartnerAllowed(partnerSessionKey, partnerId, partnerName) {
+    if (partnerSessionKey) {
+      return null;
+    }
+    const id = normalizeId(partnerId);
+    const name = normalizeName(partnerName);
+    if (!id) {
+      throw createError(400, '동료 식별 번호를 입력하세요.');
+    }
+    const roster = await fetchRosterStudents();
+    const matched = roster.find((student) => normalizeIdForCompare(student.id) === normalizeIdForCompare(id));
+    if (!matched) {
+      throw createError(404, '등록되지 않은 동료 식별 번호입니다.');
+    }
+    if (matched.name && name && normalizeName(matched.name) !== name) {
+      throw createError(403, '동료 이름이 등록된 정보와 일치하지 않습니다.');
+    }
+    return {
+      id: matched.id || id,
+      name: matched.name || name
+    };
+  }
+
+  async function startSession({ group, studentId, studentName }) {
+    const normalizedGroup = normalizeGroup(group);
+    const verifiedStudent = await ensureStudentAllowed(studentId, studentName);
     const now = Date.now();
     const sessionKey = uuid();
     const aiSessionId = uuid();
@@ -73,7 +151,7 @@ export function createSessionService(dataStore) {
       sessionKey,
       createdAt: now,
       mode: normalizedGroup,
-      you: { id: studentId.trim(), name: studentName.trim() },
+      you: { id: verifiedStudent.id, name: verifiedStudent.name },
       stage: 1,
       updatedAt: now,
       writing: {
@@ -198,11 +276,10 @@ export function createSessionService(dataStore) {
         info.name = partnerSession.you?.name || '';
         info.id = partnerSession.you?.id || '';
       }
-      if (typeof partnerName === 'string' && partnerName.trim()) {
-        info.name = partnerName.trim();
-      }
-      if (typeof partnerId === 'string' && partnerId.trim()) {
-        info.id = partnerId.trim();
+      const manualAllowed = await ensurePartnerAllowed(partnerSessionKey, partnerId, partnerName);
+      if (manualAllowed) {
+        info.name = manualAllowed.name;
+        info.id = manualAllowed.id;
       }
       if (!info.sessionKey && !info.name && !info.id) {
         throw createError(400, '동료 정보를 입력하세요.');

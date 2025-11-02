@@ -6,6 +6,10 @@ function clone(value) {
   return JSON.parse(JSON.stringify(value));
 }
 
+function sanitizeString(value) {
+  return String(value || '').trim();
+}
+
 function toNumber(value, fallback = null) {
   if (value === null || value === undefined || value === '') return fallback;
   const num = Number(value);
@@ -60,6 +64,23 @@ function summarizeForClient(effective, overrides) {
       }
     }
   };
+}
+
+function sanitizeRosterStudents(students = []) {
+  if (!Array.isArray(students)) return [];
+  const seen = new Set();
+  const normalized = [];
+  for (const entry of students) {
+    if (!entry) continue;
+    const id = sanitizeString(entry.id);
+    const name = sanitizeString(entry.name);
+    if (!id && !name) continue;
+    const key = `${id.toLowerCase()}|${name}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    normalized.push({ id, name });
+  }
+  return normalized;
 }
 
 export function createAdminService({ config, dataStore, aiResponder }) {
@@ -169,6 +190,18 @@ export function createAdminService({ config, dataStore, aiResponder }) {
     return summarizeForClient(effective, saved);
   }
 
+  async function getRoster() {
+    if (!dataStore.getRoster) return { students: [] };
+    const roster = await dataStore.getRoster();
+    return { students: sanitizeRosterStudents(roster?.students || []) };
+  }
+
+  async function replaceRoster(payload = {}) {
+    const students = sanitizeRosterStudents(payload?.students || payload);
+    const saved = dataStore.saveRoster ? await dataStore.saveRoster({ students }) : { students };
+    return { students: sanitizeRosterStudents(saved?.students || []) };
+  }
+
   return {
     initialize,
     verifyPassword,
@@ -177,7 +210,9 @@ export function createAdminService({ config, dataStore, aiResponder }) {
     revokeToken,
     getTokenTtl: () => tokenTtlMs,
     getConfig,
-    updateConfig
+    updateConfig,
+    getRoster,
+    replaceRoster
   };
 }
 

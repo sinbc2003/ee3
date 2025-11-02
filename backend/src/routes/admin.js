@@ -119,6 +119,42 @@ export function createAdminRouter({ adminService, sessionService, chatService })
     }
   });
 
+  router.get('/roster', async (req, res, next) => {
+    try {
+      const roster = await adminService.getRoster();
+      res.json(roster);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  router.post('/roster', async (req, res, next) => {
+    function parseText(text) {
+      return String(text || '')
+        .split(/\r?\n/)
+        .map((line) => line.replace(/\t/g, ',').trim())
+        .filter(Boolean)
+        .map((line) => line.split(',').map((part) => part.trim()))
+        .map(([id, name]) => ({ id, name }));
+    }
+
+    try {
+      const body = req.body || {};
+      let students = [];
+      if (Array.isArray(body.students)) {
+        students = body.students;
+      } else if (typeof body.text === 'string') {
+        students = parseText(body.text);
+      } else if (typeof body === 'string') {
+        students = parseText(body);
+      }
+      const roster = await adminService.replaceRoster({ students });
+      res.json(roster);
+    } catch (error) {
+      next(error);
+    }
+  });
+
   router.get('/config', async (req, res, next) => {
     try {
       const config = await adminService.getConfig();

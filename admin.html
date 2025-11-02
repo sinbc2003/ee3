@@ -346,6 +346,19 @@
           </div>
         </section>
 
+        <section class="card" id="rosterSection">
+          <h2>학생 명단</h2>
+          <p class="muted" style="margin-bottom: 12px;">식별번호와 이름을 한 줄씩 입력하거나 붙여넣으세요. 중복은 자동으로 정리됩니다.</p>
+          <textarea id="rosterTextarea" placeholder="식별번호, 이름"></textarea>
+          <div class="match-actions" style="margin-top: 16px; align-items: center;">
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+              <button id="btnRosterSave" class="primary" type="button">명단 저장</button>
+              <button id="btnRosterReload" class="secondary" type="button">명단 새로고침</button>
+            </div>
+            <span class="muted" id="rosterCountLabel" style="margin-left: auto;">등록된 학생 0명</span>
+          </div>
+        </section>
+
         <section class="card" id="sessionListSection">
           <h2>세션 목록</h2>
           <div class="muted" style="margin-bottom: 12px;">목록에서 세션을 선택하면 상세 정보와 대화 로그를 확인하고 동료를 매칭할 수 있습니다.</div>
@@ -396,6 +409,7 @@
         let selectedSessionKey = '';
         let clearOpenAiKey = false;
         let currentSessionDetail = null;
+        let rosterStudents = [];
 
         const sessionCache = new Map();
         const $ = (id) => document.getElementById(id);
@@ -744,6 +758,9 @@
         $('btnAssignPartner').addEventListener('click', assignPartner);
         $('btnClearPartner').addEventListener('click', clearPartner);
         $('btnJumpPartner').addEventListener('click', jumpToPartner);
+        $('btnRosterSave').addEventListener('click', saveRoster);
+        $('btnRosterReload').addEventListener('click', loadRoster);
+        $('rosterTextarea').addEventListener('input', handleRosterInput);
 
         attemptAutoLogin();
         function resetDetailPanels(){
@@ -875,6 +892,10 @@
           const sessionValue = $('partnerBulkInput').dataset.sessionKey?.trim() || '';
           const nameValue = $('partnerBulkInput').dataset.name?.trim() || '';
           const idValue = $('partnerBulkInput').dataset.id?.trim() || '';
+          if (!sessionValue && !idValue) {
+            setStatus('동료 식별번호 또는 세션 키를 입력하세요.', 'error');
+            return;
+          }
           if (sessionValue) payload.partnerSessionKey = sessionValue;
           if (nameValue) payload.partnerName = nameValue;
           if (idValue) payload.partnerId = idValue;
@@ -928,7 +949,13 @@
           const sessionKey = pieces[0] || '';
           const candidate = sessionCache.get(sessionKey);
           const nameValue = pieces[1] || candidate?.user?.name || '';
-          const idValue = pieces[2] || candidate?.user?.id || '';
+          let idValue = pieces[2] || candidate?.user?.id || '';
+          if (!sessionKey && !idValue) {
+            const rosterMatch = findRosterByName(nameValue);
+            if (rosterMatch) {
+              idValue = rosterMatch.id;
+            }
+          }
           const rebuilt = [sessionKey, nameValue, idValue].filter(Boolean).join(', ');
           textarea.value = rebuilt;
           setParsedPartnerValues(sessionKey, nameValue, idValue);
@@ -1002,7 +1029,86 @@
             button.disabled = false;
           }
         }
+        async function loadRoster(){
+          try {
+            const data = await apiRequest('roster');
+            rosterStudents = Array.isArray(data?.students) ? data.students : [];
+            renderRoster();
+            setStatus('학생 명단을 불러왔습니다.', 'success');
+          } catch (error) {
+            setStatus(error.message || '학생 명단을 불러오지 못했습니다.', 'error');
+          }
+        }
 
+        async function saveRoster(){
+          const textarea = $('rosterTextarea');
+          const students = parseRosterTextarea(textarea.value);
+          if (!students.length) {
+            setStatus('저장할 학생 정보가 없습니다.', 'error');
+            return;
+          }
+          $('btnRosterSave').disabled = true;
+          try {
+            const result = await apiRequest('roster', { method: 'POST', body: { students } });
+            rosterStudents = Array.isArray(result?.students) ? result.students : [];
+            renderRoster();
+            setStatus('학생 명단을 저장했습니다.', 'success');
+            await loadSessions();
+          } catch (error) {
+            setStatus(error.message || '학생 명단을 저장하지 못했습니다.', 'error');
+          } finally {
+            $('btnRosterSave').disabled = false;
+          }
+        }
+
+        function handleRosterInput(){
+          const textarea = $('rosterTextarea');
+          const students = parseRosterTextarea(textarea.value);
+          updateRosterCount(students.length);
+        }
+
+        function parseRosterTextarea(text){
+          return String(text || '')
+            .split(/\r?\n/)
+            .map((line) => line.replace(/\t/g, ',').trim())
+            .filter(Boolean)
+            .map((line) => line.split(',').map((part) => part.trim()))
+            .map(([id, name]) => ({ id, name }))
+            .filter((item) => item.id || item.name);
+        }
+
+        function renderRoster(){
+          const textarea = $('rosterTextarea');
+          const sorted = [...rosterStudents].sort((a, b) => a.id.localeCompare(b.id));
+          textarea.value = sorted.map((item) => [item.id, item.name].filter(Boolean).join(', ')).join('\n');
+          updateRosterCount(sorted.length);
+        }
+
+        function updateRosterCount(count){
+          $('rosterCountLabel').textContent = `등록된 학생 ${count}명`;
+        }
+
+        function findRosterByName(name){
+          const trimmed = (name || '').trim();
+          if (!trimmed) return null;
+          return rosterStudents.find((student) => (student.name || '').trim() === trimmed) || null;
+        }
+
+        async function attemptAutoLogin(){
+          if (!authToken) {
+            showLogin();
+            return;
+          }
+          try {
+            await loadConfig();
+            await Promise.all([loadSessions(), loadRoster()]);
+            showAdmin();
+          } catch (error) {
+            authToken = '';
+            window.localStorage.removeItem('writingresearch_admin_token');
+            showLogin();
+          }
+        }
         attemptAutoLogin();
       })();
     </script>

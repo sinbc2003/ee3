@@ -19,6 +19,10 @@ const DEFAULT_ADMIN_CONFIG = {
   }
 };
 
+const DEFAULT_ROSTER = {
+  students: []
+};
+
 function resolveLocalPath(rootDir, relativePath) {
   return path.resolve(rootDir, relativePath);
 }
@@ -165,6 +169,35 @@ export async function createDataStore(config) {
     return payload;
   }
 
+  function normalizeRosterEntries(entries) {
+    const list = Array.isArray(entries) ? entries : [];
+    const seen = new Set();
+    const normalized = [];
+    for (const entry of list) {
+      if (!entry) continue;
+      const id = String(entry.id || '').trim();
+      const name = String(entry.name || '').trim();
+      if (!id && !name) continue;
+      const key = `${id.toLowerCase()}|${name}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      normalized.push({ id, name });
+    }
+    return normalized;
+  }
+
+  async function getRoster() {
+    const stored = await readJson('settings/roster.json', DEFAULT_ROSTER);
+    const students = normalizeRosterEntries(stored?.students || []);
+    return { students };
+  }
+
+  async function saveRoster(data) {
+    const students = normalizeRosterEntries((data && data.students) || data);
+    await writeJson('settings/roster.json', { students });
+    return { students };
+  }
+
   async function getServerDiag() {
     const sessions = await listSessions();
     return {
@@ -186,6 +219,8 @@ export async function createDataStore(config) {
     getPublicSettings,
     getAdminConfig,
     saveAdminConfig,
+    getRoster,
+    saveRoster,
     getServerDiag
   };
 }
