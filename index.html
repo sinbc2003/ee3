@@ -810,10 +810,11 @@
             state.stage = incomingStage;
           }
           if (!state.stage || state.stage < 1) state.stage = 1;
-          state.writing.prewriting = data.prewriting || state.writing.prewriting;
-          state.writing.draft = data.draft || state.writing.draft;
-          state.writing.notes = data.notes || state.writing.notes;
-          state.writing.final = data.final || state.writing.final;
+          const incomingWriting = data.writing || {};
+          state.writing.prewriting = incomingWriting.prewriting || data.prewriting || state.writing.prewriting;
+          state.writing.draft = incomingWriting.draft || data.draft || state.writing.draft;
+          state.writing.notes = incomingWriting.notes || data.notes || state.writing.notes;
+          state.writing.final = incomingWriting.final || data.final || state.writing.final;
           if (Number(state.stage || 1) <= 1 && !(state.writing.prewriting && Number(state.writing.prewriting.submittedAt || 0))) {
             if (typeof state.localPrewritingDraft !== 'string' || !state.localPrewritingDraft) {
               state.localPrewritingDraft = (state.writing.prewriting && state.writing.prewriting.text) || state.localPrewritingDraft || '';
