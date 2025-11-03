@@ -42,7 +42,16 @@ export function createAdminRouter({ adminService, sessionService, chatService })
     try {
       const format = String(formatOverride || req.query?.format || 'json').toLowerCase();
       const scopes = parseScopesParam(req.query?.scopes);
-      const sessions = await sessionService.getAllSessionsWithDetails();
+      let sessions = [];
+      try {
+        sessions = await sessionService.getAllSessionsWithDetails();
+      } catch (error) {
+        if (error?.status === 404) {
+          sessions = [];
+        } else {
+          throw error;
+        }
+      }
 
       if (format === 'json') {
         const result = await buildJsonExportPayload(sessions);

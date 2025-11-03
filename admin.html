@@ -256,6 +256,32 @@
         color: #ffffff;
         border-color: #2563eb;
       }
+      .file-button {
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        padding: 10px 16px;
+        border-radius: 10px;
+        border: 1px solid #cbd5f5;
+        background: #eef2ff;
+        color: #1e3a8a;
+        font-weight: 600;
+        font-size: 14px;
+        cursor: pointer;
+        transition: transform 0.15s ease, box-shadow 0.15s ease;
+      }
+      .file-button:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 10px 24px rgba(37, 99, 235, 0.14);
+      }
+      .file-button input {
+        position: absolute;
+        inset: 0;
+        opacity: 0;
+        cursor: pointer;
+      }
       .prompt-preview {
         margin-top: 12px;
         padding: 16px;
@@ -518,6 +544,11 @@
             <div style="display: flex; gap: 10px; flex-wrap: wrap;">
               <button id="btnRosterSave" class="primary" type="button">명단 저장</button>
               <button id="btnRosterReload" class="secondary" type="button">명단 새로고침</button>
+              <button id="btnRosterDownloadTemplate" class="secondary" type="button">CSV 템플릿 다운로드</button>
+              <label class="file-button" style="margin: 0;">
+                CSV 업로드
+                <input id="rosterFileInput" type="file" accept=".csv,text/csv" />
+              </label>
             </div>
             <span class="muted" id="rosterCountLabel" style="margin-left: auto;">등록된 학생 0명</span>
           </div>
@@ -966,6 +997,8 @@
         });
         $('btnPromptSave').addEventListener('click', savePrompt);
         $('btnPromptReload').addEventListener('click', () => loadPublicSettings(true));
+        $('btnRosterDownloadTemplate').addEventListener('click', downloadRosterTemplate);
+        $('rosterFileInput').addEventListener('change', handleRosterFileInput);
         $('btnSaveConfig').addEventListener('click', saveConfig);
         $('btnClearOpenAiKey').addEventListener('click', () => {
           clearOpenAiKey = true;
@@ -1621,6 +1654,100 @@
           const textarea = $('rosterTextarea');
           const students = parseRosterTextarea(textarea.value);
           updateRosterCount(students.length);
+        }
+
+        function parseRosterCsv(text){
+          const lines = String(text || '')
+            .split(/\r?\n/)
+            .map((line) => line.replace(/\t/g, ',').trim())
+            .filter(Boolean);
+          if (!lines.length) return [];
+          let start = 0;
+          const header = lines[0].toLowerCase();
+          if (header.includes('student') || header.includes('학번') || header.includes('id')) {
+            start = 1;
+          }
+          const entries = [];
+          for (let i = start; i < lines.length; i += 1) {
+            const parts = lines[i].split(',').map((part) => part.trim());
+            const id = parts[0] || '';
+            const name = parts[1] || '';
+            if (!id && !name) continue;
+            entries.push({ id, name });
+          }
+          return entries;
+        }
+
+        function summarizeRosterGroups(students){
+          const summary = { A: 0, B: 0, C: 0 };
+          students.forEach((student) => {
+            const prefix = String(student.id || '').trim().charAt(0).toUpperCase();
+            if (summary[prefix] !== undefined) summary[prefix] += 1;
+          });
+          return summary;
+        }
+
+        function downloadRosterTemplate(){
+          const rows = [
+            ['student_id', 'name'],
+            ['A1001', '홍길동'],
+            ['B2001', '김영희'],
+            ['C3001', '박철수']
+          ];
+          const csv = rows.map((row) => row.join(',')).join('\r\n');
+          const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+          const stamp = new Date().toISOString().slice(0, 10);
+          const link = document.createElement('a');
+          link.href = URL.createObjectURL(blob);
+          link.download = `writingresearch-roster-template-${stamp}.csv`;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          setStatus('CSV 템플릿을 내려받았습니다.', 'success');
+        }
+
+        function handleRosterFileInput(event){
+          const input = event.target;
+          const file = input.files && input.files[0];
+          if (!file) return;
+          if (!/csv|text\//i.test(file.type) && !file.name.toLowerCase().endsWith('.csv')) {
+            setStatus('CSV 파일을 선택하세요.', 'error');
+            input.value = '';
+            return;
+          }
+          const reader = new FileReader();
+          reader.onload = () => {
+            try {
+              const text = reader.result || '';
+              const students = parseRosterCsv(text);
+              if (!students.length) {
+                setStatus('CSV에서 학생 정보를 찾지 못했습니다.', 'error');
+                return;
+              }
+              const textarea = $('rosterTextarea');
+              if (textarea) {
+                textarea.value = students.map((item) => [item.id, item.name].filter(Boolean).join(', ')).join('\n');
+                handleRosterInput();
+              }
+              const summary = summarizeRosterGroups(students);
+              const summaryText = Object.entries(summary)
+                .filter(([, count]) => count > 0)
+                .map(([group, count]) => `${group}집단 ${count}명`)
+                .join(' · ');
+              const message = summaryText ? `CSV에서 학생 ${students.length}명을 불러왔습니다. (${summaryText}) 저장을 눌러 반영하세요.` : `CSV에서 학생 ${students.length}명을 불러왔습니다. 저장을 눌러 반영하세요.`;
+              setStatus(message, 'success');
+            } catch (error) {
+              console.error(error);
+              setStatus('CSV 파일을 해석하지 못했습니다.', 'error');
+            } finally {
+              input.value = '';
+            }
+          };
+          reader.onerror = () => {
+            setStatus('CSV 파일을 읽지 못했습니다.', 'error');
+            input.value = '';
+          };
+          reader.readAsText(file, 'utf-8');
         }
 
         function parseRosterTextarea(text){
