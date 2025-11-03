@@ -144,6 +144,42 @@ export function createAdminRouter({ adminService, sessionService, chatService })
     }
   });
 
+  router.delete('/sessions/:sessionKey', async (req, res, next) => {
+    try {
+      const result = await sessionService.deleteSession(req.params.sessionKey);
+      res.json({ ok: true, ...result });
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  router.post('/sessions/bulk-delete', async (req, res, next) => {
+    try {
+      const incoming = req.body?.sessionKeys;
+      if (!Array.isArray(incoming) || !incoming.length) {
+        throw createError(400, '삭제할 세션 키를 입력하세요.');
+      }
+      const sessionKeys = Array.from(new Set(incoming.map((value) => String(value || '').trim()).filter(Boolean)));
+      if (!sessionKeys.length) {
+        throw createError(400, '삭제할 세션 키를 입력하세요.');
+      }
+      const results = await Promise.allSettled(sessionKeys.map((key) => sessionService.deleteSession(key)));
+      const deleted = [];
+      const errors = [];
+      results.forEach((result, index) => {
+        const key = sessionKeys[index];
+        if (result.status === 'fulfilled') {
+          deleted.push(key);
+        } else {
+          errors.push({ sessionKey: key, error: result.reason?.message || '삭제 실패' });
+        }
+      });
+      res.json({ deleted, errors });
+    } catch (error) {
+      next(error);
+    }
+  });
+
   router.get('/sessions/:sessionKey/chats/:channel', async (req, res, next) => {
     try {
       const { sessionKey, channel } = req.params;

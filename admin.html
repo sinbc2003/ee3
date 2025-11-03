@@ -566,10 +566,16 @@
               <button id="btnSelectSession" class="secondary" type="button">세션 열기</button>
             </div>
           </div>
+          <div class="match-actions" style="margin-bottom: 12px; flex-wrap: wrap;">
+            <button id="btnDeleteSelectedSession" class="danger" type="button" disabled>선택한 세션 삭제</button>
+            <button id="btnDeleteAllSessions" class="danger" type="button" disabled>세션 전체 삭제</button>
+            <button id="btnDeleteUnmatchedSessions" class="secondary" type="button" disabled>미매칭 세션 삭제</button>
+          </div>
           <div style="overflow-x: auto;">
             <table id="sessionTable">
               <thead>
                 <tr>
+                  <th style="width: 42px;"><input type="checkbox" id="sessionSelectAll" /></th>
                   <th>세션</th>
                   <th>집단</th>
                   <th>학생</th>
@@ -623,6 +629,7 @@
         let currentPromptContent = '';
         let pendingPairings = [];
         let pairingApplyInProgress = false;
+        const selectedSessionKeys = new Set();
 
         function normalizeBaseUrl(url){
           if (!url) return `${window.location.origin}/api/`;
@@ -810,6 +817,12 @@
           const optionList = $('sessionOptions');
           tbody.innerHTML = '';
           optionList.innerHTML = '';
+          const availableKeys = new Set(list.map((item) => item.sessionKey));
+          Array.from(selectedSessionKeys).forEach((key) => {
+            if (!availableKeys.has(key)) {
+              selectedSessionKeys.delete(key);
+            }
+          });
           sessionCache.clear();
           unmatchedSessionsCache = [];
 
@@ -817,13 +830,15 @@
             resetDetailPanels();
             const row = document.createElement('tr');
             const cell = document.createElement('td');
-            cell.colSpan = 6;
+            cell.colSpan = 7;
             cell.className = 'muted';
             cell.textContent = '등록된 세션이 없습니다.';
             row.appendChild(cell);
             tbody.appendChild(row);
             renderUnmatchedSessions();
             renderQuickMatchDetails();
+            updateSessionActionButtons();
+            syncSessionSelectAllState();
             return;
           }
 
@@ -850,6 +865,9 @@
             const updated = item.updatedAt ? formatDateTime(item.updatedAt) : '-';
             const partnerLabel = formatPartnerCell(item.partner);
             row.innerHTML = `
+              <td>
+                <input type="checkbox" class="session-select" data-session-key="${item.sessionKey}" />
+              </td>
               <td>${item.sessionKey}</td>
               <td>${item.group || '-'}</td>
               <td>${escapeHtml(item.user?.name || '')} ${item.user?.id ? `(${escapeHtml(item.user.id)})` : ''}</td>
@@ -857,10 +875,25 @@
               <td>${partnerLabel}</td>
               <td>${updated}</td>
             `;
-            row.addEventListener('click', () => selectSession(item.sessionKey));
+            row.addEventListener('click', (event) => {
+              if (event.target && event.target.closest('.session-select')) return;
+              selectSession(item.sessionKey);
+            });
             tbody.appendChild(row);
+            const checkbox = row.querySelector('.session-select');
+            if (checkbox) {
+              checkbox.checked = selectedSessionKeys.has(item.sessionKey);
+              checkbox.addEventListener('click', (event) => event.stopPropagation());
+              checkbox.addEventListener('change', (event) => handleSessionCheckboxChange(item.sessionKey, event.target.checked));
+            }
           });
           renderQuickMatchDetails();
+          if (selectedSessionKey && !sessionCache.has(selectedSessionKey)) {
+            selectedSessionKey = '';
+            resetDetailPanels();
+          }
+          updateSessionActionButtons();
+          syncSessionSelectAllState();
         }
 
         async function selectSession(sessionKey){
@@ -985,6 +1018,10 @@
             $('sessionSearchInput').value = resolved;
           }
         });
+        $('btnDeleteSelectedSession').addEventListener('click', deleteSelectedSessions);
+        $('btnDeleteAllSessions').addEventListener('click', deleteAllSessions);
+        $('btnDeleteUnmatchedSessions').addEventListener('click', deleteUnmatchedSessions);
+        $('sessionSelectAll').addEventListener('change', (event) => handleSessionSelectAllChange(event.target.checked));
         exportScopeInputs = Array.from(document.querySelectorAll('[data-export-scope]'));
         exportScopeInputs.forEach((input) => input.addEventListener('change', handleExportScopeChange));
         $('btnQuickMatchApply').addEventListener('click', handleQuickMatchApply);
@@ -1029,7 +1066,7 @@
         $('btnRosterReload').addEventListener('click', loadRoster);
         $('rosterTextarea').addEventListener('input', handleRosterInput);
 
-        updateCsvPairingButton();
+        updateSessionActionButtons();
         attemptAutoLogin();
         function resetDetailPanels(){
           $('sessionDetailSection').classList.add('hidden');
@@ -1040,6 +1077,7 @@
           $('peerChatLog').textContent = '세션을 선택하세요.';
           setParsedPartnerValues('', '', '');
           $('btnClearPartner').disabled = true;
+          updateSessionActionButtons();
         }
 
         function showDetailPanels(){
@@ -1115,7 +1153,7 @@
             applyButton.disabled = !(quickMatchState.primary && quickMatchState.partner && quickMatchState.primary !== quickMatchState.partner);
           }
           renderUnmatchedSessions();
-          updateCsvPairingButton();
+          updateSessionActionButtons();
         }
 
         function updateCsvPairingButton(){
@@ -1124,9 +1162,60 @@
           btn.disabled = !(pendingPairings && pendingPairings.length);
         }
 
+        function updateSessionActionButtons(){
+          const deleteSelectedBtn = $('btnDeleteSelectedSession');
+          if (deleteSelectedBtn) deleteSelectedBtn.disabled = selectedSessionKeys.size === 0;
+          const deleteUnmatchedBtn = $('btnDeleteUnmatchedSessions');
+          if (deleteUnmatchedBtn) deleteUnmatchedBtn.disabled = !(unmatchedSessionsCache && unmatchedSessionsCache.length);
+          const deleteAllBtn = $('btnDeleteAllSessions');
+          if (deleteAllBtn) deleteAllBtn.disabled = sessionCache.size === 0;
+          updateCsvPairingButton();
+        }
+
+        function syncSessionSelectAllState(){
+          const headerCheckbox = $('sessionSelectAll');
+          if (!headerCheckbox) return;
+          const checkboxes = $('sessionTable').querySelectorAll('tbody .session-select');
+          const total = checkboxes.length;
+          const selectedCount = selectedSessionKeys.size;
+          headerCheckbox.disabled = total === 0;
+          if (total === 0) {
+            headerCheckbox.checked = false;
+            headerCheckbox.indeterminate = false;
+            return;
+          }
+          headerCheckbox.checked = selectedCount === total;
+          headerCheckbox.indeterminate = selectedCount > 0 && selectedCount < total;
+        }
+
+        function handleSessionCheckboxChange(sessionKey, checked){
+          if (!sessionKey) return;
+          if (checked) {
+            selectedSessionKeys.add(sessionKey);
+          } else {
+            selectedSessionKeys.delete(sessionKey);
+          }
+          syncSessionSelectAllState();
+          updateSessionActionButtons();
+        }
+
+        function handleSessionSelectAllChange(checked){
+          if (checked) {
+            sessionCache.forEach((_, key) => selectedSessionKeys.add(key));
+          } else {
+            selectedSessionKeys.clear();
+          }
+          const checkboxes = $('sessionTable').querySelectorAll('tbody .session-select');
+          checkboxes.forEach((checkbox) => {
+            checkbox.checked = checked;
+          });
+          syncSessionSelectAllState();
+          updateSessionActionButtons();
+        }
+
         function setPendingPairings(list){
           pendingPairings = Array.isArray(list) ? list.filter((pair) => pair && pair.primary && pair.partner) : [];
-          updateCsvPairingButton();
+          updateSessionActionButtons();
         }
 
         function findSessionByStudentId(studentId){
@@ -1365,6 +1454,127 @@
             return pending;
           } finally {
             pairingApplyInProgress = false;
+          }
+        }
+
+        async function deleteSelectedSessions(){
+          const keys = Array.from(selectedSessionKeys);
+          if (!keys.length) {
+            setStatus('삭제할 세션을 선택하세요.', 'error');
+            return;
+          }
+          if (!confirm(`선택한 세션 ${keys.length}개를 삭제하시겠습니까?`)) return;
+          const button = $('btnDeleteSelectedSession');
+          if (button) button.disabled = true;
+          try {
+            const response = await apiRequest('sessions/bulk-delete', { method: 'POST', body: { sessionKeys: keys } });
+            const deletedList = Array.isArray(response?.deleted) ? response.deleted : [];
+            const errorList = Array.isArray(response?.errors) ? response.errors : [];
+            deletedList.forEach((key) => {
+              selectedSessionKeys.delete(key);
+              if (quickMatchState.primary === key) setQuickMatchField('primary', '');
+              if (quickMatchState.partner === key) setQuickMatchField('partner', '');
+              if (selectedSessionKey === key) {
+                selectedSessionKey = '';
+                resetDetailPanels();
+              }
+            });
+            let message = deletedList.length ? `세션 ${deletedList.length}개를 삭제했습니다.` : '삭제된 세션이 없습니다.';
+            if (errorList.length) {
+              const failed = errorList.map((item) => item.sessionKey).join(', ');
+              message += ` 실패 ${errorList.length}개: ${failed}`;
+              setStatus(message, 'warn');
+            } else {
+              setStatus(message, 'success');
+            }
+            await loadSessions();
+          } catch (error) {
+            setStatus(error.message || '세션을 삭제하지 못했습니다.', 'error');
+          } finally {
+            if (button) button.disabled = false;
+            syncSessionSelectAllState();
+            updateSessionActionButtons();
+          }
+        }
+
+        async function deleteUnmatchedSessions(){
+          const list = Array.isArray(unmatchedSessionsCache) ? unmatchedSessionsCache : [];
+          if (!list.length) {
+            setStatus('삭제할 미매칭 세션이 없습니다.', '');
+            return;
+          }
+          if (!confirm(`미매칭 세션 ${list.length}개를 삭제하시겠습니까?`)) return;
+          const button = $('btnDeleteUnmatchedSessions');
+          if (button) button.disabled = true;
+          const sessionKeys = list.map((item) => item.sessionKey);
+          try {
+            const response = await apiRequest('sessions/bulk-delete', { method: 'POST', body: { sessionKeys } });
+            const deletedList = Array.isArray(response?.deleted) ? response.deleted : [];
+            const errors = Array.isArray(response?.errors) ? response.errors : [];
+            deletedList.forEach((key) => {
+              selectedSessionKeys.delete(key);
+              if (quickMatchState.primary === key) setQuickMatchField('primary', '');
+              if (quickMatchState.partner === key) setQuickMatchField('partner', '');
+              if (selectedSessionKey === key) {
+                selectedSessionKey = '';
+                resetDetailPanels();
+              }
+            });
+            let message = deletedList.length ? `세션 ${deletedList.length}개를 삭제했습니다.` : '삭제된 세션이 없습니다.';
+            if (errors.length) {
+              const failed = errors.map((item) => item.sessionKey).join(', ');
+              message += ` 실패 ${errors.length}개: ${failed}`;
+              setStatus(message, 'warn');
+            } else {
+              setStatus(message, 'success');
+            }
+            await loadSessions();
+          } catch (error) {
+            setStatus(error.message || '세션을 삭제하지 못했습니다.', 'error');
+          } finally {
+            if (button) button.disabled = false;
+            syncSessionSelectAllState();
+            updateSessionActionButtons();
+          }
+        }
+
+        async function deleteAllSessions(){
+          const allKeys = Array.from(sessionCache.keys());
+          if (!allKeys.length) {
+            setStatus('삭제할 세션이 없습니다.', '');
+            return;
+          }
+          if (!confirm(`총 ${allKeys.length}개의 세션을 모두 삭제하시겠습니까?`)) return;
+          const button = $('btnDeleteAllSessions');
+          if (button) button.disabled = true;
+          try {
+            const response = await apiRequest('sessions/bulk-delete', { method: 'POST', body: { sessionKeys: allKeys } });
+            const deletedList = Array.isArray(response?.deleted) ? response.deleted : [];
+            const errors = Array.isArray(response?.errors) ? response.errors : [];
+            deletedList.forEach((key) => {
+              selectedSessionKeys.delete(key);
+              if (quickMatchState.primary === key) setQuickMatchField('primary', '');
+              if (quickMatchState.partner === key) setQuickMatchField('partner', '');
+              if (selectedSessionKey === key) {
+                selectedSessionKey = '';
+                resetDetailPanels();
+              }
+            });
+            let message = deletedList.length ? `세션 ${deletedList.length}개를 삭제했습니다.` : '삭제된 세션이 없습니다.';
+            if (errors.length) {
+              const failed = errors.map((item) => item.sessionKey).join(', ');
+              message += ` 실패 ${errors.length}개: ${failed}`;
+              setStatus(message, 'warn');
+            } else {
+              setStatus(message, 'success');
+            }
+            await loadSessions();
+          } catch (error) {
+            setStatus(error.message || '세션 전체 삭제에 실패했습니다.', 'error');
+          } finally {
+            if (button) button.disabled = false;
+            syncSessionSelectAllState();
+            updateSessionActionButtons();
           }
         }
 

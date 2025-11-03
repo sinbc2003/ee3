@@ -3,6 +3,7 @@ import cors from 'cors';
 import morgan from 'morgan';
 import createError from 'http-errors';
 import path from 'node:path';
+import fs from 'node:fs/promises';
 
 import config from './config.js';
 import { createDataStore } from './services/data-store.js';
@@ -30,6 +31,29 @@ app.use(cors(corsOptions));
 app.options('*', cors(corsOptions));
 app.use(express.json({ limit: '2mb' }));
 app.use(morgan('combined'));
+
+const CHAT_AVATAR_FILE = 'chatgpt.png';
+await fs.mkdir(PUBLIC_DIR, { recursive: true });
+const publicAvatarPath = path.join(PUBLIC_DIR, CHAT_AVATAR_FILE);
+try {
+  await fs.access(publicAvatarPath);
+} catch (error) {
+  const candidates = [
+    path.resolve(process.cwd(), CHAT_AVATAR_FILE),
+    path.resolve(process.cwd(), '..', CHAT_AVATAR_FILE)
+  ];
+  for (const candidate of candidates) {
+    try {
+      await fs.copyFile(candidate, publicAvatarPath);
+      break;
+    } catch (copyError) {
+      if (copyError.code !== 'ENOENT') {
+        console.warn('Failed to copy chat avatar image:', copyError.message || copyError);
+        break;
+      }
+    }
+  }
+}
 
 const dataStore = await createDataStore(config);
 const aiResponder = createAiResponder(config);

@@ -70,6 +70,24 @@ export async function createDataStore(config) {
     await writeLocalJson(absolute, data);
   }
 
+  async function deleteFile(relativePath) {
+    if (usingBucket) {
+      const file = bucket.file(relativePath);
+      try {
+        await file.delete({ ignoreNotFound: true });
+      } catch (error) {
+        if (error.code !== 404) throw error;
+      }
+      return;
+    }
+    const absolute = resolveLocalPath(localRoot, relativePath);
+    try {
+      await fs.unlink(absolute);
+    } catch (error) {
+      if (error.code !== 'ENOENT') throw error;
+    }
+  }
+
   async function appendJsonArray(relativePath, item) {
     const list = (await readJson(relativePath, [])) || [];
     list.push(item);
@@ -212,6 +230,19 @@ export async function createDataStore(config) {
     return { students };
   }
 
+  async function deleteSession(sessionKey, meta = null) {
+    if (!sessionKey) throw new Error('sessionKey is required');
+    const session = meta || (await getSession(sessionKey));
+    await deleteFile(`sessions/${sessionKey}.json`);
+    if (session?.aiSessionId) {
+      await deleteFile(`chats/ai/${session.aiSessionId}.json`);
+    }
+    if (session?.peerSessionId) {
+      await deleteFile(`chats/peer/${session.peerSessionId}.json`);
+    }
+    return { sessionKey };
+  }
+
   async function getServerDiag() {
     const sessions = await listSessions();
     return {
@@ -236,6 +267,7 @@ export async function createDataStore(config) {
     saveAdminConfig,
     getRoster,
     saveRoster,
+    deleteSession,
     getServerDiag
   };
 }

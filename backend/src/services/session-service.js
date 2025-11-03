@@ -357,6 +357,19 @@ export function createSessionService(dataStore) {
     return dataStore.getServerDiag();
   }
 
+  async function deleteSession(sessionKey) {
+    const key = String(sessionKey || '').trim();
+    if (!key) {
+      throw createError(400, '세션 키를 입력하세요.');
+    }
+    const session = await dataStore.getSession(key);
+    if (!session) {
+      throw createError(404, '세션을 찾을 수 없습니다.');
+    }
+    await dataStore.deleteSession(key, session);
+    return { sessionKey: key };
+  }
+
   return {
     startSession,
     listSessions,
@@ -387,7 +400,8 @@ export function createSessionService(dataStore) {
       return detailed.filter(Boolean);
     },
     getPublicSettings,
-    getServerDiag
+    getServerDiag,
+    deleteSession
   };
 }
 
