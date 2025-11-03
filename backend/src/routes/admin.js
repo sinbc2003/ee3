@@ -1,12 +1,72 @@
 import express from 'express';
 import createError from 'http-errors';
 
+import { buildSessionExportWorkbook } from '../utils/export-workbook.js';
+
 export function createAdminRouter({ adminService, sessionService, chatService }) {
   if (!adminService || !sessionService || !chatService) {
     throw new Error('adminService, sessionService, chatService가 필요합니다.');
   }
 
   const router = express.Router();
+
+  function parseScopesParam(input) {
+    if (!input) return [];
+    const source = Array.isArray(input) ? input : String(input).split(',');
+    return source
+      .flatMap((value) => String(value || '').split(','))
+      .map((value) => value.trim().toLowerCase())
+      .filter(Boolean);
+  }
+
+  async function buildJsonExportPayload(sessions) {
+    const payload = await Promise.all(
+      sessions.map(async (session) => {
+        const aiHistory = session.aiSessionId ? await chatService.getChatHistory(session.aiSessionId, 'ai') : [];
+        const peerHistory = session.peerSessionId ? await chatService.getChatHistory(session.peerSessionId, 'peer') : [];
+        return {
+          ...session,
+          aiChat: aiHistory,
+          peerChat: peerHistory
+        };
+      })
+    );
+    return {
+      exportedAt: Date.now(),
+      total: payload.length,
+      sessions: payload
+    };
+  }
+
+  async function handleSessionsExport(req, res, next, formatOverride) {
+    try {
+      const format = String(formatOverride || req.query?.format || 'json').toLowerCase();
+      const scopes = parseScopesParam(req.query?.scopes);
+      const sessions = await sessionService.getAllSessionsWithDetails();
+
+      if (format === 'json') {
+        const result = await buildJsonExportPayload(sessions);
+        res.setHeader('Content-Type', 'application/json; charset=utf-8');
+        res.setHeader('Content-Disposition', 'attachment; filename="writingresearch-export.json"');
+        res.send(JSON.stringify(result, null, 2));
+        return;
+      }
+
+      if (format === 'xlsx' || format === 'xls') {
+        const workbook = await buildSessionExportWorkbook({ sessions, scopes, chatService });
+        const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+        res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        res.setHeader('Content-Disposition', `attachment; filename="writingresearch-export-${stamp}.xlsx"`);
+        await workbook.xlsx.write(res);
+        res.end();
+        return;
+      }
+
+      throw createError(400, '지원하지 않는 내보내기 형식입니다. (json, xlsx 중 선택)');
+    } catch (error) {
+      next(error);
+    }
+  }
 
   router.post('/login', async (req, res, next) => {
     try {
@@ -92,32 +152,8 @@ export function createAdminRouter({ adminService, sessionService, chatService })
     }
   });
 
-  router.get('/sessions/export/json', async (req, res, next) => {
-    try {
-      const sessions = await sessionService.getAllSessionsWithDetails();
-      const payload = await Promise.all(
-        sessions.map(async (session) => {
-          const aiHistory = session.aiSessionId ? await chatService.getChatHistory(session.aiSessionId, 'ai') : [];
-          const peerHistory = session.peerSessionId ? await chatService.getChatHistory(session.peerSessionId, 'peer') : [];
-          return {
-            ...session,
-            aiChat: aiHistory,
-            peerChat: peerHistory
-          };
-        })
-      );
-      const result = {
-        exportedAt: Date.now(),
-        total: payload.length,
-        sessions: payload
-      };
-      res.setHeader('Content-Type', 'application/json; charset=utf-8');
-      res.setHeader('Content-Disposition', 'attachment; filename="writingresearch-export.json"');
-      res.send(JSON.stringify(result, null, 2));
-    } catch (error) {
-      next(error);
-    }
-  });
+  router.get('/sessions/export', (req, res, next) => handleSessionsExport(req, res, next));
+  router.get('/sessions/export/json', (req, res, next) => handleSessionsExport(req, res, next, 'json'));
 
   router.get('/roster', async (req, res, next) => {
     try {

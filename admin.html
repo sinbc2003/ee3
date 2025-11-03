@@ -129,7 +129,6 @@
         font-weight: 600;
       }
       .badge.openai { background: rgba(37, 99, 235, 0.2); color: #bfdbfe; }
-      .badge.vertex { background: rgba(16, 185, 129, 0.18); color: #bbf7d0; }
       .badge.disabled { background: #e2e8f0; color: #475569; }
       .badge.stage { background: #dbeafe; color: #1d4ed8; }
       .badge.group { background: #fee2e2; color: #b91c1c; }
@@ -165,6 +164,97 @@
         display: flex;
         gap: 10px;
         flex-wrap: wrap;
+      }
+      .export-options {
+        display: grid;
+        gap: 8px;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        margin-top: 12px;
+      }
+      .export-option {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 10px 12px;
+        border: 1px solid #e2e8f0;
+        border-radius: 10px;
+        background: #f8fafc;
+        font-size: 13px;
+      }
+      .export-option input {
+        width: auto;
+        cursor: pointer;
+      }
+      .session-search {
+        margin-bottom: 16px;
+      }
+      .session-search label {
+        font-weight: 600;
+        margin-bottom: 8px;
+        display: block;
+      }
+      .session-search-row {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+      }
+      .session-search-row input {
+        flex: 1 1 280px;
+      }
+      .quick-match-grid {
+        display: grid;
+        gap: 16px;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        margin-top: 16px;
+      }
+      .quick-match-panel {
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        background: #f8fafc;
+        padding: 16px;
+      }
+      .quick-match-summary {
+        margin-top: 12px;
+        font-size: 13px;
+        line-height: 1.5;
+      }
+      .quick-match-summary strong {
+        display: block;
+        font-size: 15px;
+        color: #0f172a;
+        margin-bottom: 4px;
+      }
+      .quick-match-actions {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-top: 16px;
+        justify-content: flex-end;
+      }
+      .unmatched-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 16px;
+      }
+      .unmatched-chip {
+        border: 1px solid #cbd5f5;
+        background: #eef2ff;
+        color: #1e3a8a;
+        padding: 6px 12px;
+        border-radius: 999px;
+        font-size: 12px;
+        cursor: pointer;
+        transition: background 0.2s ease, transform 0.2s ease;
+      }
+      .unmatched-chip:hover {
+        background: #dbeafe;
+        transform: translateY(-1px);
+      }
+      .unmatched-chip.selected {
+        background: #2563eb;
+        color: #ffffff;
+        border-color: #2563eb;
       }
       .detail-heading {
         display: flex;
@@ -278,9 +368,42 @@
         <div class="toolbar">
           <button id="btnReloadSessions" class="secondary" type="button">세션 새로고침</button>
           <button id="btnReloadConfig" class="secondary" type="button">설정 새로고침</button>
-          <button id="btnDownloadExport" class="secondary" type="button">데이터 다운로드</button>
           <button id="btnLogout" class="danger" type="button">로그아웃</button>
         </div>
+
+        <section class="card" id="exportSection">
+          <h2>데이터 다운로드</h2>
+          <p class="muted" style="margin-bottom: 12px;">내려받을 항목을 선택한 후 <strong>선택 항목 다운로드</strong> 버튼을 눌러주세요. 파일은 Excel(xlsx) 형식으로 저장됩니다.</p>
+          <div class="export-options">
+            <label class="export-option">
+              <input type="checkbox" id="exportScopeAll" data-export-scope value="all" checked />
+              <span>세션 전체 (요약 포함)</span>
+            </label>
+            <label class="export-option">
+              <input type="checkbox" id="exportScopeAi" data-export-scope value="ai-chat" checked />
+              <span>AI 피드백 대화</span>
+            </label>
+            <label class="export-option">
+              <input type="checkbox" id="exportScopeStage1" data-export-scope value="stage1" checked />
+              <span>1단계 · 사전 글쓰기</span>
+            </label>
+            <label class="export-option">
+              <input type="checkbox" id="exportScopeStage2" data-export-scope value="stage2" checked />
+              <span>2단계 · 수정 아이디어 메모</span>
+            </label>
+            <label class="export-option">
+              <input type="checkbox" id="exportScopeStage3" data-export-scope value="stage3" checked />
+              <span>3단계 · 동료 피드백 메모</span>
+            </label>
+            <label class="export-option">
+              <input type="checkbox" id="exportScopeStage4" data-export-scope value="final" checked />
+              <span>최종 글</span>
+            </label>
+          </div>
+          <div class="match-actions" style="margin-top: 16px; justify-content: flex-end;">
+            <button id="btnDownloadExport" class="primary" type="button">선택 항목 다운로드</button>
+          </div>
+        </section>
 
         <section class="card">
           <h2>AI 설정</h2>
@@ -291,7 +414,6 @@
               <select id="aiProvider">
                 <option value="auto">자동 선택</option>
                 <option value="openai">OpenAI</option>
-                <option value="vertex">Vertex AI</option>
                 <option value="none">비활성화</option>
               </select>
             </div>
@@ -318,19 +440,35 @@
               <input id="openaiApiKey" type="password" placeholder="새 키 입력 (비워두면 유지)" />
               <button id="btnClearOpenAiKey" class="secondary" type="button" style="margin-top: 10px;">저장된 OpenAI 키 제거</button>
             </div>
-            <div>
-              <h3>Vertex AI</h3>
-              <label for="vertexModel">모델 이름</label>
-              <input id="vertexModel" type="text" placeholder="예: gemini-1.5-flash" />
-              <label for="vertexLocation" style="margin-top: 12px;">리전</label>
-              <input id="vertexLocation" type="text" placeholder="예: us-central1" />
-              <div class="muted" style="margin-top: 16px;">Vertex AI를 사용하려면 Cloud Run 환경 변수에 서비스 계정 권한이 필요합니다.</div>
-            </div>
           </div>
 
           <div style="margin-top: 20px; display: flex; gap: 10px; justify-content: flex-end;">
             <button id="btnSaveConfig" class="primary" type="button">설정 저장</button>
           </div>
+        </section>
+
+        <section class="card" id="quickMatchSection">
+          <h2>빠른 동료 매칭</h2>
+          <p class="muted" style="margin-bottom: 12px;">서로 다른 두 세션을 선택해 빠르게 매칭하세요. 아래 목록에서 미매칭 학생을 클릭하면 입력란에 자동으로 채워집니다.</p>
+          <div class="quick-match-grid">
+            <div class="quick-match-panel">
+              <label for="quickMatchPrimary">학생 A 세션</label>
+              <input id="quickMatchPrimary" type="text" list="sessionOptions" placeholder="세션 키 또는 학생 이름/식별 번호" autocomplete="off" />
+              <div class="quick-match-summary" id="quickMatchPrimarySummary">세션을 선택하세요.</div>
+            </div>
+            <div class="quick-match-panel">
+              <label for="quickMatchPartner">학생 B 세션</label>
+              <input id="quickMatchPartner" type="text" list="sessionOptions" placeholder="세션 키 또는 학생 이름/식별 번호" autocomplete="off" />
+              <div class="quick-match-summary" id="quickMatchPartnerSummary">세션을 선택하세요.</div>
+            </div>
+          </div>
+          <div class="quick-match-actions">
+            <button id="btnQuickMatchSwap" class="secondary" type="button">A ↔ B 교환</button>
+            <button id="btnQuickMatchClear" class="secondary" type="button">선택 초기화</button>
+            <button id="btnQuickMatchApply" class="primary" type="button" disabled>서로 매칭</button>
+          </div>
+          <div class="muted" style="margin-top: 20px;">미매칭 세션</div>
+          <div class="unmatched-list" id="quickMatchUnmatchedList"></div>
         </section>
 
         <section class="card hidden" id="partnerSection">
@@ -362,6 +500,13 @@
         <section class="card" id="sessionListSection">
           <h2>세션 목록</h2>
           <div class="muted" style="margin-bottom: 12px;">목록에서 세션을 선택하면 상세 정보와 대화 로그를 확인하고 동료를 매칭할 수 있습니다.</div>
+          <div class="session-search">
+            <label for="sessionSearchInput">세션 빠르게 찾기</label>
+            <div class="session-search-row">
+              <input id="sessionSearchInput" type="text" list="sessionOptions" placeholder="세션 키 또는 학생 이름/식별 번호를 입력하세요." autocomplete="off" />
+              <button id="btnSelectSession" class="secondary" type="button">세션 열기</button>
+            </div>
+          </div>
           <div style="overflow-x: auto;">
             <table id="sessionTable">
               <thead>
@@ -413,6 +558,9 @@
 
         const sessionCache = new Map();
         const $ = (id) => document.getElementById(id);
+        let exportScopeInputs = [];
+        const quickMatchState = { primary: '', partner: '' };
+        let unmatchedSessionsCache = [];
 
         function normalizeBaseUrl(url){
           if (!url) return `${window.location.origin}/api/`;
@@ -533,14 +681,21 @@
           $('openaiModel').value = overrides.openai?.model || ai.openai?.model || '';
           $('openaiBaseUrl').value = overrides.openai?.baseUrl || ai.openai?.baseUrl || '';
           $('openaiOrg').value = overrides.openai?.organization || ai.openai?.organization || '';
-          $('vertexModel').value = overrides.vertex?.model || ai.vertex?.model || '';
-          $('vertexLocation').value = overrides.vertex?.location || ai.vertex?.location || '';
           $('openaiApiKey').value = '';
           clearOpenAiKey = false;
 
           const badge = document.createElement('span');
-          badge.className = `badge ${ai.provider === 'openai' ? 'openai' : ai.provider === 'vertex' ? 'vertex' : 'disabled'}`;
-          badge.textContent = ai.provider === 'openai' ? 'OpenAI 사용 중' : ai.provider === 'vertex' ? 'Vertex AI 사용 중' : 'AI 비활성화';
+          let badgeClass = 'disabled';
+          let badgeLabel = 'AI 비활성화';
+          if (ai.provider === 'openai') {
+            badgeClass = 'openai';
+            badgeLabel = 'OpenAI 사용 중';
+          } else if (ai.provider && ai.provider !== 'none') {
+            badgeClass = 'openai';
+            badgeLabel = `${ai.provider} 사용 중`;
+          }
+          badge.className = `badge ${badgeClass}`;
+          badge.textContent = badgeLabel;
           const statusContainer = document.createElement('div');
           statusContainer.className = 'ai-status';
           statusContainer.appendChild(badge);
@@ -562,10 +717,6 @@
               model: $('openaiModel').value,
               baseUrl: $('openaiBaseUrl').value,
               organization: $('openaiOrg').value
-            },
-            vertex: {
-              model: $('vertexModel').value,
-              location: $('vertexLocation').value
             }
           };
 
@@ -598,6 +749,7 @@
           tbody.innerHTML = '';
           optionList.innerHTML = '';
           sessionCache.clear();
+          unmatchedSessionsCache = [];
 
           if (!list.length) {
             resetDetailPanels();
@@ -608,10 +760,19 @@
             cell.textContent = '등록된 세션이 없습니다.';
             row.appendChild(cell);
             tbody.appendChild(row);
+            renderUnmatchedSessions();
+            renderQuickMatchDetails();
             return;
           }
 
           list.sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+          unmatchedSessionsCache = list.filter((item) => {
+            if (!item.partner) return true;
+            const partner = item.partner || {};
+            return !partner.sessionKey && !partner.id;
+          });
+          renderUnmatchedSessions();
+
           list.forEach((item) => {
             sessionCache.set(item.sessionKey, item);
             const option = document.createElement('option');
@@ -637,6 +798,7 @@
             row.addEventListener('click', () => selectSession(item.sessionKey));
             tbody.appendChild(row);
           });
+          renderQuickMatchDetails();
         }
 
         async function selectSession(sessionKey){
@@ -664,6 +826,7 @@
             showDetailPanels();
             renderSessionDetail(session);
             populatePartnerForm(session);
+            renderQuickMatchDetails();
             renderChatLogs(aiChats?.messages || [], peerChats?.messages || []);
             setStatus(`세션 ${sessionKey} 상세 정보를 불러왔습니다.`, 'success');
           } catch (error) {
@@ -746,6 +909,30 @@
           }
         });
         $('btnDownloadExport').addEventListener('click', downloadExport);
+        $('btnSelectSession').addEventListener('click', handleSessionSearchSubmit);
+        $('sessionSearchInput').addEventListener('keydown', (event) => {
+          if (event.key === 'Enter') {
+            event.preventDefault();
+            handleSessionSearchSubmit();
+          }
+        });
+        $('sessionSearchInput').addEventListener('change', () => {
+          const resolved = resolveSessionSearchValue($('sessionSearchInput').value);
+          if (resolved && sessionCache.has(resolved)) {
+            selectSession(resolved);
+            $('sessionSearchInput').value = resolved;
+          }
+        });
+        exportScopeInputs = Array.from(document.querySelectorAll('[data-export-scope]'));
+        exportScopeInputs.forEach((input) => input.addEventListener('change', handleExportScopeChange));
+        $('btnQuickMatchApply').addEventListener('click', handleQuickMatchApply);
+        $('btnQuickMatchSwap').addEventListener('click', handleQuickMatchSwap);
+        $('btnQuickMatchClear').addEventListener('click', handleQuickMatchClear);
+        $('quickMatchPrimary').addEventListener('change', () => resolveQuickMatchInput('primary', false));
+        $('quickMatchPartner').addEventListener('change', () => resolveQuickMatchInput('partner', false));
+        $('quickMatchPrimary').addEventListener('blur', () => resolveQuickMatchInput('primary', true));
+        $('quickMatchPartner').addEventListener('blur', () => resolveQuickMatchInput('partner', true));
+        $('quickMatchUnmatchedList').addEventListener('click', handleQuickMatchUnmatchedClick);
         $('btnSaveConfig').addEventListener('click', saveConfig);
         $('btnClearOpenAiKey').addEventListener('click', () => {
           clearOpenAiKey = true;
@@ -778,6 +965,271 @@
           $('sessionDetailSection').classList.remove('hidden');
           $('chatSection').classList.remove('hidden');
           $('partnerSection').classList.remove('hidden');
+        }
+
+        function ensureQuickMatchSelection(field){
+          const key = quickMatchState[field];
+          if (key && !sessionCache.has(key)) {
+            quickMatchState[field] = '';
+            const inputId = field === 'primary' ? 'quickMatchPrimary' : 'quickMatchPartner';
+            const input = $(inputId);
+            if (input) input.value = '';
+          }
+        }
+
+        function buildQuickMatchSummaryMarkup(sessionKey){
+          if (!sessionKey) return '<span class="muted">세션을 선택하세요.</span>';
+          const session = sessionCache.get(sessionKey);
+          if (!session) return '<span class="muted">세션 정보를 찾을 수 없습니다. 세션 목록을 새로고침하세요.</span>';
+          const name = escapeHtml(session.user?.name || '이름 없음');
+          const id = session.user?.id ? ` (${escapeHtml(session.user.id)})` : '';
+          const group = escapeHtml(session.group || session.mode || '-');
+          const stageLabel = session.stage ? `단계 ${session.stage}` : '단계 정보 없음';
+          const partnerLabel = session.partner
+            ? escapeHtml(session.partner.name || session.partner.sessionKey || session.partner.id || '지정됨')
+            : '미지정';
+          const updated = session.updatedAt ? formatDateTime(session.updatedAt) : '정보 없음';
+          return `
+            <strong>${name}${id}</strong>
+            <div class="muted">집단 ${group} · ${stageLabel}</div>
+            <div class="muted">동료: ${partnerLabel}</div>
+            <div class="muted">최근 업데이트 · ${updated}</div>
+          `;
+        }
+
+        function renderUnmatchedSessions(list = unmatchedSessionsCache){
+          const container = $('quickMatchUnmatchedList');
+          if (!container) return;
+          container.innerHTML = '';
+          if (!Array.isArray(list) || !list.length) {
+            const empty = document.createElement('div');
+            empty.className = 'muted';
+            empty.textContent = '모든 세션이 매칭되었습니다.';
+            container.appendChild(empty);
+            return;
+          }
+          list.forEach((item) => {
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'unmatched-chip';
+            if (item.sessionKey === quickMatchState.primary || item.sessionKey === quickMatchState.partner) {
+              button.classList.add('selected');
+            }
+            button.dataset.sessionKey = item.sessionKey;
+            const studentLabel = `${item.user?.name || ''}${item.user?.id ? ` (${item.user.id})` : ''}`.trim();
+            button.textContent = studentLabel ? `${item.sessionKey} · ${studentLabel}` : item.sessionKey;
+            container.appendChild(button);
+          });
+        }
+
+        function renderQuickMatchDetails(){
+          ensureQuickMatchSelection('primary');
+          ensureQuickMatchSelection('partner');
+          const primarySummary = $('quickMatchPrimarySummary');
+          const partnerSummary = $('quickMatchPartnerSummary');
+          if (primarySummary) primarySummary.innerHTML = buildQuickMatchSummaryMarkup(quickMatchState.primary);
+          if (partnerSummary) partnerSummary.innerHTML = buildQuickMatchSummaryMarkup(quickMatchState.partner);
+          const applyButton = $('btnQuickMatchApply');
+          if (applyButton) {
+            applyButton.disabled = !(quickMatchState.primary && quickMatchState.partner && quickMatchState.primary !== quickMatchState.partner);
+          }
+          renderUnmatchedSessions();
+        }
+
+        function setQuickMatchField(field, sessionKey){
+          const key = String(sessionKey || '').trim();
+          const inputId = field === 'primary' ? 'quickMatchPrimary' : 'quickMatchPartner';
+          const input = $(inputId);
+          if (!input) return;
+          if (key && !sessionCache.has(key)) {
+            setStatus('세션 목록에서 선택한 키를 찾을 수 없습니다.', 'error');
+            return;
+          }
+          quickMatchState[field] = key;
+          if (input.value !== key) input.value = key;
+          renderQuickMatchDetails();
+        }
+
+        function resolveQuickMatchInput(field, showError){
+          const inputId = field === 'primary' ? 'quickMatchPrimary' : 'quickMatchPartner';
+          const input = $(inputId);
+          if (!input) return;
+          const raw = input.value;
+          if (!raw.trim()) {
+            setQuickMatchField(field, '');
+            return;
+          }
+          const resolved = resolveSessionSearchValue(raw);
+          if (resolved) {
+            setQuickMatchField(field, resolved);
+            input.value = resolved;
+          } else if (showError) {
+            setStatus('세션을 찾지 못했습니다. 정확한 세션 키 또는 학생 정보를 입력하세요.', 'error');
+            setQuickMatchField(field, '');
+            input.value = '';
+          }
+        }
+
+        async function handleQuickMatchApply(){
+          const primary = quickMatchState.primary;
+          const partner = quickMatchState.partner;
+          if (!primary || !partner) {
+            setStatus('두 학생의 세션을 모두 선택하세요.', 'error');
+            return;
+          }
+          if (primary === partner) {
+            setStatus('서로 다른 세션을 선택하세요.', 'error');
+            return;
+          }
+          const button = $('btnQuickMatchApply');
+          if (button) button.disabled = true;
+          try {
+            setStatus('동료 매칭을 저장하는 중입니다...', '');
+            await Promise.all([
+              apiRequest(`sessions/${primary}/partner`, { method: 'POST', body: { partnerSessionKey: partner } }),
+              apiRequest(`sessions/${partner}/partner`, { method: 'POST', body: { partnerSessionKey: primary } })
+            ]);
+            await loadSessions();
+            setStatus('두 학생을 서로 동료로 매칭했습니다.', 'success');
+            setQuickMatchField('primary', primary);
+            setQuickMatchField('partner', partner);
+            await selectSession(primary);
+          } catch (error) {
+            setStatus(error.message || '동료 매칭에 실패했습니다.', 'error');
+          } finally {
+            if (button) {
+              button.disabled = !(quickMatchState.primary && quickMatchState.partner && quickMatchState.primary !== quickMatchState.partner);
+            }
+          }
+        }
+
+        function handleQuickMatchSwap(){
+          const { primary, partner } = quickMatchState;
+          quickMatchState.primary = partner || '';
+          quickMatchState.partner = primary || '';
+          const primaryInput = $('quickMatchPrimary');
+          const partnerInput = $('quickMatchPartner');
+          if (primaryInput) primaryInput.value = quickMatchState.primary;
+          if (partnerInput) partnerInput.value = quickMatchState.partner;
+          renderQuickMatchDetails();
+        }
+
+        function handleQuickMatchClear(){
+          quickMatchState.primary = '';
+          quickMatchState.partner = '';
+          const primaryInput = $('quickMatchPrimary');
+          const partnerInput = $('quickMatchPartner');
+          if (primaryInput) primaryInput.value = '';
+          if (partnerInput) partnerInput.value = '';
+          renderQuickMatchDetails();
+        }
+
+        function handleQuickMatchUnmatchedClick(event){
+          const target = event.target.closest('[data-session-key]');
+          if (!target) return;
+          const key = target.dataset.sessionKey;
+          if (!key || !sessionCache.has(key)) return;
+          if (quickMatchState.primary === key) {
+            setQuickMatchField('primary', '');
+            return;
+          }
+          if (quickMatchState.partner === key) {
+            setQuickMatchField('partner', '');
+            return;
+          }
+          if (!quickMatchState.primary) {
+            setQuickMatchField('primary', key);
+            return;
+          }
+          if (!quickMatchState.partner) {
+            setQuickMatchField('partner', key);
+            return;
+          }
+          setQuickMatchField('primary', key);
+          setQuickMatchField('partner', '');
+        }
+
+        function handleSessionSearchSubmit(){
+          const input = $('sessionSearchInput');
+          if (!input) return;
+          const resolvedKey = resolveSessionSearchValue(input.value);
+          if (!resolvedKey) {
+            setStatus('일치하는 세션을 찾지 못했습니다.', 'error');
+            return;
+          }
+          if (!sessionCache.has(resolvedKey)) {
+            setStatus('세션 데이터를 로드하지 못했습니다.', 'error');
+            return;
+          }
+          input.value = resolvedKey;
+          selectSession(resolvedKey);
+        }
+
+        function resolveSessionSearchValue(raw){
+          const value = String(raw || '').trim();
+          if (!value) return '';
+          if (sessionCache.has(value)) return value;
+          const lower = value.toLowerCase();
+          for (const key of sessionCache.keys()) {
+            if (key.toLowerCase() === lower) return key;
+          }
+          for (const [key, session] of sessionCache.entries()) {
+            const name = String(session?.user?.name || '').toLowerCase();
+            const id = String(session?.user?.id || '').toLowerCase();
+            if (name === lower || id === lower) {
+              return key;
+            }
+          }
+          for (const [key, session] of sessionCache.entries()) {
+            const name = String(session?.user?.name || '').toLowerCase();
+            const id = String(session?.user?.id || '').toLowerCase();
+            if ((name && name.includes(lower)) || (id && id.includes(lower))) {
+              return key;
+            }
+          }
+          return '';
+        }
+
+        function handleExportScopeChange(event){
+          const input = event?.target;
+          if (!input || !input.dataset.exportScope) return;
+          if (!exportScopeInputs.length) {
+            exportScopeInputs = Array.from(document.querySelectorAll('[data-export-scope]'));
+          }
+          const allToggle = $('exportScopeAll');
+          if (input.value === 'all') {
+            const checked = input.checked;
+            exportScopeInputs.forEach((item) => {
+              if (item.value !== 'all') {
+                item.checked = checked;
+              }
+            });
+          } else {
+            if (!input.checked && allToggle) {
+              allToggle.checked = false;
+            } else if (allToggle) {
+              const others = exportScopeInputs.filter((item) => item.value !== 'all');
+              const everyChecked = others.every((item) => item.checked);
+              allToggle.checked = everyChecked;
+            }
+          }
+        }
+
+        function getSelectedExportScopes(){
+          if (!exportScopeInputs.length) {
+            exportScopeInputs = Array.from(document.querySelectorAll('[data-export-scope]'));
+          }
+          const values = exportScopeInputs
+            .filter((input) => input.checked)
+            .map((input) => input.value)
+            .filter(Boolean);
+          if (!values.length) return [];
+          const unique = Array.from(new Set(values));
+          if (unique.includes('all')) {
+            const others = unique.filter((item) => item !== 'all');
+            return ['all', ...others];
+          }
+          return unique;
         }
 
         function formatPartnerCell(partner){
@@ -999,12 +1451,20 @@
             setStatus('로그인 후 이용하세요.', 'error');
             return;
           }
+          const scopes = getSelectedExportScopes();
+          if (!scopes.length) {
+            setStatus('다운로드할 항목을 하나 이상 선택하세요.', 'error');
+            return;
+          }
           const button = $('btnDownloadExport');
           button.disabled = true;
           try {
-            setStatus('전체 데이터를 준비 중입니다...', '');
-            const url = new URL('sessions/export/json', API_BASE).toString();
-            const headers = { Accept: 'application/json' };
+            setStatus('선택한 데이터를 준비 중입니다...', '');
+            const params = new URLSearchParams();
+            params.set('format', 'xlsx');
+            params.set('scopes', scopes.join(','));
+            const url = new URL(`sessions/export?${params.toString()}`, API_BASE).toString();
+            const headers = { Accept: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' };
             if (authToken) headers['Authorization'] = `Bearer ${authToken}`;
             const response = await fetch(url, { headers });
             if (!response.ok) {
@@ -1013,7 +1473,7 @@
             }
             const blob = await response.blob();
             const stamp = new Date().toISOString().replace(/[:.]/g, '-');
-            const fileName = `writingresearch-export-${stamp}.json`;
+            const fileName = `writingresearch-export-${stamp}.xlsx`;
             const blobUrl = URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.href = blobUrl;
