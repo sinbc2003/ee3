@@ -528,6 +528,8 @@
         google.script.run = createGoogleScriptRunShim(backend);
         const hasGas = Boolean(backend && backend.isReady);
 
+        const DEFAULT_AI_AVATAR = '/chatgpt.png';
+
         const state = {
           group: '',
           sessionKey: '',
@@ -554,11 +556,11 @@
           localFinalDraft: '',
           localDraftBuffer: '',
           localStage3Memo: '',
-          aiAvatarUrl: ''
+          aiAvatarUrl: DEFAULT_AI_AVATAR
         };
 
         const $ = (id) => document.getElementById(id);
-        const publicConfig = { aiAvatarUrl: '', promptContent: '' };
+        const publicConfig = { aiAvatarUrl: DEFAULT_AI_AVATAR, promptContent: '' };
 
         function init(){
           document.querySelectorAll('[data-group-select]').forEach(function(btn){
@@ -714,7 +716,7 @@
           state.localFinalDraft = '';
           state.localDraftBuffer = '';
           state.localStage3Memo = '';
-          state.aiAvatarUrl = publicConfig.aiAvatarUrl || '';
+          state.aiAvatarUrl = publicConfig.aiAvatarUrl || DEFAULT_AI_AVATAR;
         }
 
         function resetToGroupSelection(clearInput){
@@ -763,7 +765,7 @@
           state.sessionKey = res.sessionKey || '';
           state.aiChat = { sessionId: res.aiSessionId || '', lastTs: 0, rendered: {}, pending: {}, fetching: false, awaitingResponse: false, welcomeShown: false };
           state.peerChat = { sessionId: res.peerSessionId || '', lastTs: 0, rendered: {}, pending: {}, fetching: false };
-          state.aiAvatarUrl = publicConfig.aiAvatarUrl || state.aiAvatarUrl || '';
+          state.aiAvatarUrl = publicConfig.aiAvatarUrl || state.aiAvatarUrl || DEFAULT_AI_AVATAR;
           state.localPrewritingDraft = '';
           state.stageChangePending = false;
           $('loginCard').style.display = 'none';
@@ -1835,7 +1837,7 @@
           contentWrap.className = 'chat-content';
           contentWrap.appendChild(bubble);
           contentWrap.appendChild(meta);
-          const avatarUrl = role === 'ai' ? (state.aiAvatarUrl || publicConfig.aiAvatarUrl || '') : '';
+          const avatarUrl = role === 'ai' ? (state.aiAvatarUrl || publicConfig.aiAvatarUrl || DEFAULT_AI_AVATAR) : '';
           if (avatarUrl) {
             const avatar = document.createElement('div');
             avatar.className = 'chat-avatar';
@@ -2076,9 +2078,9 @@
           try {
             google.script.run.withSuccessHandler(function(cfg){
               if (!cfg) return;
-              publicConfig.aiAvatarUrl = cfg.aiAvatarUrl || '';
+              publicConfig.aiAvatarUrl = cfg.aiAvatarUrl || DEFAULT_AI_AVATAR;
               publicConfig.promptContent = cfg.promptContent || '';
-              state.aiAvatarUrl = publicConfig.aiAvatarUrl;
+              state.aiAvatarUrl = publicConfig.aiAvatarUrl || DEFAULT_AI_AVATAR;
               const promptEl = $('promptContent');
               if (promptEl) {
                 promptEl.textContent = publicConfig.promptContent || '제시문이 아직 등록되지 않았습니다.';

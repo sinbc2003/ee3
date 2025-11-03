@@ -13,6 +13,7 @@ COPY index.html ./public/index.html
 COPY admin.html ./public/admin.html
 COPY chat.html ./public/chat.html
 COPY modal.html ./public/modal.html
+COPY chatgpt.png ./public/chatgpt.png
 
 ENV NODE_ENV=production
 

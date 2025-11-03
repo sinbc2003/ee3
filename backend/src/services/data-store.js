@@ -146,7 +146,7 @@ export async function createDataStore(config) {
   async function getPublicSettings() {
     return readJson('settings/public.json', {
       promptContent: '',
-      aiAvatarUrl: ''
+      aiAvatarUrl: '/chatgpt.png'
     });
   }
 
