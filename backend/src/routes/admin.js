@@ -200,9 +200,27 @@ export function createAdminRouter({ adminService, sessionService, chatService })
     }
   });
 
+  router.get('/public-settings', async (req, res, next) => {
+    try {
+      const settings = await adminService.getPublicSettings();
+      res.json(settings);
+    } catch (error) {
+      next(error);
+    }
+  });
+
   router.post('/config', async (req, res, next) => {
     try {
       const result = await adminService.updateConfig(req.body || {});
+      res.json(result);
+    } catch (error) {
+      next(error);
+    }
+  });
+
+  router.post('/public-settings', async (req, res, next) => {
+    try {
+      const result = await adminService.updatePublicSettings(req.body || {});
       res.json(result);
     } catch (error) {
       next(error);

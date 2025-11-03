@@ -256,6 +256,20 @@
         color: #ffffff;
         border-color: #2563eb;
       }
+      .prompt-preview {
+        margin-top: 12px;
+        padding: 16px;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        background: #f8fafc;
+        font-size: 14px;
+        line-height: 1.7;
+        white-space: pre-wrap;
+      }
+      .prompt-preview.empty {
+        color: #64748b;
+        font-style: italic;
+      }
       .detail-heading {
         display: flex;
         justify-content: space-between;
@@ -447,6 +461,18 @@
           </div>
         </section>
 
+        <section class="card" id="promptSection">
+          <h2>제시문 관리</h2>
+          <p class="muted" style="margin-bottom: 12px;">학생들이 1단계에서 확인하는 제시문을 입력하세요. 저장하면 즉시 적용되며, 학생 화면은 새로고침 후 반영됩니다.</p>
+          <textarea id="promptTextarea" placeholder="제시문 내용을 입력하세요."></textarea>
+          <div class="match-actions" style="margin-top: 16px; justify-content: flex-end;">
+            <button id="btnPromptReload" class="secondary" type="button">현재 제시문 불러오기</button>
+            <button id="btnPromptSave" class="primary" type="button" disabled>제시문 저장</button>
+          </div>
+          <div class="muted" style="margin-top: 20px;">미리보기</div>
+          <div id="promptPreview" class="prompt-preview empty">제시문이 아직 등록되지 않았습니다.</div>
+        </section>
+
         <section class="card" id="quickMatchSection">
           <h2>빠른 동료 매칭</h2>
           <p class="muted" style="margin-bottom: 12px;">서로 다른 두 세션을 선택해 빠르게 매칭하세요. 아래 목록에서 미매칭 학생을 클릭하면 입력란에 자동으로 채워집니다.</p>
@@ -561,6 +587,7 @@
         let exportScopeInputs = [];
         const quickMatchState = { primary: '', partner: '' };
         let unmatchedSessionsCache = [];
+        let currentPromptContent = '';
 
         function normalizeBaseUrl(url){
           if (!url) return `${window.location.origin}/api/`;
@@ -620,7 +647,7 @@
           if (!authToken) return false;
           try {
             await loadConfig();
-            await loadSessions();
+            await Promise.all([loadPublicSettings(), loadSessions(), loadRoster()]);
             showAdmin();
             return true;
           } catch (error) {
@@ -645,7 +672,7 @@
             window.localStorage.setItem('writingresearch_admin_token', authToken);
             $('adminPassword').value = '';
             await loadConfig();
-            await loadSessions();
+            await Promise.all([loadPublicSettings(), loadSessions(), loadRoster()]);
             showAdmin();
           } catch (error) {
             setStatus(error.message || '로그인에 실패했습니다.', 'error');
@@ -933,6 +960,12 @@
         $('quickMatchPrimary').addEventListener('blur', () => resolveQuickMatchInput('primary', true));
         $('quickMatchPartner').addEventListener('blur', () => resolveQuickMatchInput('partner', true));
         $('quickMatchUnmatchedList').addEventListener('click', handleQuickMatchUnmatchedClick);
+        $('promptTextarea').addEventListener('input', () => {
+          renderPromptPreview($('promptTextarea').value);
+          updatePromptSaveButton();
+        });
+        $('btnPromptSave').addEventListener('click', savePrompt);
+        $('btnPromptReload').addEventListener('click', () => loadPublicSettings(true));
         $('btnSaveConfig').addEventListener('click', saveConfig);
         $('btnClearOpenAiKey').addEventListener('click', () => {
           clearOpenAiKey = true;
@@ -1034,6 +1067,69 @@
             applyButton.disabled = !(quickMatchState.primary && quickMatchState.partner && quickMatchState.primary !== quickMatchState.partner);
           }
           renderUnmatchedSessions();
+        }
+
+        function renderPromptPreview(content){
+          const preview = $('promptPreview');
+          if (!preview) return;
+          const trimmed = String(content || '').trim();
+          if (!trimmed) {
+            preview.classList.add('empty');
+            preview.innerHTML = '제시문이 아직 등록되지 않았습니다.';
+            return;
+          }
+          preview.classList.remove('empty');
+          const escaped = escapeHtml(trimmed).replace(/\n/g, '<br/>');
+          preview.innerHTML = escaped;
+        }
+
+        function updatePromptSaveButton(){
+          const textarea = $('promptTextarea');
+          const button = $('btnPromptSave');
+          if (!textarea || !button) return;
+          const current = String(currentPromptContent || '');
+          const incoming = String(textarea.value || '');
+          button.disabled = current.trim() === incoming.trim();
+        }
+
+        async function loadPublicSettings(showStatus = false){
+          try {
+            const settings = await apiRequest('public-settings');
+            currentPromptContent = settings?.promptContent || '';
+            const textarea = $('promptTextarea');
+            if (textarea) {
+              textarea.value = currentPromptContent;
+            }
+            renderPromptPreview(currentPromptContent);
+            updatePromptSaveButton();
+            if (showStatus) {
+              setStatus('제시문을 불러왔습니다.', 'success');
+            }
+            return settings;
+          } catch (error) {
+            setStatus(error.message || '제시문을 불러오지 못했습니다.', 'error');
+            throw error;
+          }
+        }
+
+        async function savePrompt(){
+          const textarea = $('promptTextarea');
+          if (!textarea) return;
+          const button = $('btnPromptSave');
+          const value = textarea.value;
+          if (button) button.disabled = true;
+          try {
+            const response = await apiRequest('public-settings', { method: 'POST', body: { promptContent: value } });
+            currentPromptContent = response?.promptContent || String(value || '').trim();
+            textarea.value = currentPromptContent;
+            renderPromptPreview(currentPromptContent);
+            updatePromptSaveButton();
+            setStatus('제시문을 저장했습니다.', 'success');
+          } catch (error) {
+            setStatus(error.message || '제시문을 저장하지 못했습니다.', 'error');
+          } finally {
+            updatePromptSaveButton();
+          }
         }
 
         function setQuickMatchField(field, sessionKey){
@@ -1561,7 +1657,7 @@
           }
           try {
             await loadConfig();
-            await Promise.all([loadSessions(), loadRoster()]);
+            await Promise.all([loadSessions(), loadRoster(), loadPublicSettings()]);
             showAdmin();
           } catch (error) {
             authToken = '';

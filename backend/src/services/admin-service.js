@@ -1,6 +1,7 @@
 import crypto from 'node:crypto';
 
 const EMPTY_OVERRIDES = { ai: {} };
+const EMPTY_PUBLIC_SETTINGS = { promptContent: '', aiAvatarUrl: '' };
 
 function clone(value) {
   return JSON.parse(JSON.stringify(value));
@@ -202,6 +203,32 @@ export function createAdminService({ config, dataStore, aiResponder }) {
     return { students: sanitizeRosterStudents(saved?.students || []) };
   }
 
+  async function getPublicSettings() {
+    if (!dataStore.getPublicSettings) return { ...EMPTY_PUBLIC_SETTINGS };
+    const stored = await dataStore.getPublicSettings();
+    return {
+      promptContent: sanitizeString(stored?.promptContent),
+      aiAvatarUrl: sanitizeString(stored?.aiAvatarUrl)
+    };
+  }
+
+  async function updatePublicSettings(payload = {}) {
+    const current = await getPublicSettings();
+    const next = {
+      promptContent: Object.prototype.hasOwnProperty.call(payload, 'promptContent')
+        ? sanitizeString(payload.promptContent)
+        : current.promptContent,
+      aiAvatarUrl: Object.prototype.hasOwnProperty.call(payload, 'aiAvatarUrl')
+        ? sanitizeString(payload.aiAvatarUrl)
+        : current.aiAvatarUrl
+    };
+    const saved = await dataStore.savePublicSettings(next);
+    return {
+      promptContent: sanitizeString(saved?.promptContent),
+      aiAvatarUrl: sanitizeString(saved?.aiAvatarUrl)
+    };
+  }
+
   return {
     initialize,
     verifyPassword,
@@ -211,6 +238,8 @@ export function createAdminService({ config, dataStore, aiResponder }) {
     getTokenTtl: () => tokenTtlMs,
     getConfig,
     updateConfig,
+    getPublicSettings,
+    updatePublicSettings,
     getRoster,
     replaceRoster
   };

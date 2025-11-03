@@ -150,6 +150,20 @@ export async function createDataStore(config) {
     });
   }
 
+  async function savePublicSettings(data = {}) {
+    const current = await getPublicSettings();
+    const next = {
+      promptContent: Object.prototype.hasOwnProperty.call(data, 'promptContent')
+        ? String(data.promptContent || '').trim()
+        : String(current.promptContent || ''),
+      aiAvatarUrl: Object.prototype.hasOwnProperty.call(data, 'aiAvatarUrl')
+        ? String(data.aiAvatarUrl || '').trim()
+        : String(current.aiAvatarUrl || '')
+    };
+    await writeJson('settings/public.json', next);
+    return next;
+  }
+
   async function getAdminConfig() {
     return readJson('settings/admin-config.json', DEFAULT_ADMIN_CONFIG);
   }
@@ -217,6 +231,7 @@ export async function createDataStore(config) {
     getChatMessages,
     getChatHistory,
     getPublicSettings,
+    savePublicSettings,
     getAdminConfig,
     saveAdminConfig,
     getRoster,
