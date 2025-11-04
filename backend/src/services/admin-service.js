@@ -84,6 +84,35 @@ function sanitizeRosterStudents(students = []) {
   return normalized;
 }
 
+function sanitizeRosterPairings(pairings = []) {
+  if (!Array.isArray(pairings)) return [];
+  const seen = new Set();
+  const normalized = [];
+  for (const entry of pairings) {
+    if (!entry) continue;
+    const primaryId = sanitizeString(entry.primary?.id);
+    const partnerId = sanitizeString(entry.partner?.id);
+    if (!primaryId || !partnerId) continue;
+    const primaryKey = primaryId.toLowerCase();
+    const partnerKey = partnerId.toLowerCase();
+    if (primaryKey === partnerKey) continue;
+    const key = [primaryKey, partnerKey].sort().join('|');
+    if (seen.has(key)) continue;
+    seen.add(key);
+    normalized.push({
+      primary: {
+        id: primaryId,
+        name: sanitizeString(entry.primary?.name)
+      },
+      partner: {
+        id: partnerId,
+        name: sanitizeString(entry.partner?.name)
+      }
+    });
+  }
+  return normalized;
+}
+
 export function createAdminService({ config, dataStore, aiResponder }) {
   if (!config || !dataStore || !aiResponder) {
     throw new Error('config, dataStore, aiResponder가 필요합니다.');
@@ -192,15 +221,22 @@ export function createAdminService({ config, dataStore, aiResponder }) {
   }
 
   async function getRoster() {
-    if (!dataStore.getRoster) return { students: [] };
+    if (!dataStore.getRoster) return { students: [], pairings: [] };
     const roster = await dataStore.getRoster();
-    return { students: sanitizeRosterStudents(roster?.students || []) };
+    return {
+      students: sanitizeRosterStudents(roster?.students || []),
+      pairings: sanitizeRosterPairings(roster?.pairings || [])
+    };
   }
 
   async function replaceRoster(payload = {}) {
     const students = sanitizeRosterStudents(payload?.students || payload);
-    const saved = dataStore.saveRoster ? await dataStore.saveRoster({ students }) : { students };
-    return { students: sanitizeRosterStudents(saved?.students || []) };
+    const pairings = sanitizeRosterPairings(payload?.pairings || []);
+    const saved = dataStore.saveRoster ? await dataStore.saveRoster({ students, pairings }) : { students, pairings };
+    return {
+      students: sanitizeRosterStudents(saved?.students || []),
+      pairings: sanitizeRosterPairings(saved?.pairings || [])
+    };
   }
 
   async function getPublicSettings() {
@@ -241,7 +277,8 @@ export function createAdminService({ config, dataStore, aiResponder }) {
     getPublicSettings,
     updatePublicSettings,
     getRoster,
-    replaceRoster
+    replaceRoster,
+    sanitizeRosterPairings
   };
 }
 

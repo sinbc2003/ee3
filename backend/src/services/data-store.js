@@ -20,7 +20,8 @@ const DEFAULT_ADMIN_CONFIG = {
 };
 
 const DEFAULT_ROSTER = {
-  students: []
+  students: [],
+  pairings: []
 };
 
 function resolveLocalPath(rootDir, relativePath) {
@@ -201,7 +202,7 @@ export async function createDataStore(config) {
     return payload;
   }
 
-  function normalizeRosterEntries(entries) {
+function normalizeRosterEntries(entries) {
     const list = Array.isArray(entries) ? entries : [];
     const seen = new Set();
     const normalized = [];
@@ -218,16 +219,57 @@ export async function createDataStore(config) {
     return normalized;
   }
 
+function normalizeRosterPairings(entries, students = []) {
+  const list = Array.isArray(entries) ? entries : [];
+  const seen = new Set();
+  const studentNameMap = new Map(
+    (Array.isArray(students) ? students : []).map((student) => [String(student.id || '').trim().toLowerCase(), String(student.name || '').trim()])
+  );
+  const normalized = [];
+  for (const entry of list) {
+    if (!entry) continue;
+    const primarySource = entry.primary || entry.a || entry.studentA || entry.source || entry.left || {};
+    const partnerSource = entry.partner || entry.b || entry.studentB || entry.target || entry.right || {};
+    const primaryIdRaw = primarySource.id ?? entry.primaryId ?? entry.idA ?? entry.student_id_a ?? entry.student_id ?? entry.leftId;
+    const partnerIdRaw = partnerSource.id ?? entry.partnerId ?? entry.idB ?? entry.student_id_b ?? entry.partner_student_id ?? entry.rightId;
+    const primaryId = String(primaryIdRaw || '').trim();
+    const partnerId = String(partnerIdRaw || '').trim();
+    if (!primaryId || !partnerId) continue;
+    const primaryKey = primaryId.toLowerCase();
+    const partnerKey = partnerId.toLowerCase();
+    if (primaryKey === partnerKey) continue;
+    const dedupeKey = [primaryKey, partnerKey].sort().join('|');
+    if (seen.has(dedupeKey)) continue;
+    seen.add(dedupeKey);
+    const primaryName = String(primarySource.name || studentNameMap.get(primaryKey) || '').trim();
+    const partnerName = String(partnerSource.name || studentNameMap.get(partnerKey) || '').trim();
+    normalized.push({
+      primary: {
+        id: primaryId,
+        name: primaryName
+      },
+      partner: {
+        id: partnerId,
+        name: partnerName
+      }
+    });
+  }
+  return normalized;
+}
+
   async function getRoster() {
     const stored = await readJson('settings/roster.json', DEFAULT_ROSTER);
     const students = normalizeRosterEntries(stored?.students || []);
-    return { students };
+    const pairings = normalizeRosterPairings(stored?.pairings || [], students);
+    return { students, pairings };
   }
 
   async function saveRoster(data) {
-    const students = normalizeRosterEntries((data && data.students) || data);
-    await writeJson('settings/roster.json', { students });
-    return { students };
+    const source = data && data.students ? data.students : data;
+    const students = normalizeRosterEntries(source);
+    const pairings = normalizeRosterPairings((data && data.pairings) || [], students);
+    await writeJson('settings/roster.json', { students, pairings });
+    return { students, pairings };
   }
 
   async function deleteSession(sessionKey, meta = null) {

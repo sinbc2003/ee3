@@ -222,6 +222,7 @@ export function createAdminRouter({ adminService, sessionService, chatService })
     try {
       const body = req.body || {};
       let students = [];
+      let pairings = [];
       if (Array.isArray(body.students)) {
         students = body.students;
       } else if (typeof body.text === 'string') {
@@ -229,7 +230,13 @@ export function createAdminRouter({ adminService, sessionService, chatService })
       } else if (typeof body === 'string') {
         students = parseText(body);
       }
-      const roster = await adminService.replaceRoster({ students });
+      if (Array.isArray(body.pairings)) {
+        pairings = body.pairings;
+      }
+      const roster = await adminService.replaceRoster({ students, pairings });
+      if (typeof sessionService.reloadRosterCache === 'function') {
+        sessionService.reloadRosterCache();
+      }
       res.json(roster);
     } catch (error) {
       next(error);

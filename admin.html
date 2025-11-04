@@ -620,6 +620,7 @@
         let clearOpenAiKey = false;
         let currentSessionDetail = null;
         let rosterStudents = [];
+        let rosterPairings = [];
 
         const sessionCache = new Map();
         const $ = (id) => document.getElementById(id);
@@ -1954,7 +1955,9 @@
           try {
             const data = await apiRequest('roster');
             rosterStudents = Array.isArray(data?.students) ? data.students : [];
+            rosterPairings = Array.isArray(data?.pairings) ? data.pairings : [];
             renderRoster();
+            setPendingPairings(rosterPairings);
             setStatus('학생 명단을 불러왔습니다.', 'success');
           } catch (error) {
             setStatus(error.message || '학생 명단을 불러오지 못했습니다.', 'error');
@@ -1970,9 +1973,19 @@
           }
           $('btnRosterSave').disabled = true;
           try {
-            const result = await apiRequest('roster', { method: 'POST', body: { students } });
-            rosterStudents = Array.isArray(result?.students) ? result.students : [];
+            const idWhitelist = new Set(students.map((item) => String(item.id || '').trim().toLowerCase()).filter(Boolean));
+            const filteredPairings = Array.isArray(rosterPairings)
+              ? rosterPairings.filter((pair) => {
+                  const a = String(pair?.primary?.id || '').trim().toLowerCase();
+                  const b = String(pair?.partner?.id || '').trim().toLowerCase();
+                  return a && b && idWhitelist.has(a) && idWhitelist.has(b);
+                })
+              : [];
+            const result = await apiRequest('roster', { method: 'POST', body: { students, pairings: filteredPairings } });
+            rosterStudents = Array.isArray(result?.students) ? result.students : students;
+            rosterPairings = Array.isArray(result?.pairings) ? result.pairings : filteredPairings;
             renderRoster();
+            setPendingPairings(rosterPairings);
             setStatus('학생 명단을 저장했습니다.', 'success');
             await loadSessions();
           } catch (error) {
@@ -2086,6 +2099,7 @@
                 textarea.value = students.map((item) => [item.id, item.name].filter(Boolean).join(', ')).join('\n');
                 handleRosterInput();
               }
+              rosterPairings = pairings;
               setPendingPairings(pairings);
               const summary = summarizeRosterGroups(students);
               const summaryText = Object.entries(summary)
@@ -2136,8 +2150,9 @@
           const button = $('btnRosterClear');
           if (button) button.disabled = true;
           try {
-            await apiRequest('roster', { method: 'POST', body: { students: [] } });
+            await apiRequest('roster', { method: 'POST', body: { students: [], pairings: [] } });
             rosterStudents = [];
+            rosterPairings = [];
             const textarea = $('rosterTextarea');
             if (textarea) textarea.value = '';
             updateRosterCount(0);
