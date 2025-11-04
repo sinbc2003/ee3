@@ -82,8 +82,7 @@
       .history-item .time { margin-left: auto; color: #94a3b8; font-size: 12px; }
       .prewriting-preview-block { display: flex; flex-direction: column; gap: 6px; }
       .prewriting-preview-block strong { font-size: 13px; color: #475569; }
-      .chat-log { flex: 1; min-height: 420px; max-height: 620px; border: 1px solid #d0d7e3; border-radius: 12px; background: radial-gradient(circle at top, #f8fafc 0%, #ffffff 48%); padding: 14px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
-      #peerChatLog { min-height: 420px; max-height: 620px; }
+      .chat-log { flex: none; height: clamp(420px, 55vh, 520px); border: 1px solid #d0d7e3; border-radius: 12px; background: radial-gradient(circle at top, #f8fafc 0%, #ffffff 48%); padding: 14px; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; }
       .chat-line { display: flex; flex-direction: column; gap: 4px; max-width: 80%; }
       .chat-line.me { align-self: flex-end; text-align: right; }
       .chat-line.ai, .chat-line.other { align-self: flex-start; }
@@ -121,8 +120,7 @@
         .group-buttons { flex-direction: column; }
         .login-actions { flex-direction: column; align-items: stretch; }
         .step-item { min-width: 100%; }
-        .chat-log { min-height: 320px; max-height: 420px; }
-        #peerChatLog { min-height: 320px; max-height: 420px; }
+        .chat-log { height: clamp(300px, 60vh, 360px); }
         .chat-input textarea { height: 100px; min-height: 100px; max-height: 100px; }
         #finalInput { min-height: 200px; }
       }
