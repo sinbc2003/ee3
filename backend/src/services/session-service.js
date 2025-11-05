@@ -185,6 +185,72 @@ export function createSessionService(dataStore) {
     });
   }
 
+  async function determineSharedPeerSessionId(session, partnerSession) {
+    const sessionPeerId = String(session?.peerSessionId || '').trim();
+    const partnerPeerId = String(partnerSession?.peerSessionId || '').trim();
+    let sharedId = sessionPeerId || partnerPeerId || uuid();
+    let messagesA = [];
+    let messagesB = [];
+    if (sessionPeerId) {
+      try {
+        messagesA = await dataStore.getChatHistory(sessionPeerId, 'peer');
+      } catch (error) {
+        messagesA = [];
+      }
+    }
+    if (partnerPeerId) {
+      try {
+        messagesB = await dataStore.getChatHistory(partnerPeerId, 'peer');
+      } catch (error) {
+        messagesB = [];
+      }
+    }
+    if (sessionPeerId && partnerPeerId && sessionPeerId !== partnerPeerId) {
+      if (messagesA.length && !messagesB.length) {
+        sharedId = sessionPeerId;
+      } else if (!messagesA.length && messagesB.length) {
+        sharedId = partnerPeerId;
+      } else if (!messagesA.length && !messagesB.length) {
+        sharedId = sessionPeerId || partnerPeerId || uuid();
+      } else {
+        sharedId = uuid();
+      }
+    }
+    if (!sharedId) sharedId = uuid();
+    const mergeSources = [];
+    const addSource = (id, messages) => {
+      if (!id || id === sharedId || !Array.isArray(messages) || !messages.length) return;
+      if (mergeSources.some((src) => src.id === id)) return;
+      mergeSources.push({ id, messages });
+    };
+    if (sessionPeerId && sessionPeerId !== sharedId) addSource(sessionPeerId, messagesA);
+    if (partnerPeerId && partnerPeerId !== sharedId) addSource(partnerPeerId, messagesB);
+    return { sharedId, mergeSources };
+  }
+
+  async function mergePeerChatHistories(targetId, sources = []) {
+    const target = String(targetId || '').trim();
+    if (!target || !Array.isArray(sources) || !sources.length) return;
+    let existing = [];
+    try {
+      existing = await dataStore.getChatHistory(target, 'peer');
+    } catch (error) {
+      existing = [];
+    }
+    const seen = new Set(existing.map((msg) => `${Number(msg.ts || 0)}|${msg.senderId || ''}|${msg.text || ''}`));
+    for (const source of sources) {
+      if (!source || !Array.isArray(source.messages) || !source.messages.length) continue;
+      const sorted = [...source.messages].sort((a, b) => Number(a?.ts || 0) - Number(b?.ts || 0));
+      for (const message of sorted) {
+        if (!message) continue;
+        const key = `${Number(message.ts || 0)}|${message.senderId || ''}|${message.text || ''}`;
+        if (seen.has(key)) continue;
+        await dataStore.appendChatMessage(target, 'peer', message);
+        seen.add(key);
+      }
+    }
+  }
+
   async function findExistingSessionByStudentId(studentId) {
     const target = normalizeIdForCompare(studentId);
     if (!target) return null;
@@ -374,6 +440,7 @@ export function createSessionService(dataStore) {
       return session;
     }
 
+    const { sharedId, mergeSources } = await determineSharedPeerSessionId(session, partnerSession);
     const partnerSnapshot = buildPartnerSnapshot(partnerSession, partnerEntry);
     const partnerPresence = buildPartnerPresence(partnerSession, partnerEntry);
     const selfSnapshot = buildPartnerSnapshot(session, { id: session.you.id, name: session.you.name });
@@ -386,6 +453,7 @@ export function createSessionService(dataStore) {
         record.partner = partnerSnapshot;
         record.presence = record.presence || {};
         record.presence.partner = partnerPresence;
+        record.peerSessionId = sharedId;
         return record;
       }),
       dataStore.updateSession(partnerSession.sessionKey, (record) => {
@@ -394,11 +462,14 @@ export function createSessionService(dataStore) {
         record.partner = selfSnapshot;
         record.presence = record.presence || {};
         record.presence.partner = selfPresence;
+        record.peerSessionId = sharedId;
         return record;
       })
     ]);
-    await updatePartnerMirrorPresence(updatedSession);
-    await updatePartnerMirrorPresence(updatedPartner);
+    if (mergeSources.length) {
+      await mergePeerChatHistories(sharedId, mergeSources);
+    }
+    await Promise.all([updatePartnerMirrorPresence(updatedSession), updatePartnerMirrorPresence(updatedPartner)]);
     return updatedSession;
   }
 
