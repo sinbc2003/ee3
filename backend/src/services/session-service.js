@@ -185,12 +185,38 @@ export function createSessionService(dataStore) {
     return pair.primary;
   }
 
-  function buildPartnerSnapshot(session, fallback = {}) {
-    return {
+  function buildPartnerSnapshot(session, fallback = {}, includeDetails = false) {
+    const snapshot = {
       sessionKey: session?.sessionKey || '',
       id: normalizeId(fallback.id || session?.you?.id),
       name: normalizeName(session?.you?.name || fallback.name)
     };
+    if (includeDetails && session) {
+      ensureWriting(session);
+      snapshot.stage = Number(session.stage || 1);
+      const prewriting = session.writing?.prewriting || session.prewriting;
+      const draft = session.writing?.draft || session.draft;
+      const notes = session.writing?.notes || session.notes;
+      if (prewriting) {
+        snapshot.prewriting = {
+          text: String(prewriting.text || ''),
+          submittedAt: Number(prewriting.submittedAt || 0)
+        };
+      }
+      if (draft) {
+        snapshot.draft = {
+          text: String(draft.text || ''),
+          savedAt: Number(draft.savedAt || draft.updatedAt || 0)
+        };
+      }
+      if (notes) {
+        snapshot.notes = {
+          text: String(notes.text || ''),
+          updatedAt: Number(notes.updatedAt || notes.savedAt || 0)
+        };
+      }
+    }
+    return snapshot;
   }
 
   function buildPartnerPresence(session, fallback = {}) {
@@ -198,10 +224,39 @@ export function createSessionService(dataStore) {
       sessionKey: session?.sessionKey || '',
       name: normalizeName(session?.you?.name || fallback.name),
       id: normalizeId(session?.you?.id || fallback.id),
-      stage: Number(session?.stage || 1),
-      online: Boolean(session?.presence?.self?.online),
-      lastSeen: Number(session?.presence?.self?.lastSeen || 0)
+      stage: Number(session?.stage || fallback.stage || 1),
+      online: session?.presence?.self?.online ?? Boolean(fallback.online),
+      lastSeen: Number(session?.presence?.self?.lastSeen || fallback.lastSeen || 0)
     };
+  }
+
+  function rememberRosterPairing(primary, partner) {
+    if (!primary || !partner) return;
+    const primaryId = normalizeId(primary.id);
+    const partnerId = normalizeId(partner.id);
+    if (!primaryId || !partnerId) return;
+    const primaryKey = normalizeIdForCompare(primaryId);
+    const partnerKey = normalizeIdForCompare(partnerId);
+    if (!primaryKey || !partnerKey || primaryKey === partnerKey) return;
+    const dedupeKey = [primaryKey, partnerKey].sort().join('|');
+    if (rosterPairingsCache.some((entry) => {
+      const entryKey = [normalizeIdForCompare(entry.primary?.id || ''), normalizeIdForCompare(entry.partner?.id || '')]
+        .sort()
+        .join('|');
+      return entryKey === dedupeKey;
+    })) {
+      return;
+    }
+    rosterPairingsCache.push({
+      primary: {
+        id: primaryId,
+        name: normalizeName(primary.name)
+      },
+      partner: {
+        id: partnerId,
+        name: normalizeName(partner.name)
+      }
+    });
   }
 
   async function updatePartnerMirrorPresence(session) {
@@ -459,6 +514,7 @@ export function createSessionService(dataStore) {
         return dataStore.updateSession(session.sessionKey, (record) => {
           ensureWriting(record);
           ensureSteps(record);
+          rememberRosterPairing({ id: session.you?.id, name: session.you?.name }, partnerEntry);
           record.partner = {
             sessionKey: '',
             name: normalizeName(partnerEntry.name),
@@ -494,7 +550,8 @@ export function createSessionService(dataStore) {
       dataStore.updateSession(session.sessionKey, (record) => {
         ensureWriting(record);
         ensureSteps(record);
-        record.partner = partnerSnapshot;
+        rememberRosterPairing(session.you || { id: session.you?.id, name: session.you?.name }, partnerEntry);
+        record.partner = buildPartnerSnapshot(partnerSession, partnerEntry, true);
         record.presence = record.presence || {};
         record.presence.partner = partnerPresence;
         record.peerSessionId = sharedId;
@@ -503,7 +560,7 @@ export function createSessionService(dataStore) {
       dataStore.updateSession(partnerSession.sessionKey, (record) => {
         ensureWriting(record);
         ensureSteps(record);
-        record.partner = selfSnapshot;
+        record.partner = buildPartnerSnapshot(session, { id: session.you?.id, name: session.you?.name }, true);
         record.presence = record.presence || {};
         record.presence.partner = selfPresence;
         record.peerSessionId = sharedId;
@@ -637,11 +694,13 @@ export function createSessionService(dataStore) {
       const offlinePartner = {
         sessionKey: '',
         name: manualAllowed.name,
-        id: manualAllowed.id
+        id: manualAllowed.id,
+        stage: Number(manualAllowed.stage || 1)
       };
       const updated = await dataStore.updateSession(session.sessionKey, (record) => {
         ensureWriting(record);
         ensureSteps(record);
+        rememberRosterPairing({ id: session.you?.id, name: session.you?.name }, manualAllowed);
         record.partner = offlinePartner;
         record.presence = record.presence || {};
         record.presence.partner = {
@@ -649,7 +708,7 @@ export function createSessionService(dataStore) {
           sessionKey: '',
           name: manualAllowed.name,
           id: manualAllowed.id,
-          stage: 1,
+          stage: Number(manualAllowed.stage || 1),
           online: false,
           lastSeen: 0
         };
@@ -663,10 +722,11 @@ export function createSessionService(dataStore) {
       name: normalizeName(partnerName)
     };
 
+    rememberRosterPairing(session.you || { id: session.you?.id, name: session.you?.name }, fallbackInfo || partnerSession.you);
     const { sharedId, mergeSources } = await determineSharedPeerSessionId(session, partnerSession);
-    const partnerSnapshot = buildPartnerSnapshot(partnerSession, fallbackInfo || {});
+    const partnerSnapshot = buildPartnerSnapshot(partnerSession, fallbackInfo || {}, true);
     const partnerPresence = buildPartnerPresence(partnerSession, fallbackInfo || {});
-    const selfSnapshot = buildPartnerSnapshot(session, { id: session.you?.id, name: session.you?.name });
+    const selfSnapshot = buildPartnerSnapshot(session, { id: session.you?.id, name: session.you?.name }, true);
     const selfPresence = buildPartnerPresence(session, { id: session.you?.id, name: session.you?.name });
 
     const [updatedSession, updatedPartner] = await Promise.all([

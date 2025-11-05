@@ -1771,12 +1771,20 @@
           }).postMessage(state.peerChat.sessionId, state.group, state.user.id, state.user.name, 'user', text, { channel: 'peer-chat', sessionKey: state.sessionKey });
         }
 
+        function buildChatDedupeKey(message, ts){
+          const time = Number(ts || message.ts || 0) || 0;
+          const sender = String(message.senderId || message.role || '');
+          const text = String(message.text || '');
+          return time + '|' + sender + '|' + text;
+        }
+
         function appendChatMessage(channel, message, options){
           const chatState = channel === 'ai' ? state.aiChat : state.peerChat;
           const logEl = $(channel === 'ai' ? 'aiChatLog' : 'peerChatLog');
           if (!chatState || !logEl) return null;
           const isPending = options && options.pending;
           const ts = Number(message.ts || Date.now());
+          const dedupeKey = buildChatDedupeKey(message, ts);
           if (!isPending) {
             if (chatState.pending && Object.keys(chatState.pending).length) {
               let matchedTempId = '';
@@ -1799,7 +1807,7 @@
                 if (ts) pendingNode.dataset.ts = String(ts);
                 const metaEl = pendingNode.querySelector('.chat-meta');
                 if (metaEl) metaEl.textContent = buildChatMeta(channel, message, ts, false);
-                chatState.rendered[ts] = true;
+                chatState.rendered[dedupeKey] = true;
                 if (ts > chatState.lastTs) chatState.lastTs = ts;
                 if (channel === 'ai' && message.role === 'ai') {
                   setAiPending(false);
@@ -1808,8 +1816,8 @@
                 return { tempId: matchedTempId, element: pendingNode };
               }
             }
-            if (chatState.rendered[ts]) return null;
-            chatState.rendered[ts] = true;
+            if (chatState.rendered[dedupeKey]) return null;
+            chatState.rendered[dedupeKey] = true;
             if (ts > chatState.lastTs) chatState.lastTs = ts;
           }
           const tempId = isPending ? ('tmp-' + Date.now() + '-' + Math.random().toString(16).slice(2)) : '';
@@ -1870,7 +1878,8 @@
           delete chatState.pending[tempId];
           el.classList.remove('pending');
           el.dataset.ts = String(serverTs);
-          chatState.rendered[serverTs] = true;
+          const dedupeKey = buildChatDedupeKey(original || {}, serverTs);
+          chatState.rendered[dedupeKey] = true;
           chatState.lastTs = Number(serverTs) || chatState.lastTs;
           const meta = el.querySelector('.chat-meta');
           if (meta) {
