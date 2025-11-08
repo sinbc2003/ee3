@@ -579,7 +579,9 @@ export function createSessionService(dataStore) {
     if (!session) {
       throw createError(404, '세션을 찾을 수 없습니다.');
     }
-    return session;
+    // 세션 상태 조회 시마다 동료 매칭을 다시 확인하여 동료가 나중에 로그인한 경우에도 매칭되도록 함
+    const updated = await ensureRosterPairing(session);
+    return updated;
   }
 
   async function listSessions() {
