@@ -581,6 +581,17 @@ export function createSessionService(dataStore) {
     }
     // 세션 상태 조회 시마다 동료 매칭을 다시 확인하여 동료가 나중에 로그인한 경우에도 매칭되도록 함
     const updated = await ensureRosterPairing(session);
+    // 동료 세션이 있다면 동료 세션도 업데이트하여 양방향 동기화 보장
+    if (updated?.partner?.sessionKey) {
+      try {
+        const partnerSession = await dataStore.getSession(updated.partner.sessionKey);
+        if (partnerSession) {
+          await ensureRosterPairing(partnerSession);
+        }
+      } catch (error) {
+        console.warn('동료 세션 동기화 실패', error);
+      }
+    }
     return updated;
   }
 

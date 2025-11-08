@@ -808,8 +808,21 @@
           }
           const prevStage = Number(state.stage || 1);
           if (data.sessionKey) state.sessionKey = data.sessionKey;
-          if (data.aiSessionId) state.aiChat.sessionId = data.aiSessionId;
-          if (data.peerSessionId) state.peerChat.sessionId = data.peerSessionId;
+          if (data.aiSessionId) {
+            const prevAiSessionId = state.aiChat.sessionId;
+            state.aiChat.sessionId = data.aiSessionId;
+            if (prevAiSessionId && prevAiSessionId !== data.aiSessionId) {
+              clearChatLog('ai');
+            }
+          }
+          const prevPeerSessionId = state.peerChat.sessionId;
+          if (data.peerSessionId !== undefined && data.peerSessionId !== null) {
+            state.peerChat.sessionId = String(data.peerSessionId).trim();
+          }
+          if (prevPeerSessionId && state.peerChat.sessionId && prevPeerSessionId !== state.peerChat.sessionId) {
+            clearChatLog('peer');
+            state.peerChat.lastTs = 0;
+          }
           var incomingStage = Number(data.stage || 0);
           if (incomingStage) {
             state.stage = incomingStage;
