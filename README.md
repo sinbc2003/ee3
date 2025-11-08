@@ -91,7 +91,7 @@ window.APP_CONFIG = {
 | `DATA_BUCKET` | Cloud Storage 버킷 이름 |
 | `API_KEY` | (선택) 프론트엔드 요청 검증용 키 |
 | `ALLOWED_ORIGINS` | CORS 허용 도메인 (쉼표 구분) |
-| `AI_PROVIDER` | `openai` 또는 `vertex` (공백이면 자동 감지) |
+| `AI_PROVIDER` | `openai` 또는 `vertex` (공백이면 자동 감지) | 
 | `AI_SYSTEM_PROMPT` | (선택) AI 역활 지침 |
 | `AI_TEMPERATURE` | (선택) 0~1 사이 숫자 |
 | `VERTEX_MODEL` | (선택) Vertex AI 모델 이름 |
