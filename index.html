@@ -185,56 +185,79 @@
           <div class="step-item" data-step="1">
             <div class="step-number">1</div>
             <div class="step-info">
-              <div class="step-title">사전 글쓰기</div>
-              <div class="step-caption"></div>
-          </div>
+              <div class="step-title">2차시</div>
+              <div class="step-caption">사전 글쓰기</div>
+            </div>
           </div>
           <div class="step-item" data-step="2">
             <div class="step-number">2</div>
             <div class="step-info">
-              <div class="step-title">AI 피드백</div>
-              <div class="step-caption"></div>
+              <div class="step-title">3차시-1</div>
+              <div class="step-caption">AI/동료 토론(1)</div>
+            </div>
           </div>
-           </div>
-           <div class="step-item" data-step="3">
-             <div class="step-number">3</div>
-             <div class="step-info">
-              <div class="step-title">동료 피드백</div>
-              <div class="step-caption"></div>
-             </div>
-           </div>
+          <div class="step-item" data-step="3">
+            <div class="step-number">3</div>
+            <div class="step-info">
+              <div class="step-title">3차시-2</div>
+              <div class="step-caption">AI/동료 토론(2)</div>
+            </div>
+          </div>
           <div class="step-item" data-step="4">
             <div class="step-number">4</div>
             <div class="step-info">
-              <div class="step-title">최종 수정 및 제출</div>
-              <div class="step-caption"></div>
+              <div class="step-title">4차시</div>
+              <div class="step-caption">최종 수정 및 제출</div>
             </div>
+          </div>
+          <div class="step-item" data-step="5">
+            <div class="step-number">5</div>
+            <div class="step-info">
+              <div class="step-title">5차시</div>
+              <div class="step-caption">추후 진행</div>
+            </div>
+          </div>
         </div>
-      </div>
 
         <div class="workspace-grid">
           <div class="left-column">
             <section id="panelPrompt" class="stage-panel" data-step="1">
               <div class="panel-header">
-                <h2>1단계 · 제시문 안내</h2>
-                <span class="panel-subtext">제시문을 확인한 뒤, 주어진 시간 25분 동안 사전 글쓰기를 진행하세요.</span>
+                <h2>2차시 · 토론 관련 발문</h2>
+                <span class="panel-subtext">논제 이해를 위해 핵심 발문을 확인하세요. 필요 시 교사가 제시합니다.</span>
               </div>
-              <div id="promptContent" class="text-block">제시문이 아직 등록되지 않았습니다.</div>
+              <div id="promptContent" class="text-block">토론 발문이 아직 등록되지 않았습니다.</div>
+            </section>
+
+            <section id="panelPrewriting" class="stage-panel" data-step="1">
+              <div class="panel-header">
+                <h2>2차시 · 메모장</h2>
+                <span id="prewritingInfo" class="panel-subtext">인터넷 검색으로 찬성·반대 근거를 수집하며 메모를 남기세요.</span>
+              </div>
+              <textarea id="prewritingInput" placeholder="주장·근거, 출처, 의문점을 자유롭게 적어 두세요."></textarea>
+              <div id="prewritingReadonly" class="readonly-block"></div>
+              <div class="button-row">
+                <button id="btnPreSubmit" class="primary" type="button" disabled>2차시 메모 저장</button>
+              </div>
             </section>
 
             <section id="panelDraft" class="stage-panel" data-step="2">
               <div class="panel-header">
-                <h2 id="draftTitle">2단계 · 글쓰기 수정 관련 메모</h2>
-                <span id="draftInfo" class="panel-subtext">AI 튜터에게 받은 피드백을 참고하여, 글을 어떻게 수정할지에 대한 아이디어를 메모 형태로 자유롭게 정리하세요.</span>
+                <h2 id="draftTitle">3-1차시 · 토론 메모</h2>
+                <span id="draftInfo" class="panel-subtext">ChatGPT와 1:1 모의 토론 중 떠오른 주장·근거·반론을 간단히 메모하세요.</span>
               </div>
               <div class="prewriting-preview-block">
-                <strong>나의 사전 글쓰기</strong>
-                <div id="prewritingPreview" class="text-block">사전 글쓰기가 아직 제출되지 않았습니다.</div>
+                <strong>토론 관련 발문</strong>
+                <div id="draftPromptContent" class="text-block">관리자가 등록한 발문이 여기에 표시됩니다.</div>
               </div>
-              <textarea id="draftInput" placeholder="떠오른 아이디어, 수정할 점 등을 간단히 기록하세요."></textarea>
+              <div class="prewriting-preview-block">
+                <strong>이전 메모/발문</strong>
+                <div id="prewritingPreview" class="text-block">2차시 메모가 아직 저장되지 않았습니다.</div>
+              </div>
+              <textarea id="draftInput" placeholder="찬성/반대 주장, 근거, 추가 조사할 내용 등을 기록하세요."></textarea>
               <div class="button-row">
                 <button id="btnDraftBack" class="ghost" type="button">이전 단계로 이동</button>
-                <button id="btnSaveDraft" class="secondary" type="button" disabled>메모 저장</button>
+                <button id="btnSaveDraft" class="secondary" type="button" disabled>3-1차시 메모 저장</button>
                 <button id="btnToPeer" class="primary" type="button" disabled>다음 단계로 이동</button>
               </div>
             </section>
@@ -243,6 +266,10 @@
               <div class="panel-header">
                 <h2 id="memoStage3Title">글쓰기 수정 관련 메모</h2>
                 <span id="memoStage3Info" class="panel-subtext">동료의 글을 읽고, 10분 동안 어떤 피드백을 줄지 생각해 보세요. 피드백 내용을 메모 형태로 자유롭게 정리하세요. 동료에게서 받은 피드백을 참고하여, 글을 어떻게 수정할지에 대한 아이디어를 메모 형태로 자유롭게 정리하세요.</span>
+              </div>
+              <div class="prewriting-preview-block">
+                <strong>3-1차시 토론 기록</strong>
+                <div id="stage3Transcript" class="text-block">이전 토론 기록을 불러오는 중입니다.</div>
               </div>
               <div class="prewriting-preview-block">
                 <strong>동료 글</strong>
@@ -262,67 +289,33 @@
 
             <section id="panelFinalSummary" class="stage-panel" data-step="4">
               <div class="panel-header">
-                <h2>이전 단계 요약</h2>
-                <span class="panel-subtext">최종 글을 수정하여 제출하기 전에, 이전에 받았던 피드백과 메모를 확인하세요.</span>
+                <h2>4차시 · 토론 발문</h2>
+                <span class="panel-subtext">관리자가 입력한 2차 토론 관련 발문을 확인하세요.</span>
               </div>
-              <div class="final-grid">
-                <div>
-                  <strong>사전 글쓰기</strong>
-                  <div id="finalPreText" class="text-block">작성된 사전 글이 없습니다.</div>
-                </div>
-                <div>
-                  <strong>AI 피드백 글쓰기 수정 관련 메모</strong>
-                  <div id="finalStage2Memo" class="text-block">AI 피드백 글쓰기 수정 관련 메모가 아직 없습니다.</div>
-                </div>
-                <div>
-                  <strong>동료 피드백 글쓰기 수정 관련 메모</strong>
-                  <div id="finalStage3Memo" class="text-block">동료 피드백 글쓰기 수정 관련 메모가 아직 없습니다.</div>
-                </div>
+              <div id="stage4PromptContent" class="text-block">관리자가 등록한 발문이 여기에 표시됩니다.</div>
+            </section>
+
+            <section id="panelStage5" class="stage-panel" data-step="5">
+              <div class="panel-header">
+                <h2>5차시 · 4-1 토론 요약 & 메모 (4-2)</h2>
+                <span class="panel-subtext">4-1차시 대화를 요약해 확인하고, 추가로 메모하세요.</span>
+              </div>
+              <div class="prewriting-preview-block">
+                <strong>4-1차시 토론 요약</strong>
+                <div id="stage5TranscriptSummary" class="text-block">4-1 토론 기록을 불러오는 중입니다. (추후 연동)</div>
+              </div>
+              <textarea id="stage5MemoInput" placeholder="추가로 정리하고 싶은 내용을 메모하세요. (현재는 로컬에만 저장됩니다.)"></textarea>
+              <div class="button-row">
+                <button id="btnStage5MemoSave" class="secondary" type="button" disabled>5차시 메모 저장</button>
               </div>
             </section>
           </div>
 
           <div class="right-column">
-            <section id="rightStage1" class="right-panel">
-              <section id="panelPrewriting" class="stage-panel" data-step="1">
-                <div class="panel-header">
-                  <h2>1단계 · 사전 글쓰기</h2>
-                  <span id="prewritingInfo" class="panel-subtext"> 주제에 대한 자신의 입장을 정한 뒤, 영어로 글을 작성하여 제출하세요.
-                  </span>
-                </div>
-                <textarea id="prewritingInput" placeholder="주제에 대한 생각을 자유롭게 작성하세요."></textarea>
-                <div id="prewritingReadonly" class="readonly-block"></div>
-                <div class="button-row">
-                  <button id="btnPreSubmit" class="primary" type="button" disabled>사전 글쓰기 제출</button>
-                </div>
-              </section>
-
-              <section id="panelDictionary" class="stage-panel">
-                <div class="panel-header">
-                  <h2>사전 도구 · 영한·한영 사전</h2>
-                  <span class="panel-subtext">필요한 어휘를 검색하세요.</span>
-                </div>
-                <div class="dictionary-search">
-                  <input id="dictQuery" type="text" placeholder="영어 또는 한국어 단어를 입력하세요." />
-                  <button id="btnDictSearch" class="secondary" type="button">검색</button>
-                </div>
-                <div id="dictResult" class="dictionary-result">
-                  <div class="dict-word">사전 검색 결과</div>
-                  <div class="dict-pron">검색어를 입력하면 결과가 표시됩니다.</div>
-                </div>
-                <div>
-                  <strong>최근 검색</strong>
-                  <div id="dictEmpty" class="panel-subtext">최근 검색 이력이 없습니다.</div>
-                  <div id="dictHistory" class="dictionary-history"></div>
-                </div>
-              </section>
-
-            </section>
-
             <section id="rightStage2" class="right-panel">
               <div class="panel-header">
-                <h2>AI 피드백</h2>
-                <span class="panel-subtext">AI 튜터와 25분간 상호작용하며 자신의 글에 대한 피드백을 받아 보세요. AI 튜터에게 글을 대신 써달라고 요청하는 것은 안 됩니다.</span>
+                <h2>ChatGPT 모의 토론 (gpt-4.1-mini)</h2>
+                <span class="panel-subtext">찬·반 입장으로 질문하며 논거를 점검하세요. 정답 생성 대신 토론 연습에 집중합니다.</span>
               </div>
               <div class="chat-log" id="aiChatLog"></div>
               <div id="aiChatLoader" class="spinner"><span>AI 응답 생성 중...</span></div>
@@ -357,16 +350,16 @@
              </section>
 
             <section id="rightStage4" class="right-panel">
-              <div class="panel-block">
-                <div class="panel-header">
-                  <h2>4단계 · 최종 글쓰기</h2>
-                  <span id="finalInfo" class="panel-subtext">사전 글쓰기를 기반으로 최종 글을 작성하여 제출하세요. 기존 내용을 수정·추가·보완하는 것이 모두 가능합니다.</span>
-                </div>
-                <textarea id="finalInput" placeholder="3단계에서 정리한 내용을 바탕으로 최종 글을 작성하세요." disabled></textarea>
-                <div id="finalReadonly" class="readonly-block"></div>
-                <div class="button-row">
-                  <button id="btnFinalBack" class="ghost" type="button">이전 단계로 이동</button>
-                  <button id="btnFinalSubmit" class="primary" type="button" disabled>최종 제출</button>
+              <div class="panel-header">
+                <h2>ChatGPT와 토론 (gpt-4.1-mini)</h2>
+                <span class="panel-subtext">관리자 시스템 프롬프트를 기반으로 토론을 진행합니다.</span>
+              </div>
+              <div class="chat-log" id="finalChatLog"></div>
+              <div id="finalChatLoader" class="spinner"><span>AI 응답 생성 중...</span></div>
+              <div class="chat-input">
+                <textarea id="finalChatInput" placeholder="질문하거나 토론을 이어가세요." disabled></textarea>
+                <div class="chat-actions">
+                  <button id="btnFinalChatSend" class="primary" type="button" disabled>전송</button>
                 </div>
               </div>
             </section>
@@ -561,6 +554,7 @@
           localFinalDraft: '',
           localDraftBuffer: '',
           localStage3Memo: '',
+          localStage5Memo: '',
           aiAvatarUrl: DEFAULT_AI_AVATAR
         };
 
@@ -645,6 +639,15 @@
           if (peerSendBtn) peerSendBtn.addEventListener('click', sendPeerMessage);
           const peerInput = $('peerInput');
           if (peerInput) peerInput.addEventListener('keydown', function(e){ if (e.key === 'Enter' && !e.shiftKey){ e.preventDefault(); sendPeerMessage(); } });
+
+          const stage5MemoInput = $('stage5MemoInput');
+          if (stage5MemoInput) stage5MemoInput.addEventListener('input', function(){
+            const btn = $('btnStage5MemoSave');
+            if (!btn) return;
+            btn.disabled = !this.value.trim();
+          });
+          const stage5MemoSave = $('btnStage5MemoSave');
+          if (stage5MemoSave) stage5MemoSave.addEventListener('click', onSaveStage5Memo);
 
           const preBtn = $('btnPreSubmit');
           if (preBtn) preBtn.addEventListener('click', onSubmitPrewriting);
@@ -886,6 +889,9 @@
           renderDraftPanel();
           renderPeerPanel();
           renderFinalPanel();
+          renderStage4Prompt();
+          renderStage5Panel();
+        renderFinalChatPanel();
           renderRightPanels();
           renderPartnerPanel();
           renderPresence();
@@ -899,7 +905,8 @@
           if (current <= 1) return 1;
           if (current === 2) return 1;
           if (current === 3) return 2;
-          if (current >= 4) return group === 'C' ? 2 : 3;
+          if (current === 4) return group === 'C' ? 2 : 3;
+          if (current >= 5) return 4;
           return Math.max(1, current - 1);
         }
 
@@ -909,11 +916,13 @@
           const showStage1 = stage <= 1;
           const showStage2 = stage === 2;
           const showStage3 = stage === 3 && (group === 'A' || group === 'B');
+          const showStage5 = stage >= 5;
           setPanelVisibility('panelPrompt', stage === 1);
           setPanelVisibility('panelPrewriting', showStage1);
           setPanelVisibility('panelDraft', showStage2);
           setPanelVisibility('panelMemoStage3', showStage3);
-          setPanelVisibility('panelFinalSummary', stage >= 4);
+          setPanelVisibility('panelFinalSummary', stage === 4);
+          setPanelVisibility('panelStage5', showStage5);
         }
 
         function setPanelVisibility(id, visible){
@@ -938,16 +947,18 @@
           const current = Number(state.stage || 1);
           const group = (state.group || '').toUpperCase();
           const titleMap = {
-            1: '사전 글쓰기',
-            2: group === 'B' ? '동료 피드백' : 'AI 피드백',
-            3: group === 'B' ? 'AI 피드백' : '동료 피드백',
-            4: '최종 수정 및 제출'
+            1: '2차시',
+            2: '3차시-1',
+            3: '3차시-2',
+            4: '4차시',
+            5: '5차시'
           };
           const captionMap = {
-            1: '',
-            2: '',
-            3: '',
-            4: ''
+            1: '자료 조사·메모',
+            2: 'ChatGPT 모의 토론',
+            3: group === 'A' ? '동료 토론' : 'ChatGPT/동료',
+            4: '4-1 차시',
+            5: '4-2 차시'
           };
           document.querySelectorAll('#stepIndicator .step-item').forEach(function(item){
             const step = Number(item.dataset.step);
@@ -970,7 +981,7 @@
           
           // 1단계(사전 글쓰기)가 완료되면 이후 단계(2,3,4)를 모두 자유롭게 이동할 수 있도록 허용
           if (steps.prewriting && steps.prewriting.completed) {
-            return 4;
+            return 5;
           }
           
           const group = (state.group || '').toUpperCase();
@@ -994,6 +1005,9 @@
             if (Number(state.stage || 1) >= 4 || (steps.final && steps.final.submitted)) {
               highest = Math.max(highest, 4);
             }
+          }
+          if (Number(state.stage || 1) >= 5) {
+            highest = Math.max(highest, 5);
           }
           return Math.max(1, Number(highest || 1));
         }
@@ -1081,14 +1095,18 @@
           const info = $('draftInfo');
           const titleEl = $('draftTitle');
           const previewEl = $('prewritingPreview');
+          const promptEl = $('draftPromptContent');
           if (!textarea || !info) return;
           const stage = Number(state.stage || 1);
           const group = (state.group || '').toUpperCase();
           const editable = stage === 2 && !state.writing.final.submittedAt;
           const savedText = state.writing.draft.text || '';
+          if (promptEl) {
+            promptEl.textContent = publicConfig.promptContent || '관리자가 등록한 발문이 여기에 표시됩니다.';
+          }
           if (previewEl) {
             const prewritingText = (state.writing.prewriting && state.writing.prewriting.text) || '';
-            previewEl.textContent = prewritingText ? prewritingText : '사전 글쓰기가 아직 제출되지 않았습니다.';
+            previewEl.textContent = prewritingText ? prewritingText : '2차시 메모가 아직 저장되지 않았습니다.';
           }
           if (savedText) {
             state.localDraftBuffer = savedText;
@@ -1207,75 +1225,74 @@
         }
 
         function renderFinalPanel(){
-          const textarea = $('finalInput');
-          const readonly = $('finalReadonly');
-          const submitBtn = $('btnFinalSubmit');
-          const info = $('finalInfo');
+          // 4차시는 발문/챗봇 중심 UI로 전환되어 최종 글쓰기 패널 사용 안 함
+        }
+
+        function renderStage4Prompt(){
+          const promptEl = $('stage4PromptContent');
+          if (promptEl) {
+            promptEl.textContent = publicConfig.promptContent || '관리자가 등록한 발문이 여기에 표시됩니다.';
+          }
+        }
+
+        function renderStage5Panel(){
+          const summaryEl = $('stage5TranscriptSummary');
+          if (summaryEl) {
+            summaryEl.textContent = '4-1 토론 요약을 불러오는 중입니다. (추후 연동)';
+          }
+          const memoInput = $('stage5MemoInput');
+          const saveBtn = $('btnStage5MemoSave');
           const stage = Number(state.stage || 1);
-          const finalData = state.writing.final || {};
-          const prewritingText = (state.writing.prewriting && state.writing.prewriting.text) || '';
-          const stage2Memo = (state.writing.draft && state.writing.draft.text) || '';
-          const stage3Memo = (state.writing.notes && state.writing.notes.text) || '';
-          const finalText = String(finalData.text || '');
-          const finalSubmittedAt = Number(finalData.submittedAt || 0);
-          const hasSubmitted = finalSubmittedAt > 0;
-          const canEdit = stage === 4 && !hasSubmitted;
+          const enabled = stage >= 5;
+          const memoText = state.localStage5Memo || '';
+          if (memoInput) {
+            memoInput.value = memoText;
+            memoInput.disabled = !enabled;
+          }
+          if (saveBtn) {
+            saveBtn.disabled = !enabled || !memoText.trim();
+          }
+        }
 
-          if (state.localFinalDraft == null) state.localFinalDraft = '';
-          if (stage === 4) {
-            if (hasSubmitted) {
-              state.localFinalDraft = finalText;
-            } else if (!state.localFinalDraft) {
-              state.localFinalDraft = finalText || prewritingText || '';
-            }
+        function renderFinalChatPanel(){
+          const logEl = $('finalChatLog');
+          const inputEl = $('finalChatInput');
+          const sendBtn = $('btnFinalChatSend');
+          const stage = Number(state.stage || 1);
+          const aiEnabled = !!state.aiChat.sessionId && stage >= 4;
+          if (logEl) {
+            logEl.innerHTML = '';
+            // reuse existing ai chat log data: render last known messages for ai channel
+            const messages = Object.keys(state.aiChat.rendered || {}).length
+              ? []
+              : [];
+            // 단순 초기화만 수행 (기존 채팅 렌더는 pollAiMessages에서 처리)
           }
+          if (inputEl) inputEl.disabled = !aiEnabled || (state.aiChat && state.aiChat.awaitingResponse);
+          if (sendBtn) sendBtn.disabled = !aiEnabled || (state.aiChat && state.aiChat.awaitingResponse);
+        }
 
-          if (textarea) {
-            if (textarea.value !== state.localFinalDraft) textarea.value = state.localFinalDraft;
-            textarea.disabled = !canEdit;
-            textarea.style.display = canEdit ? 'block' : 'none';
-          }
-          if (readonly) {
-            readonly.textContent = hasSubmitted ? finalText : state.localFinalDraft || '';
-            readonly.style.display = canEdit ? 'none' : 'block';
-          }
-          if (submitBtn) {
-            submitBtn.disabled = !canEdit || !state.localFinalDraft.trim();
-            submitBtn.textContent = hasSubmitted ? '최종 제출 완료' : '최종 제출';
-          }
-          if (info) {
-            info.textContent = hasSubmitted ? '최종 제출 시간: ' + formatDate(finalSubmittedAt) : '사전 글쓰기를 기반으로 최종 글을 작성하여 제출하세요. 기존 내용을 수정·추가·보완하는 것이 모두 가능합니다.';
-          }
-
-          const backBtn = $('btnFinalBack');
-          if (backBtn) {
-            const prevStage = getPreviousStageNumber();
-            const currentStage = Number(state.stage || 1);
-            if (prevStage < currentStage) {
-              backBtn.disabled = false;
-              backBtn.textContent = '← ' + (formatStageName(prevStage) || (prevStage + '단계')) + '로 이동';
-            } else {
-              backBtn.disabled = true;
-              backBtn.textContent = '이전 단계로 이동';
-            }
-          }
-
-          $('finalPreText').textContent = prewritingText || '작성된 사전 글이 없습니다.';
-          $('finalStage2Memo').textContent = stage2Memo || 'AI 피드백 글쓰기 수정 관련 메모가 아직 없습니다.';
-          $('finalStage3Memo').textContent = stage3Memo || '동료 피드백 글쓰기 수정 관련 메모가 아직 없습니다.';
+        function onSaveStage5Memo(){
+          const memoInput = $('stage5MemoInput');
+          if (!memoInput) return;
+          const text = memoInput.value.trim();
+          if (!text) { setStatus('5차시 메모를 입력하세요.', 'warn'); return; }
+          state.localStage5Memo = text;
+          const btn = $('btnStage5MemoSave');
+          if (btn) btn.disabled = true;
+          setStatus('5차시 메모가 로컬에 저장되었습니다. (서버 연동 필요)', 'success');
         }
 
         function renderRightPanels(){
           const stage = Number(state.stage || 1);
           const group = (state.group || '').toUpperCase();
-          const showDict = stage <= 1;
-          const showAiChat = (stage === 2 && (group === 'A' || group === 'C')) || (stage === 3 && group === 'B');
-          const showPeerChat = (stage === 2 && group === 'B') || (stage === 3 && group === 'A');
-          togglePanel('rightStage1', showDict);
+          const showAiChat = stage === 1 || stage === 2 || (stage === 3 && group === 'B');
+          const showPeerChat = stage === 3 && (group === 'A' || group === 'B');
+          const showFinalChat = stage >= 4;
           togglePanel('rightStage2', showAiChat);
           togglePanel('rightStage3', showPeerChat);
-          togglePanel('rightStage4', stage >= 4);
-          if (showAiChat) ensureAiWelcomeMessage();
+          togglePanel('rightStage4', showFinalChat);
+          if (showAiChat || showFinalChat) ensureAiWelcomeMessage();
         }
 
         function togglePanel(id, visible){
@@ -1327,7 +1344,16 @@
           if (state.aiChat.welcomeShown) return;
           const logEl = $('aiChatLog');
           if (!logEl) return;
-          appendChatMessage('ai', { ts: 0, role: 'system', senderName: '시스템', text: '글쓰기와 관련된 궁금한 것을 질문하세요.' }, { pending: false });
+          appendChatMessage(
+            'ai',
+            {
+              ts: 0,
+              role: 'system',
+              senderName: '시스템',
+              text: 'ChatGPT(gpt-4.1-mini)와 모의 토론을 시작하세요. 예) “나는 찬성 측인데 주요 반론이 뭐가 있을까?”, “이 근거의 약점을 지적해줘”.'
+            },
+            { pending: false }
+          );
           state.aiChat.welcomeShown = true;
         }
 
@@ -1383,7 +1409,7 @@
         function refreshChatControls(){
           const stage = Number(state.stage || 1);
           const group = (state.group || '').toUpperCase();
-          const aiEnabled = !!state.aiChat.sessionId && ((stage === 2 && (group === 'A' || group === 'C')) || (stage === 3 && group === 'B'));
+          const aiEnabled = !!state.aiChat.sessionId && (stage >= 1 && stage <= 5);
           const aiPending = state.aiChat && state.aiChat.awaitingResponse;
           const aiInput = $('aiInput');
           const aiBtn = $('btnAiSend');
@@ -1736,7 +1762,7 @@
           if (!state.aiChat.sessionId) { setStatus('AI 세션이 준비되지 않았습니다.', 'error'); return; }
           const stage = Number(state.stage || 1);
           const group = (state.group || '').toUpperCase();
-          const isAiStage = (stage === 2 && (group === 'A' || group === 'C')) || (stage === 3 && group === 'B');
+          const isAiStage = stage >= 1 && stage <= 5;
           if (!isAiStage) { setStatus('AI 피드백 단계에서만 사용할 수 있습니다.', 'warn'); return; }
           const input = $('aiInput');
           if (!input || input.disabled) return;
@@ -1758,13 +1784,13 @@
               setAiLoading(false);
               setAiPending(false);
               handleError(err);
-            }).requestAiIfNeeded(state.aiChat.sessionId, state.group, text, '', { channel: 'ai-feedback', sessionKey: state.sessionKey });
+            }).requestAiIfNeeded(state.aiChat.sessionId, state.group, text, '', { channel: 'ai-feedback', sessionKey: state.sessionKey, stage: state.stage });
           }).withFailureHandler(function(err){
             setAiLoading(false);
             setAiPending(false);
             if (appended && appended.element) appended.element.classList.add('error');
             handleError(err);
-          }).postMessage(state.aiChat.sessionId, state.group, state.user.id, state.user.name, 'user', text, { channel: 'ai-feedback', sessionKey: state.sessionKey });
+          }).postMessage(state.aiChat.sessionId, state.group, state.user.id, state.user.name, 'user', text, { channel: 'ai-feedback', sessionKey: state.sessionKey, stage: state.stage });
         }
 
         function setAiLoading(flag){
@@ -2090,10 +2116,11 @@
         function formatStageName(step){
           const group = (state.group || '').toUpperCase();
           switch (Number(step)) {
-            case 1: return '1단계 사전 글쓰기';
-            case 2: return group === 'B' ? '2단계 동료 피드백' : '2단계 AI 피드백';
-            case 3: return '3단계 글쓰기 수정 관련 메모';
-            case 4: return '4단계 최종 수정 및 제출';
+            case 1: return '2차시 (자료 조사·메모)';
+            case 2: return '3차시-1 (ChatGPT 모의 토론)';
+            case 3: return group === 'A' ? '3차시-2 (동료 토론)' : '3차시-2 (ChatGPT/동료)';
+            case 4: return '4차시 (최종 수정 및 제출)';
+            case 5: return '5차시';
             default: return step + '단계';
           }
         }

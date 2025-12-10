@@ -454,6 +454,7 @@
               <select id="aiProvider">
                 <option value="auto">자동 선택</option>
                 <option value="openai">OpenAI</option>
+                  <option value="perplexity">Perplexity</option>
                 <option value="none">비활성화</option>
               </select>
             </div>
@@ -479,6 +480,13 @@
               <label for="openaiApiKey" style="margin-top: 12px;">새 API 키</label>
               <input id="openaiApiKey" type="password" placeholder="새 키 입력 (비워두면 유지)" />
               <button id="btnClearOpenAiKey" class="secondary" type="button" style="margin-top: 10px;">저장된 OpenAI 키 제거</button>
+            </div>
+            <div>
+              <h3>Perplexity</h3>
+              <label for="perplexityModel">모델 이름</label>
+              <input id="perplexityModel" type="text" placeholder="예: llama-3.1-sonar-small-128k-online" />
+              <label for="perplexityApiKey" style="margin-top: 12px;">새 API 키</label>
+              <input id="perplexityApiKey" type="password" placeholder="새 키 입력 (비워두면 유지)" />
             </div>
           </div>
 
@@ -752,6 +760,8 @@
           $('openaiBaseUrl').value = overrides.openai?.baseUrl || ai.openai?.baseUrl || '';
           $('openaiOrg').value = overrides.openai?.organization || ai.openai?.organization || '';
           $('openaiApiKey').value = '';
+          $('perplexityModel').value = overrides.perplexity?.model || ai.perplexity?.model || '';
+          $('perplexityApiKey').value = '';
           clearOpenAiKey = false;
 
           const badge = document.createElement('span');
@@ -787,6 +797,9 @@
               model: $('openaiModel').value,
               baseUrl: $('openaiBaseUrl').value,
               organization: $('openaiOrg').value
+            },
+            perplexity: {
+              model: $('perplexityModel').value
             }
           };
 
@@ -795,6 +808,11 @@
             payload.openai.apiKey = null;
           } else if (apiKeyInput && apiKeyInput.trim()) {
             payload.openai.apiKey = apiKeyInput.trim();
+          }
+
+          const ppxKeyInput = $('perplexityApiKey').value;
+          if (ppxKeyInput && ppxKeyInput.trim()) {
+            payload.perplexity.apiKey = ppxKeyInput.trim();
           }
 
           $('btnSaveConfig').disabled = true;

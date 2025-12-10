@@ -1,0 +1,22 @@
+[
+  {
+    "sessionKey": "A|test",
+    "group": "A",
+    "studentId": "test",
+    "studentName": "1",
+    "roomId": "solo_634330a26d1f",
+    "stage": 3,
+    "preText": "g2g2",
+    "preSubmittedAt": 1765367241372,
+    "draftText": "g2g2zzz",
+    "draftSavedAt": 1765367245619,
+    "notesText": "",
+    "notesUpdatedAt": 0,
+    "finalText": "",
+    "finalSubmittedAt": 0,
+    "partnerStudentId": "",
+    "partnerName": "",
+    "createdAt": 1765367075300,
+    "updatedAt": 1765374191930
+  }
+]

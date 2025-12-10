@@ -1,0 +1,137 @@
+[
+  {
+    "ts": 1765367253459,
+    "sessionId": "peer:solo_634330a26d1f",
+    "roomId": "peer:solo_634330a26d1f",
+    "channel": "peer-chat",
+    "group": "A",
+    "senderId": "",
+    "senderName": "",
+    "role": "user",
+    "text": "g2g2",
+    "ext": {
+      "channel": "peer-chat",
+      "sessionKey": "A|test",
+      "roomId": "peer:solo_634330a26d1f"
+    }
+  },
+  {
+    "ts": 1765367256515,
+    "sessionId": "ai:A|test",
+    "roomId": "",
+    "channel": "ai-feedback",
+    "group": "A",
+    "senderId": "",
+    "senderName": "",
+    "role": "user",
+    "text": "g2g2",
+    "ext": {
+      "channel": "ai-feedback",
+      "sessionKey": "A|test"
+    }
+  },
+  {
+    "ts": 1765367256523,
+    "sessionId": "ai:A|test",
+    "channel": "ai-feedback",
+    "group": "A",
+    "senderId": "AI",
+    "senderName": "AI",
+    "role": "ai",
+    "text": "로컬 AI 응답입니다. 본 환경에서는 간단한 에코 응답을 제공합니다.\n\ng2g2",
+    "ext": {
+      "channel": "ai-feedback",
+      "sessionKey": "A|test"
+    }
+  },
+  {
+    "ts": 1765367257944,
+    "sessionId": "ai:A|test",
+    "roomId": "",
+    "channel": "ai-feedback",
+    "group": "A",
+    "senderId": "",
+    "senderName": "",
+    "role": "user",
+    "text": "zzz",
+    "ext": {
+      "channel": "ai-feedback",
+      "sessionKey": "A|test"
+    }
+  },
+  {
+    "ts": 1765367257959,
+    "sessionId": "ai:A|test",
+    "channel": "ai-feedback",
+    "group": "A",
+    "senderId": "AI",
+    "senderName": "AI",
+    "role": "ai",
+    "text": "로컬 AI 응답입니다. 본 환경에서는 간단한 에코 응답을 제공합니다.\n\nzzz",
+    "ext": {
+      "channel": "ai-feedback",
+      "sessionKey": "A|test"
+    }
+  },
+  {
+    "ts": 1765367261071,
+    "sessionId": "ai:A|test",
+    "roomId": "",
+    "channel": "ai-feedback",
+    "group": "A",
+    "senderId": "",
+    "senderName": "",
+    "role": "user",
+    "text": "dzdz",
+    "ext": {
+      "channel": "ai-feedback",
+      "sessionKey": "A|test"
+    }
+  },
+  {
+    "ts": 1765367261084,
+    "sessionId": "ai:A|test",
+    "channel": "ai-feedback",
+    "group": "A",
+    "senderId": "AI",
+    "senderName": "AI",
+    "role": "ai",
+    "text": "로컬 AI 응답입니다. 본 환경에서는 간단한 에코 응답을 제공합니다.\n\ndzdz",
+    "ext": {
+      "channel": "ai-feedback",
+      "sessionKey": "A|test"
+    }
+  },
+  {
+    "ts": 1765374091050,
+    "sessionId": "ai:A|test",
+    "roomId": "",
+    "channel": "ai-feedback",
+    "group": "A",
+    "senderId": "",
+    "senderName": "",
+    "role": "user",
+    "text": "f2",
+    "ext": {
+      "channel": "ai-feedback",
+      "sessionKey": "A|test",
+      "stage": 2
+    }
+  },
+  {
+    "ts": 1765374107058,
+    "sessionId": "ai:A|test",
+    "roomId": "",
+    "channel": "ai-feedback",
+    "group": "A",
+    "senderId": "",
+    "senderName": "",
+    "role": "user",
+    "text": "f2",
+    "ext": {
+      "channel": "ai-feedback",
+      "sessionKey": "A|test",
+      "stage": 1
+    }
+  }
+]
