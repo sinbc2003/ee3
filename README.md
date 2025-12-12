@@ -24,16 +24,82 @@
 
 ## 사전 준비 (GCP)
 
-1. **프로젝트**: `writingresearch` (프로젝트 번호 `711739369323`).
-2. **API 활성화**: Cloud Run, Artifact Registry, Cloud Storage, Vertex AI (선택), Secret Manager.
-3. **Cloud Storage 버킷**: `writingresearch-app-data` 같은 이름으로 생성 후 버킷 이름을 기억합니다.
-4. **서비스 계정**: GitHub Actions에서 사용할 배포용 서비스 계정을 만들고 다음 권한을 부여합니다.
-   - Artifact Registry 관리자 (`roles/artifactregistry.admin`)
-   - Cloud Run 관리자 (`roles/run.admin`)
-   - 서비스 계정 토큰 생성 (`roles/iam.serviceAccountTokenCreator`)
-   - Storage 객체 관리자 (`roles/storage.objectAdmin`)
-   - Vertex AI 사용자 (`roles/aiplatform.user`, 선택)
-   서비스 계정 키(JSON)를 GitHub `GCP_SA_KEY` 비밀 값으로 저장합니다.
+이 저장소는 현재 **test12** 프로젝트(ID `test12-481000`, 번호 `711121900388`) 기준으로 설명합니다. Cloud Shell에서 아래 변수를 먼저 정의하면 나머지 명령을 그대로 붙여넣기만 하면 됩니다.
+
+```bash
+export PROJECT_ID=test12-481000
+export PROJECT_NUMBER=711121900388
+export REGION=asia-northeast3          # Cloud Run/버킷 리전
+export GAR_LOCATION=asia-northeast3    # Artifact Registry 리전
+export GAR_REPOSITORY=ee3              # 원하는 리포지토리 이름
+export SERVICE_NAME=ee3-backend        # Cloud Run 서비스 이름
+export BUCKET=test12-writingresearch-data
+export SA_ID=github-actions-deployer   # 서비스 계정 ID
+export POOL_ID=github-actions-pool     # Workload Identity Pool ID
+export PROVIDER_ID=github-actions      # Workload Identity Provider ID
+```
+
+1. **프로젝트 선택 & API 활성화**
+   ```bash
+   gcloud config set project $PROJECT_ID
+   gcloud services enable run.googleapis.com artifactregistry.googleapis.com iam.googleapis.com iamcredentials.googleapis.com storage.googleapis.com secretmanager.googleapis.com logging.googleapis.com compute.googleapis.com
+   ```
+2. **Artifact Registry Docker 리포지토리 생성**
+   ```bash
+   gcloud artifacts repositories create $GAR_REPOSITORY \
+     --project=$PROJECT_ID \
+     --repository-format=docker \
+     --location=$GAR_LOCATION \
+     --description="ee3 images"
+   ```
+3. **Cloud Storage 버킷 생성**
+   ```bash
+   gsutil mb -p $PROJECT_ID -l $REGION -b on gs://$BUCKET
+   ```
+4. **GitHub Actions 배포용 서비스 계정 생성 및 권한 부여**
+   ```bash
+   gcloud iam service-accounts create $SA_ID \
+     --project=$PROJECT_ID \
+     --display-name="GitHub Actions deployer"
+   SA_EMAIL=${SA_ID}@${PROJECT_ID}.iam.gserviceaccount.com
+   for role in roles/run.admin roles/iam.serviceAccountTokenCreator roles/storage.objectAdmin roles/artifactregistry.writer; do
+     gcloud projects add-iam-policy-binding $PROJECT_ID \
+       --member="serviceAccount:${SA_EMAIL}" \
+       --role="$role"
+   done
+   ```
+5. **Workload Identity Federation 연결 (GitHub Actions ↔ GCP)**
+   ```bash
+   gcloud iam workload-identity-pools create $POOL_ID \
+     --project=$PROJECT_ID \
+     --location=global \
+     --display-name="GitHub Actions pool"
+
+   gcloud iam workload-identity-pools providers create-oidc $PROVIDER_ID \
+     --project=$PROJECT_ID \
+     --location=global \
+     --workload-identity-pool=$POOL_ID \
+     --display-name="GitHub Actions provider" \
+     --attribute-mapping="google.subject=assertion.sub,attribute.repository=assertion.repository" \
+     --attribute-condition="assertion.repository=='sinbc2003/ee3'" \
+     --issuer-uri="https://token.actions.githubusercontent.com"
+
+   gcloud iam service-accounts add-iam-policy-binding $SA_EMAIL \
+     --project=$PROJECT_ID \
+     --role=roles/iam.workloadIdentityUser \
+     --member="principalSet://iam.googleapis.com/projects/${PROJECT_NUMBER}/locations/global/workloadIdentityPools/${POOL_ID}/attribute.repository/sinbc2003/ee3"
+   ```
+6. **Provider 리소스 이름 확인 (GitHub 비밀 값으로 사용)**
+   ```bash
+   gcloud iam workload-identity-pools providers describe $PROVIDER_ID \
+     --project=$PROJECT_ID \
+     --location=global \
+     --workload-identity-pool=$POOL_ID \
+     --format='value(name)'
+   # 출력 예) projects/711121900388/locations/global/workloadIdentityPools/github-actions-pool/providers/github-actions
+   ```
+
+위 명령들을 순서대로 실행하면 Cloud Run 배포에 필요한 GCP 리소스가 모두 준비됩니다. Vertex AI를 쓰고 싶다면 `gcloud services enable aiplatform.googleapis.com`와 `roles/aiplatform.user` 권한도 추가하세요.
 
 ## 백엔드 (로컬 개발)
 
@@ -82,12 +148,13 @@ window.APP_CONFIG = {
 
 | Secret 이름 | 설명 |
 |-------------|------|
-| `GCP_SA_KEY` | 배포용 서비스 계정 JSON |
-| `GCP_PROJECT_ID` | `writingresearch` |
-| `GCP_REGION` | 예: `asia-northeast3` |
-| `CLOUD_RUN_SERVICE` | Cloud Run 서비스 이름 (예: `writingresearch-api`) |
-| `GAR_LOCATION` | Artifact Registry 위치 (예: `asia-northeast1`) |
-| `GAR_REPOSITORY` | Artifact Registry 리포지토리 이름 |
+| `GCP_PROJECT_ID` | `test12-481000` |
+| `GCP_REGION` | Cloud Run 리전 (예: `asia-northeast3`) |
+| `CLOUD_RUN_SERVICE` | Cloud Run 서비스 이름 (예: `ee3-backend`) |
+| `GAR_LOCATION` | Artifact Registry 위치 (예: `asia-northeast3`) |
+| `GAR_REPOSITORY` | Artifact Registry 리포지토리 이름 (예: `ee3`) |
+| `GCP_WIF_PROVIDER` | `projects/711121900388/locations/global/workloadIdentityPools/.../providers/...` |
+| `GCP_WIF_SERVICE_ACCOUNT` | `github-actions-deployer@test12-481000.iam.gserviceaccount.com` |
 | `DATA_BUCKET` | Cloud Storage 버킷 이름 |
 | `API_KEY` | (선택) 프론트엔드 요청 검증용 키 |
 | `ALLOWED_ORIGINS` | CORS 허용 도메인 (쉼표 구분) |
