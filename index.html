@@ -1510,10 +1510,10 @@
           const desired = Number(step || 0);
           if (!desired || desired < 1) return false;
           if (desired === 1) return false;
-          const group = (state.group || '').toUpperCase();
-          if (desired === 3 && !(group === 'A' || group === 'B')) return false;
-          const highest = getHighestUnlockedStage();
-          return desired <= highest;
+          const typeKey = state.typeMode || TYPE_KEYS.TYPE_A;
+          const typeConfig = getTypeConfig(typeKey);
+          const template = Array.isArray(typeConfig.stepTemplate) ? typeConfig.stepTemplate : [];
+          return template.some((entry) => Number(entry.stage) === desired);
         }
 
         function navigateToStage(targetStage){
@@ -1521,11 +1521,6 @@
           if (!target || target < 1) return;
           const current = Number(state.stage || 1);
           if (target === current) return;
-          const highest = getHighestUnlockedStage();
-          if (target > highest) {
-            setStatus('아직 진행되지 않은 단계입니다.', 'warn');
-            return;
-          }
           if (!canSelectStage(target)) {
             setStatus('해당 단계로 이동할 수 없습니다.', 'warn');
             return;
