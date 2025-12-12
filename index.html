@@ -1283,10 +1283,17 @@
           setStatus('5차시 메모가 로컬에 저장되었습니다. (서버 연동 필요)', 'success');
         }
 
+        function isAiChatStage(stage, group){
+          const upper = (group || '').toUpperCase();
+          const numeric = Number(stage || 0);
+          if (!numeric) return false;
+          return numeric === 1 || numeric === 2 || (numeric === 3 && upper === 'B');
+        }
+
         function renderRightPanels(){
           const stage = Number(state.stage || 1);
           const group = (state.group || '').toUpperCase();
-          const showAiChat = stage === 1 || stage === 2 || (stage === 3 && group === 'B');
+          const showAiChat = isAiChatStage(stage, group);
           const showPeerChat = stage === 3 && (group === 'A' || group === 'B');
           const showFinalChat = stage >= 4;
           togglePanel('rightStage2', showAiChat);
@@ -1762,8 +1769,10 @@
           if (!state.aiChat.sessionId) { setStatus('AI 세션이 준비되지 않았습니다.', 'error'); return; }
           const stage = Number(state.stage || 1);
           const group = (state.group || '').toUpperCase();
-          const isAiStage = stage >= 1 && stage <= 5;
-          if (!isAiStage) { setStatus('AI 피드백 단계에서만 사용할 수 있습니다.', 'warn'); return; }
+          if (!isAiChatStage(stage, group)) {
+            setStatus('AI 피드백 단계에서만 사용할 수 있습니다.', 'warn');
+            return;
+          }
           const input = $('aiInput');
           if (!input || input.disabled) return;
           const text = input.value.trim();
@@ -1955,8 +1964,7 @@
           if (!hasGas || !state.aiChat.sessionId) return;
           const stage = Number(state.stage || 1);
           const group = (state.group || '').toUpperCase();
-          const isAiStage = (stage === 2 && (group === 'A' || group === 'C')) || (stage === 3 && group === 'B');
-          if (!isAiStage) return;
+          if (!isAiChatStage(stage, group)) return;
           if (state.aiChat.fetching) return;
           state.aiChat.fetching = true;
           google.script.run.withSuccessHandler(function(list){
@@ -1973,8 +1981,7 @@
           if (state.timers.ai) return;
           const stage = Number(state.stage || 1);
           const group = (state.group || '').toUpperCase();
-          const isAiStage = (stage === 2 && (group === 'A' || group === 'C')) || (stage === 3 && group === 'B');
-          if (!isAiStage) return;
+          if (!isAiChatStage(stage, group)) return;
           state.timers.ai = setInterval(pollAiMessages, 5000);
           pollAiMessages();
         }
@@ -2054,7 +2061,7 @@
           startPresencePing();
           const stage = Number(state.stage || 1);
           const group = (state.group || '').toUpperCase();
-          const isAiStage = (stage === 2 && (group === 'A' || group === 'C')) || (stage === 3 && group === 'B');
+          const isAiStage = isAiChatStage(stage, group);
           const isPeerStage = (stage === 2 && group === 'B') || (stage === 3 && group === 'A');
           if (isAiStage && state.aiChat.sessionId) startAiPolling(); else stopAiPolling();
           if (isPeerStage && state.peerChat.sessionId) startPeerPolling(); else stopPeerPolling();
