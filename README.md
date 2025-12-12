@@ -167,6 +167,8 @@ window.APP_CONFIG = {
 | `OPENAI_MODEL` | (선택) OpenAI 모델 이름 |
 | `OPENAI_BASE_URL` | (선택) OpenAI 호스트 URL |
 | `OPENAI_ORG` | (선택) OpenAI 조직 ID |
+| `PERPLEXITY_API_KEY` | (선택) Perplexity API 키 |
+| `PERPLEXITY_MODEL` | (선택) Perplexity 모델 이름 |
 | `LIBRE_TRANSLATE_URL` | (선택) 번역 API 엔드포인트 | 
 | `ADMIN_PASSWORD` | (선택) 관리자 페이지 비밀번호 |
 

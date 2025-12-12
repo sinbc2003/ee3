@@ -1351,7 +1351,11 @@
           if (state.aiChat.welcomeShown) return;
           const logEl = $('aiChatLog');
           if (!logEl) return;
-          appendChatMessage(
+          if (logEl.querySelector('.chat-line.system[data-welcome="true"]')) {
+            state.aiChat.welcomeShown = true;
+            return;
+          }
+          const appended = appendChatMessage(
             'ai',
             {
               ts: 0,
@@ -1361,6 +1365,9 @@
             },
             { pending: false }
           );
+          if (appended && appended.element) {
+            appended.element.dataset.welcome = 'true';
+          }
           state.aiChat.welcomeShown = true;
         }
 
