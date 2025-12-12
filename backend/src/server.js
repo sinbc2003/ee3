@@ -6,6 +6,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import crypto from 'crypto';
 import OpenAI from 'openai';
+import ExcelJS from 'exceljs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -17,6 +18,9 @@ const DATA_DIR = path.resolve(
 );
 const PUBLIC_DIR = await resolvePublicDir();
 const PRESENCE_TTL_MS = 20_000;
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || '159753tt!';
+const ADMIN_SESSION_TTL_MS = 1000 * 60 * 60 * 12;
+const adminTokens = new Map();
 
 const app = express();
 
@@ -31,6 +35,8 @@ class FileStore {
     this.messages = [];
     this.matchups = [];
     this.publicSettings = defaultPublicSettings();
+    this.roster = defaultRoster();
+    this.adminOverrides = defaultAdminOverrides();
   }
 
   async init() {
@@ -40,6 +46,11 @@ class FileStore {
     this.publicSettings = await this.readJson(
       'public-settings.json',
       defaultPublicSettings()
+    );
+    this.roster = await this.readJson('roster.json', defaultRoster());
+    this.adminOverrides = await this.readJson(
+      'admin-config.json',
+      defaultAdminOverrides()
     );
   }
 
@@ -70,10 +81,34 @@ class FileStore {
     }
     await this.writeJson('messages.json', this.messages);
   }
+
+  async saveMatchups() {
+    await this.writeJson('matchups.json', this.matchups);
+  }
+
+  async savePublicSettings() {
+    await this.writeJson('public-settings.json', this.publicSettings);
+  }
+
+  async saveRoster(roster) {
+    this.roster = roster;
+    await this.writeJson('roster.json', this.roster);
+  }
+
+  async saveAdminOverrides(overrides) {
+    this.adminOverrides = overrides;
+    await this.writeJson('admin-config.json', this.adminOverrides);
+  }
 }
 
 const store = new FileStore(DATA_DIR);
 await store.init();
+
+const baseAiConfig = buildBaseAiConfig();
+let runtimeOverrides = sanitizeOverrides(store.adminOverrides || defaultAdminOverrides());
+let effectiveAiConfig = mergeAiConfig(baseAiConfig, runtimeOverrides);
+let openAiClient = null;
+let openAiClientSignature = '';
 
 // ----- 프레즌스(메모리) -----
 const presenceMap = new Map(); // key: roomId|studentId -> timestamp(ms)
@@ -119,6 +154,250 @@ function defaultPublicSettings() {
     topLinkText: '',
     aiAvatarUrl: '',
     promptContent: '',
+  };
+}
+
+function defaultRoster() {
+  return { students: [], pairings: [] };
+}
+
+function defaultAdminOverrides() {
+  return {
+    provider: null,
+    temperature: null,
+    systemPrompt: null,
+    openai: {
+      model: null,
+      baseUrl: null,
+      organization: null,
+      apiKey: null,
+    },
+    perplexity: {
+      model: null,
+      apiKey: null,
+    },
+  };
+}
+
+function buildBaseAiConfig() {
+  return {
+    provider: (process.env.AI_PROVIDER || '').trim().toLowerCase() || 'auto',
+    temperature: parseEnvNumber(process.env.AI_TEMPERATURE),
+    systemPrompt: process.env.AI_SYSTEM_PROMPT || '',
+    openai: {
+      model: process.env.OPENAI_MODEL || 'gpt-4.1-mini',
+      baseUrl: process.env.OPENAI_BASE_URL || '',
+      organization: process.env.OPENAI_ORG || '',
+      apiKey: process.env.OPENAI_API_KEY || '',
+    },
+    perplexity: {
+      model: process.env.PERPLEXITY_MODEL || 'llama-3.1-sonar-small-128k-online',
+      apiKey: process.env.PERPLEXITY_API_KEY || '',
+    },
+  };
+}
+
+function parseEnvNumber(value) {
+  if (typeof value === 'undefined' || value === null || value === '') return null;
+  const num = Number(value);
+  return Number.isFinite(num) ? num : null;
+}
+
+function sanitizeOverrides(input = {}) {
+  const safe = defaultAdminOverrides();
+  if (typeof input.provider === 'string') safe.provider = input.provider.trim() || null;
+  if (typeof input.temperature === 'number' && Number.isFinite(input.temperature)) {
+    safe.temperature = input.temperature;
+  } else if (input.temperature === null) {
+    safe.temperature = null;
+  }
+  if (typeof input.systemPrompt === 'string') safe.systemPrompt = input.systemPrompt;
+
+  if (input.openai && typeof input.openai === 'object') {
+    safe.openai.model =
+      typeof input.openai.model === 'string' ? input.openai.model.trim() || null : null;
+    safe.openai.baseUrl =
+      typeof input.openai.baseUrl === 'string'
+        ? input.openai.baseUrl.trim() || null
+        : null;
+    safe.openai.organization =
+      typeof input.openai.organization === 'string'
+        ? input.openai.organization.trim() || null
+        : null;
+    if (Object.prototype.hasOwnProperty.call(input.openai, 'apiKey')) {
+      if (input.openai.apiKey === null) {
+        safe.openai.apiKey = '';
+      } else if (typeof input.openai.apiKey === 'string') {
+        safe.openai.apiKey = input.openai.apiKey.trim();
+      }
+    } else if (store?.adminOverrides?.openai?.apiKey) {
+      safe.openai.apiKey = store.adminOverrides.openai.apiKey;
+    }
+  } else if (store?.adminOverrides?.openai?.apiKey) {
+    safe.openai.apiKey = store.adminOverrides.openai.apiKey;
+  }
+
+  if (input.perplexity && typeof input.perplexity === 'object') {
+    safe.perplexity.model =
+      typeof input.perplexity.model === 'string'
+        ? input.perplexity.model.trim() || null
+        : null;
+    if (Object.prototype.hasOwnProperty.call(input.perplexity, 'apiKey')) {
+      if (input.perplexity.apiKey === null) {
+        safe.perplexity.apiKey = '';
+      } else if (typeof input.perplexity.apiKey === 'string') {
+        safe.perplexity.apiKey = input.perplexity.apiKey.trim();
+      }
+    } else if (store?.adminOverrides?.perplexity?.apiKey) {
+      safe.perplexity.apiKey = store.adminOverrides.perplexity.apiKey;
+    }
+  } else if (store?.adminOverrides?.perplexity?.apiKey) {
+    safe.perplexity.apiKey = store.adminOverrides.perplexity.apiKey;
+  }
+
+  return safe;
+}
+
+function mergeAiConfig(base, overrides) {
+  const result = {
+    provider: base.provider,
+    temperature: base.temperature,
+    systemPrompt: base.systemPrompt,
+    openai: { ...base.openai },
+    perplexity: { ...base.perplexity },
+  };
+  if (overrides.provider) result.provider = overrides.provider;
+  if (typeof overrides.temperature === 'number') result.temperature = overrides.temperature;
+  if (overrides.systemPrompt !== null && overrides.systemPrompt !== undefined) {
+    result.systemPrompt = overrides.systemPrompt;
+  }
+  if (overrides.openai) {
+    if (overrides.openai.model !== null && overrides.openai.model !== undefined) {
+      result.openai.model = overrides.openai.model;
+    }
+    if (overrides.openai.baseUrl !== null && overrides.openai.baseUrl !== undefined) {
+      result.openai.baseUrl = overrides.openai.baseUrl;
+    }
+    if (
+      overrides.openai.organization !== null &&
+      overrides.openai.organization !== undefined
+    ) {
+      result.openai.organization = overrides.openai.organization;
+    }
+    if (
+      Object.prototype.hasOwnProperty.call(overrides.openai, 'apiKey') &&
+      overrides.openai.apiKey !== undefined &&
+      overrides.openai.apiKey !== null
+    ) {
+      result.openai.apiKey = overrides.openai.apiKey;
+    }
+  }
+  if (overrides.perplexity) {
+    if (
+      overrides.perplexity.model !== null &&
+      overrides.perplexity.model !== undefined
+    ) {
+      result.perplexity.model = overrides.perplexity.model;
+    }
+    if (
+      Object.prototype.hasOwnProperty.call(overrides.perplexity, 'apiKey') &&
+      overrides.perplexity.apiKey !== undefined &&
+      overrides.perplexity.apiKey !== null
+    ) {
+      result.perplexity.apiKey = overrides.perplexity.apiKey;
+    }
+  }
+  return result;
+}
+
+function getEffectiveAiConfig() {
+  return effectiveAiConfig;
+}
+
+async function applyAdminOverrides(overrides) {
+  runtimeOverrides = sanitizeOverrides(overrides);
+  await store.saveAdminOverrides(runtimeOverrides);
+  effectiveAiConfig = mergeAiConfig(baseAiConfig, runtimeOverrides);
+  openAiClient = null;
+  openAiClientSignature = '';
+}
+
+function issueAdminToken() {
+  const token = crypto.randomBytes(24).toString('hex');
+  const expiresAt = Date.now() + ADMIN_SESSION_TTL_MS;
+  adminTokens.set(token, { expiresAt });
+  return { token, expiresAt };
+}
+
+function extractAdminToken(req) {
+  const header = req.headers.authorization || '';
+  if (typeof header === 'string' && header.startsWith('Bearer ')) {
+    return header.slice(7).trim();
+  }
+  return '';
+}
+
+function validateAdminToken(token) {
+  if (!token) return false;
+  const session = adminTokens.get(token);
+  if (!session) return false;
+  if (session.expiresAt < Date.now()) {
+    adminTokens.delete(token);
+    return false;
+  }
+  return true;
+}
+
+function requireAdminAuth(req, _res, next) {
+  const token = extractAdminToken(req);
+  if (!validateAdminToken(token)) {
+    return next(createHttpError(401, '관리자 인증이 필요합니다.'));
+  }
+  req.adminToken = token;
+  return next();
+}
+
+function revokeAdminToken(token) {
+  if (token && adminTokens.has(token)) {
+    adminTokens.delete(token);
+  }
+}
+
+function buildAdminConfigResponse() {
+  const effective = getEffectiveAiConfig();
+  const overrides = store.adminOverrides || defaultAdminOverrides();
+  const redactOverrideKeys = (section) => {
+    if (!section) return {};
+    const result = { ...section };
+    if (Object.prototype.hasOwnProperty.call(result, 'apiKey')) {
+      result.hasApiKey = !!result.apiKey;
+      delete result.apiKey;
+    }
+    return result;
+  };
+  return {
+    ai: {
+      provider: effective.provider,
+      temperature: effective.temperature,
+      systemPrompt: effective.systemPrompt,
+      openai: {
+        model: effective.openai.model,
+        baseUrl: effective.openai.baseUrl,
+        organization: effective.openai.organization,
+        hasApiKey: !!effective.openai.apiKey,
+      },
+      perplexity: {
+        model: effective.perplexity.model,
+        hasApiKey: !!effective.perplexity.apiKey,
+      },
+    },
+    overrides: {
+      provider: overrides.provider,
+      temperature: overrides.temperature,
+      systemPrompt: overrides.systemPrompt,
+      openai: redactOverrideKeys(overrides.openai),
+      perplexity: redactOverrideKeys(overrides.perplexity),
+    },
   };
 }
 
@@ -339,6 +618,85 @@ function buildSessionState(record) {
   };
 }
 
+function buildPartnerSnapshot(record) {
+  if (!record) return null;
+  if (record.partnerStudentId) {
+    const partner = store.sessions.find(
+      (s) => s.group === record.group && s.studentId === record.partnerStudentId
+    );
+    if (partner) {
+      return {
+        id: partner.studentId || '',
+        name: partner.studentName || '',
+        sessionKey: partner.sessionKey || '',
+      };
+    }
+    return {
+      id: record.partnerStudentId || '',
+      name: record.partnerName || '',
+      sessionKey: '',
+    };
+  }
+  if (record.partnerName) {
+    return {
+      id: record.partnerStudentId || '',
+      name: record.partnerName,
+      sessionKey: '',
+    };
+  }
+  return null;
+}
+
+function buildAdminSessionSummary(record) {
+  if (!record) return null;
+  return {
+    sessionKey: record.sessionKey,
+    group: record.group,
+    stage: Number(record.stage || 1),
+    createdAt: Number(record.createdAt || 0),
+    updatedAt: Number(record.updatedAt || 0),
+    user: {
+      id: record.studentId || '',
+      name: record.studentName || '',
+    },
+    partner: buildPartnerSnapshot(record),
+  };
+}
+
+function buildAdminSessionDetail(record) {
+  if (!record) return null;
+  const summary = buildAdminSessionSummary(record);
+  return {
+    sessionKey: summary.sessionKey,
+    mode: summary.group,
+    stage: summary.stage,
+    createdAt: summary.createdAt,
+    updatedAt: summary.updatedAt,
+    aiSessionId: `ai:${record.sessionKey}`,
+    peerSessionId: record.roomId ? `peer:${record.roomId}` : '',
+    you: summary.user,
+    partner: summary.partner,
+    writing: {
+      prewriting: {
+        text: record.preText || '',
+        submittedAt: Number(record.preSubmittedAt || 0),
+      },
+      draft: {
+        text: record.draftText || '',
+        savedAt: Number(record.draftSavedAt || 0),
+      },
+      notes: {
+        text: record.notesText || '',
+        updatedAt: Number(record.notesUpdatedAt || 0),
+      },
+      final: {
+        text: record.finalText || '',
+        submittedAt: Number(record.finalSubmittedAt || 0),
+      },
+    },
+  };
+}
+
 function createHttpError(status, message) {
   const err = new Error(message || '요청 처리 중 오류가 발생했습니다.');
   err.status = status;
@@ -358,10 +716,11 @@ async function generateAiFeedback(userMessage, group, contextText, options = {})
   const trimmed = String(userMessage || '').trim();
   if (!trimmed) return '질문/메시지가 비어 있습니다.';
 
-  const provider = options.provider || 'openai';
+  const provider = options.provider || resolveAiProvider(options.stage, group) || 'openai';
   const stage = Number(options.stage || 1);
   const sessionId = options.sessionId || '';
   const evalPrompt = options.evalPrompt || '';
+  const config = getEffectiveAiConfig();
 
   // 3-2 차시: gpt-4.1로 평가, 이전 대화 요약 포함
   if (stage >= 3) {
@@ -376,7 +735,7 @@ async function generateAiFeedback(userMessage, group, contextText, options = {})
       message: trimmed,
       contextText: mergedContext,
       model: 'gpt-4.1',
-      systemPrompt: evalPrompt || AI_SYSTEM_PROMPT,
+      systemPrompt: evalPrompt || config.systemPrompt,
     });
   }
 
@@ -386,34 +745,41 @@ async function generateAiFeedback(userMessage, group, contextText, options = {})
   return callOpenAiChat({ message: trimmed, contextText });
 }
 
-async function callOpenAiChat({ message, contextText, model, systemPrompt }) {
-  if (!openAiClient) {
-    throw createHttpError(500, 'OpenAI 클라이언트가 설정되지 않았습니다.');
-  }
-  const modelName = model || DEFAULT_OPENAI_MODEL;
-  const prompt = typeof systemPrompt === 'string' && systemPrompt.trim()
-    ? systemPrompt
-    : AI_SYSTEM_PROMPT;
+async function callOpenAiChat({ message, contextText, model, systemPrompt, temperature }) {
+  const client = ensureOpenAiClient();
+  const config = getEffectiveAiConfig();
+  const modelName = model || config.openai.model || 'gpt-4.1-mini';
+  const prompt =
+    typeof systemPrompt === 'string' && systemPrompt.trim()
+      ? systemPrompt
+      : config.systemPrompt || '';
   const messages = [];
   if (prompt) messages.push({ role: 'system', content: prompt });
   if (contextText) {
     messages.push({ role: 'system', content: `[참고]\n${contextText}` });
   }
   messages.push({ role: 'user', content: message });
-  const resp = await openAiClient.chat.completions.create({
+  const selectedTemp =
+    typeof temperature === 'number' && Number.isFinite(temperature)
+      ? temperature
+      : getEffectiveTemperature();
+  const resp = await client.chat.completions.create({
     model: modelName,
     messages,
-    temperature: Number.isFinite(AI_TEMPERATURE) ? AI_TEMPERATURE : 0.6,
+    temperature: selectedTemp,
   });
   const text = resp?.choices?.[0]?.message?.content || '';
   return text.trim() || '응답을 생성하지 못했습니다.';
 }
 
 async function callPerplexityChat({ message, contextText }) {
-  if (!PERPLEXITY_API_KEY) {
+  const config = getEffectiveAiConfig();
+  const apiKey = config.perplexity.apiKey || '';
+  if (!apiKey) {
     throw createHttpError(500, 'Perplexity API 키가 설정되지 않았습니다.');
   }
-  const systemPrompt = AI_SYSTEM_PROMPT;
+  const systemPrompt = config.systemPrompt || '';
+  const modelName = config.perplexity.model || 'llama-3.1-sonar-small-128k-online';
   const messages = [];
   if (systemPrompt) messages.push({ role: 'system', content: systemPrompt });
   if (contextText) {
@@ -425,10 +791,10 @@ async function callPerplexityChat({ message, contextText }) {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      Authorization: `Bearer ${PERPLEXITY_API_KEY}`,
+      Authorization: `Bearer ${apiKey}`,
     },
     body: JSON.stringify({
-      model: PERPLEXITY_MODEL,
+      model: modelName,
       messages,
     }),
   });
@@ -561,24 +927,32 @@ function handleRegress(record) {
 }
 
 // ----- AI 클라이언트/설정 -----
-const openAiClient =
-  process.env.OPENAI_API_KEY || process.env.OPENAI_BASE_URL
-    ? new (OpenAI.default || OpenAI)({
-        apiKey: process.env.OPENAI_API_KEY || '',
-        baseURL: process.env.OPENAI_BASE_URL || undefined,
-        organization: process.env.OPENAI_ORG || undefined,
-      })
-    : null;
+function ensureOpenAiClient() {
+  const config = getEffectiveAiConfig();
+  const apiKey = config.openai.apiKey || '';
+  if (!apiKey) {
+    throw createHttpError(500, 'OpenAI API 키가 설정되지 않았습니다.');
+  }
+  const signature = [
+    apiKey,
+    config.openai.baseUrl || '',
+    config.openai.organization || '',
+  ].join('|');
+  if (!openAiClient || openAiClientSignature !== signature) {
+    openAiClient = new (OpenAI.default || OpenAI)({
+      apiKey,
+      baseURL: config.openai.baseUrl || undefined,
+      organization: config.openai.organization || undefined,
+    });
+    openAiClientSignature = signature;
+  }
+  return openAiClient;
+}
 
-const PERPLEXITY_API_KEY = process.env.PERPLEXITY_API_KEY || '';
-const PERPLEXITY_MODEL =
-  process.env.PERPLEXITY_MODEL || 'llama-3.1-sonar-small-128k-online';
-const DEFAULT_OPENAI_MODEL = process.env.OPENAI_MODEL || 'gpt-4.1-mini';
-const AI_SYSTEM_PROMPT = process.env.AI_SYSTEM_PROMPT || '';
-const AI_TEMPERATURE =
-  typeof process.env.AI_TEMPERATURE !== 'undefined'
-    ? Number(process.env.AI_TEMPERATURE)
-    : 0.6;
+function getEffectiveTemperature() {
+  const config = getEffectiveAiConfig();
+  return Number.isFinite(config.temperature) ? config.temperature : 0.6;
+}
 
 // ----- Express 미들웨어 -----
 app.use(morgan('dev'));
@@ -606,6 +980,180 @@ app.use((req, res, next) => {
 
 // ----- 라우트 정의 -----
 const router = express.Router();
+const adminRouter = express.Router();
+
+adminRouter.post('/login', (req, res, next) => {
+  try {
+    const password = String(req.body?.password || '');
+    if (!ADMIN_PASSWORD) {
+      throw createHttpError(500, '관리자 비밀번호가 설정되지 않았습니다.');
+    }
+    if (password !== ADMIN_PASSWORD) {
+      throw createHttpError(401, '비밀번호가 올바르지 않습니다.');
+    }
+    const session = issueAdminToken();
+    res.json(session);
+  } catch (err) {
+    next(err);
+  }
+});
+
+adminRouter.post('/logout', requireAdminAuth, (req, res) => {
+  revokeAdminToken(req.adminToken);
+  res.json({ ok: true });
+});
+
+adminRouter.use(requireAdminAuth);
+
+adminRouter.get('/config', (_req, res) => {
+  res.json(buildAdminConfigResponse());
+});
+
+adminRouter.post('/config', async (req, res, next) => {
+  try {
+    await applyAdminOverrides(req.body || {});
+    res.json(buildAdminConfigResponse());
+  } catch (err) {
+    next(err);
+  }
+});
+
+adminRouter.get('/public-settings', (_req, res) => {
+  res.json(store.publicSettings || defaultPublicSettings());
+});
+
+adminRouter.post('/public-settings', async (req, res, next) => {
+  try {
+    store.publicSettings = {
+      ...defaultPublicSettings(),
+      ...(store.publicSettings || {}),
+      ...sanitizePublicSettings(req.body || {}),
+    };
+    await store.savePublicSettings();
+    res.json(store.publicSettings);
+  } catch (err) {
+    next(err);
+  }
+});
+
+adminRouter.get('/sessions', (_req, res) => {
+  const sessions =
+    store.sessions?.map((record) => buildAdminSessionSummary(record)) || [];
+  res.json({ sessions });
+});
+
+adminRouter.get('/sessions/:sessionKey', (req, res, next) => {
+  try {
+    const record = findSession(req.params.sessionKey);
+    if (!record) throw createHttpError(404, '세션을 찾을 수 없습니다.');
+    res.json({ session: buildAdminSessionDetail(record) });
+  } catch (err) {
+    next(err);
+  }
+});
+
+adminRouter.get('/sessions/:sessionKey/chats/:channel', (req, res, next) => {
+  try {
+    const record = findSession(req.params.sessionKey);
+    if (!record) throw createHttpError(404, '세션을 찾을 수 없습니다.');
+    const channel = req.params.channel;
+    if (channel === 'ai') {
+      const sessionId = `ai:${record.sessionKey}`;
+      return res.json({ messages: collectMessages(sessionId, 'ai-feedback') });
+    }
+    if (channel === 'peer') {
+      const sessionId = record.roomId ? `peer:${record.roomId}` : '';
+      const messages = sessionId ? collectMessages(sessionId, 'peer-chat') : [];
+      return res.json({ messages });
+    }
+    throw createHttpError(400, '알 수 없는 채널입니다.');
+  } catch (err) {
+    next(err);
+  }
+});
+
+adminRouter.post('/sessions/:sessionKey/partner', async (req, res, next) => {
+  try {
+    const sessionKey = req.params.sessionKey;
+    const record = findSession(sessionKey);
+    if (!record) throw createHttpError(404, '세션을 찾을 수 없습니다.');
+    await assignPartnerRecord(record, req.body || {});
+    await store.saveSessions();
+    res.json({ session: buildAdminSessionDetail(record) });
+  } catch (err) {
+    next(err);
+  }
+});
+
+adminRouter.delete('/sessions/:sessionKey/partner', async (req, res, next) => {
+  try {
+    const record = findSession(req.params.sessionKey);
+    if (!record) throw createHttpError(404, '세션을 찾을 수 없습니다.');
+    await clearPartnerRecord(record);
+    await store.saveSessions();
+    res.json({ session: buildAdminSessionDetail(record) });
+  } catch (err) {
+    next(err);
+  }
+});
+
+adminRouter.post('/sessions/bulk-delete', async (req, res, next) => {
+  try {
+    const keys = Array.isArray(req.body?.sessionKeys) ? req.body.sessionKeys : [];
+    if (!keys.length) throw createHttpError(400, '삭제할 세션이 없습니다.');
+    const result = await deleteSessionsByKeys(keys);
+    res.json(result);
+  } catch (err) {
+    next(err);
+  }
+});
+
+adminRouter.get('/sessions/export', async (req, res, next) => {
+  try {
+    const format = String(req.query?.format || 'xlsx').toLowerCase();
+    if (format !== 'xlsx') {
+      throw createHttpError(400, '지원하지 않는 내보내기 형식입니다.');
+    }
+    const scopes = parseExportScopes(req.query?.scopes);
+    const workbook = await buildExportWorkbook(scopes);
+    const buffer = await workbook.xlsx.writeBuffer();
+    const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="writingresearch-export-${stamp}.xlsx"`
+    );
+    res.setHeader(
+      'Content-Type',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    );
+    res.send(Buffer.from(buffer));
+  } catch (err) {
+    next(err);
+  }
+});
+
+adminRouter.get('/roster', (_req, res) => {
+  res.json(store.roster || defaultRoster());
+});
+
+adminRouter.post('/roster', async (req, res, next) => {
+  try {
+    const { students, pairings } = normalizeRosterPayload(req.body || {});
+    const roster = { students, pairings };
+    await store.saveRoster(roster);
+    store.matchups = pairings.map((pair) => ({
+      studentIdA: pair.primary.id,
+      nameA: pair.primary.name || '',
+      studentIdB: pair.partner.id,
+      nameB: pair.partner.name || '',
+      group: inferGroupFromId(pair.primary.id),
+    }));
+    await store.saveMatchups();
+    res.json(roster);
+  } catch (err) {
+    next(err);
+  }
+});
 
 router.get('/server/diag', (_req, res) => {
   res.json({
@@ -872,6 +1420,7 @@ router.get('/dictionary', (req, res, next) => {
   }
 });
 
+app.use(`${API_PREFIX}/admin`, adminRouter);
 app.use(API_PREFIX, router);
 
 // 정적 파일 서빙(가능한 경우)
@@ -934,6 +1483,10 @@ function resolveSessionInfo(sessionId, metadata) {
 }
 
 function resolveAiProvider(stage, group) {
+  const config = getEffectiveAiConfig();
+  if (config.provider && config.provider !== 'auto') {
+    return config.provider;
+  }
   const s = Number(stage || 1);
   const g = String(group || '').toUpperCase();
   // 2차시(스테이지 1): Perplexity 검색형
@@ -971,6 +1524,268 @@ async function summarizeTranscript(text) {
   });
 }
 
+function sanitizePublicSettings(payload) {
+  const result = {};
+  if (typeof payload.topLinkUrl === 'string') result.topLinkUrl = payload.topLinkUrl.trim();
+  if (typeof payload.topLinkText === 'string') result.topLinkText = payload.topLinkText.trim();
+  if (typeof payload.aiAvatarUrl === 'string') result.aiAvatarUrl = payload.aiAvatarUrl.trim();
+  if (typeof payload.promptContent === 'string') result.promptContent = payload.promptContent;
+  return result;
+}
+
+function collectMessages(sessionId, channel) {
+  if (!sessionId || !channel) return [];
+  return (store.messages || [])
+    .filter((msg) => msg.channel === channel && msg.sessionId === sessionId)
+    .sort((a, b) => Number(a.ts || 0) - Number(b.ts || 0))
+    .map((msg) => ({
+      ts: Number(msg.ts || 0),
+      text: msg.text || '',
+      senderName: msg.senderName || '',
+      role: msg.role || '',
+    }));
+}
+
+async function assignPartnerRecord(record, payload) {
+  if (!record) return;
+  const partnerSessionKey = String(payload?.partnerSessionKey || '').trim();
+  const partnerId = String(payload?.partnerId || '').trim();
+  const partnerName = String(payload?.partnerName || '').trim();
+  let partnerRecord = null;
+  if (partnerSessionKey) {
+    partnerRecord = findSession(partnerSessionKey);
+  }
+  if (!partnerRecord && partnerId) {
+    partnerRecord = store.sessions.find(
+      (s) => s.group === record.group && s.studentId === partnerId
+    );
+  }
+  if (partnerRecord && partnerRecord.sessionKey === record.sessionKey) {
+    throw createHttpError(400, '자기 자신과 매칭할 수 없습니다.');
+  }
+  if (partnerRecord) {
+    const roomId =
+      record.roomId ||
+      partnerRecord.roomId ||
+      makePairRoomId(record.sessionKey, partnerRecord.sessionKey);
+    record.roomId = roomId;
+    partnerRecord.roomId = roomId;
+    record.partnerStudentId = partnerRecord.studentId;
+    record.partnerName = partnerRecord.studentName;
+    partnerRecord.partnerStudentId = record.studentId;
+    partnerRecord.partnerName = record.studentName;
+    record.updatedAt = Date.now();
+    partnerRecord.updatedAt = Date.now();
+  } else {
+    record.partnerStudentId = partnerId || '';
+    record.partnerName = partnerName || '';
+    record.updatedAt = Date.now();
+  }
+}
+
+async function clearPartnerRecord(record) {
+  if (!record) return;
+  if (record.partnerStudentId) {
+    const partner = store.sessions.find(
+      (s) => s.group === record.group && s.studentId === record.partnerStudentId
+    );
+    if (partner && partner.partnerStudentId === record.studentId) {
+      partner.partnerStudentId = '';
+      partner.partnerName = '';
+      partner.updatedAt = Date.now();
+    }
+  }
+  record.partnerStudentId = '';
+  record.partnerName = '';
+  record.updatedAt = Date.now();
+}
+
+async function deleteSessionsByKeys(keys) {
+  const keySet = new Set((keys || []).map((key) => String(key || '').trim()).filter(Boolean));
+  if (!keySet.size) {
+    return { deleted: 0 };
+  }
+  const removedSessionIds = new Set();
+  const removedPeerIds = new Set();
+  const removedStudentIds = new Set();
+  for (const record of store.sessions) {
+    if (keySet.has(record.sessionKey)) {
+      removedSessionIds.add(`ai:${record.sessionKey}`);
+      if (record.roomId) removedPeerIds.add(`peer:${record.roomId}`);
+      removedStudentIds.add(record.studentId);
+      presenceMap.delete(`${record.roomId}|${record.studentId}`);
+    }
+  }
+  store.sessions = store.sessions.filter((record) => !keySet.has(record.sessionKey));
+  store.sessions.forEach((record) => {
+    if (removedStudentIds.has(record.partnerStudentId)) {
+      record.partnerStudentId = '';
+      record.partnerName = '';
+    }
+  });
+  store.messages = store.messages.filter(
+    (msg) =>
+      !removedSessionIds.has(msg.sessionId || '') && !removedPeerIds.has(msg.sessionId || '')
+  );
+  await store.saveSessions();
+  await store.saveMessages();
+  return { deleted: removedSessionIds.size };
+}
+
+function parseExportScopes(input) {
+  if (!input) return ['all'];
+  const raw =
+    typeof input === 'string'
+      ? input.split(',')
+      : Array.isArray(input)
+        ? input
+        : ['all'];
+  const normalized = raw
+    .map((item) => String(item || '').trim().toLowerCase())
+    .filter(Boolean);
+  return normalized.length ? normalized : ['all'];
+}
+
+async function buildExportWorkbook(scopes) {
+  const workbook = new ExcelJS.Workbook();
+  const sessions = (store.sessions || []).map((record) => buildAdminSessionDetail(record));
+  addSummarySheet(workbook, sessions);
+  if (shouldIncludeScope(scopes, 'stage1')) {
+    addStageSheet(workbook, 'Stage1', sessions, (session) => session.writing.prewriting);
+  }
+  if (shouldIncludeScope(scopes, 'stage2')) {
+    addStageSheet(workbook, 'Stage2', sessions, (session) => session.writing.draft);
+  }
+  if (shouldIncludeScope(scopes, 'stage3')) {
+    addStageSheet(workbook, 'Stage3', sessions, (session) => session.writing.notes);
+  }
+  if (shouldIncludeScope(scopes, 'final')) {
+    addStageSheet(workbook, 'Final', sessions, (session) => session.writing.final);
+  }
+  if (shouldIncludeScope(scopes, 'ai-chat')) {
+    addChatSheet(workbook, 'AI Chat', sessions, (session) => ({
+      sessionId: `ai:${session.sessionKey}`,
+      channel: 'ai-feedback',
+    }));
+  }
+  return workbook;
+}
+
+function shouldIncludeScope(scopes, value) {
+  return scopes.includes('all') || scopes.includes(value);
+}
+
+function addSummarySheet(workbook, sessions) {
+  const sheet = workbook.addWorksheet('Sessions');
+  sheet.columns = [
+    { header: 'Session Key', key: 'sessionKey', width: 24 },
+    { header: 'Group', key: 'group', width: 10 },
+    { header: 'Student ID', key: 'studentId', width: 16 },
+    { header: 'Student Name', key: 'studentName', width: 20 },
+    { header: 'Stage', key: 'stage', width: 10 },
+    { header: 'Partner', key: 'partner', width: 24 },
+    { header: 'Updated At', key: 'updatedAt', width: 22 },
+  ];
+  sessions.forEach((session) => {
+    sheet.addRow({
+      sessionKey: session.sessionKey,
+      group: session.mode,
+      studentId: session.you?.id || '',
+      studentName: session.you?.name || '',
+      stage: session.stage,
+      partner: session.partner
+        ? `${session.partner.name || ''} (${session.partner.id || ''})`
+        : '',
+      updatedAt: session.updatedAt ? new Date(session.updatedAt).toISOString() : '',
+    });
+  });
+}
+
+function addStageSheet(workbook, name, sessions, accessor) {
+  const sheet = workbook.addWorksheet(name);
+  sheet.columns = [
+    { header: 'Session Key', key: 'sessionKey', width: 24 },
+    { header: 'Student ID', key: 'studentId', width: 16 },
+    { header: 'Student Name', key: 'studentName', width: 20 },
+    { header: 'Timestamp', key: 'timestamp', width: 22 },
+    { header: 'Content', key: 'content', width: 80 },
+  ];
+  sessions.forEach((session) => {
+    const block = accessor(session);
+    if (!block) return;
+    sheet.addRow({
+      sessionKey: session.sessionKey,
+      studentId: session.you?.id || '',
+      studentName: session.you?.name || '',
+      timestamp: block.submittedAt || block.savedAt || block.updatedAt
+        ? new Date(block.submittedAt || block.savedAt || block.updatedAt).toISOString()
+        : '',
+      content: block.text || '',
+    });
+  });
+}
+
+function addChatSheet(workbook, name, sessions, resolver) {
+  const sheet = workbook.addWorksheet(name);
+  sheet.columns = [
+    { header: 'Session Key', key: 'sessionKey', width: 24 },
+    { header: 'Student ID', key: 'studentId', width: 16 },
+    { header: 'Student Name', key: 'studentName', width: 20 },
+    { header: 'Timestamp', key: 'timestamp', width: 22 },
+    { header: 'Sender', key: 'sender', width: 20 },
+    { header: 'Message', key: 'message', width: 80 },
+  ];
+  sessions.forEach((session) => {
+    const { sessionId, channel } = resolver(session);
+    const messages = collectMessages(sessionId, channel);
+    messages.forEach((msg) => {
+      sheet.addRow({
+        sessionKey: session.sessionKey,
+        studentId: session.you?.id || '',
+        studentName: session.you?.name || '',
+        timestamp: msg.ts ? new Date(msg.ts).toISOString() : '',
+        sender: msg.senderName || msg.role || '',
+        message: msg.text || '',
+      });
+    });
+  });
+}
+
+function normalizeRosterPayload(body) {
+  const rawStudents = Array.isArray(body.students) ? body.students : [];
+  const rawPairings = Array.isArray(body.pairings) ? body.pairings : [];
+  const students = rawStudents
+    .map((item) => ({
+      id: String(item.id || '').trim(),
+      name: String(item.name || '').trim(),
+    }))
+    .filter((item) => item.id || item.name);
+  const filteredStudents = students.filter((item) => item.id);
+  const idSet = new Set(filteredStudents.map((item) => item.id.toLowerCase()));
+  const pairings = rawPairings
+    .map((pair) => ({
+      primary: {
+        id: String(pair?.primary?.id || '').trim(),
+        name: String(pair?.primary?.name || '').trim(),
+      },
+      partner: {
+        id: String(pair?.partner?.id || '').trim(),
+        name: String(pair?.partner?.name || '').trim(),
+      },
+    }))
+    .filter((pair) => pair.primary.id && pair.partner.id)
+    .filter(
+      (pair) =>
+        idSet.has(pair.primary.id.toLowerCase()) && idSet.has(pair.partner.id.toLowerCase())
+    );
+  return { students: filteredStudents, pairings };
+}
+
+function inferGroupFromId(id) {
+  if (!id) return undefined;
+  const prefix = String(id).trim().charAt(0).toUpperCase();
+  return prefix || undefined;
+}
 async function resolvePublicDir() {
   const candidates = [
     path.resolve(__dirname, '..', 'public'),
