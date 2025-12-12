@@ -150,12 +150,12 @@
     <div class="page-container">
       <div class="card hero-card">
         <h1>토론 플랫폼</h1>
-        <p>단일 집단(A) 기준으로 진행합니다. 식별번호와 이름을 입력해 세션을 시작하세요.</p>
+        <p>식별번호와 이름을 입력해 세션을 시작하세요.</p>
       </div>
 
       <div id="loginCard" class="card login-card">
         <div class="login-header">
-          <div id="selectedGroupLabel" class="login-group">단일 집단 (A)</div>
+          <div id="selectedGroupLabel" class="login-group">로그인</div>
           <div id="loginMessage" class="login-message">식별번호와 이름을 정확하게 입력해주세요.</div>
         </div>
         <form id="loginForm">
@@ -653,8 +653,7 @@
         function updateGroupLabel(){
           const label = $('selectedGroupLabel');
           if (!label) return;
-          const groupName = state.group || DEFAULT_GROUP;
-          label.textContent = `단일 집단 (${groupName})`;
+          label.textContent = '로그인';
         }
 
         function setText(id, text){
@@ -1084,11 +1083,10 @@
         function renderUserInfo(){
           const el = $('userInfo');
           if (!el) return;
-          const groupLabel = state.group || DEFAULT_GROUP;
           if (state.sessionKey) {
-            el.textContent = `단일 집단 (${groupLabel}) · ${(state.user.id || '')} ${(state.user.name || '')}`.trim();
+            el.textContent = `${state.user.id || ''} ${state.user.name || ''}`.trim();
           } else {
-            el.textContent = `단일 집단 (${groupLabel})`;
+            el.textContent = '';
           }
         }
 
