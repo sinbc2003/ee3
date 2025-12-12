@@ -52,7 +52,7 @@ export PROVIDER_ID=github-actions      # Workload Identity Provider ID
      --project=$PROJECT_ID \
      --repository-format=docker \
      --location=$GAR_LOCATION \
-     --description="ee3 images"
+     --description="ee3 images"  
    ```
 3. **Cloud Storage 버킷 생성**
    ```bash
