@@ -10,7 +10,7 @@
 
 ```
 .
-├─ app-config.js            # 프론트엔드 설정 (Cloud Run API URL 등)
+├─ app-config.js            # 프론트엔드 설정 (Cloud Run API URL 등) 
 ├─ index.html               # 프론트엔드 단일 페이지 애플리케이션
 ├─ backend/                 # Cloud Run 백엔드 소스
 │  ├─ Dockerfile
