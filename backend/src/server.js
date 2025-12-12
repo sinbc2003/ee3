@@ -26,6 +26,17 @@ const DATA_BUCKET = process.env.DATA_BUCKET || '';
 const DATA_BUCKET_PREFIX = process.env.DATA_BUCKET_PREFIX || 'local-data';
 const storageClient = DATA_BUCKET ? new Storage() : null;
 const dataBucket = DATA_BUCKET && storageClient ? storageClient.bucket(DATA_BUCKET) : null;
+const PANEL_COPY_KEYS = [
+  'prompt',
+  'prewriting',
+  'ai',
+  'draft',
+  'memo',
+  'peer',
+  'stage4',
+  'final',
+  'stage5',
+];
 
 const app = express();
 
@@ -188,18 +199,6 @@ function buildPresenceSummary(roomId, studentId, partnerStudentId) {
 }
 
 // ----- 헬퍼 -----
-const PANEL_COPY_KEYS = [
-  'prompt',
-  'prewriting',
-  'ai',
-  'draft',
-  'memo',
-  'peer',
-  'stage4',
-  'final',
-  'stage5',
-];
-
 function emptyPanelCopy() {
   return PANEL_COPY_KEYS.reduce((acc, key) => {
     acc[key] = { title: '', subtitle: '' };
