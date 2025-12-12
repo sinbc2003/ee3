@@ -906,6 +906,13 @@ async function generateAiFeedback(userMessage, group, contextText, options = {})
   const typeKey = mapGroupToTypeKey(group);
   const stagePrompt = getStagePrompt(stage, typeKey);
   const stageSystemPrompt = typeof stagePrompt?.aiPrompt === 'string' ? stagePrompt.aiPrompt.trim() : '';
+  const transcriptLimit = stage < 3 ? 30 : 0;
+  const recentTranscript =
+    transcriptLimit && sessionId
+      ? await buildTranscriptText(sessionId, { limit: transcriptLimit })
+      : '';
+  const historyBlock = recentTranscript ? `<대화기록>\n${recentTranscript}\n</대화기록>` : '';
+  const baseContext = [contextText || '', historyBlock].filter(Boolean).join('\n\n');
 
   // 3-2 차시: gpt-4.1로 평가, 이전 대화 요약 포함
   if (stage >= 3) {
@@ -915,7 +922,7 @@ async function generateAiFeedback(userMessage, group, contextText, options = {})
         ? ''
         : await summarizeTranscript(transcript).catch(() => '');
     const wrapped = `<이전토론대화>${summary || transcript || '대화 없음'}</이전토론대화>`;
-    const mergedContext = [contextText || '', wrapped].filter(Boolean).join('\n\n');
+    const mergedContext = [baseContext || '', wrapped].filter(Boolean).join('\n\n');
     return callOpenAiChat({
       message: trimmed,
       contextText: mergedContext,
@@ -927,13 +934,13 @@ async function generateAiFeedback(userMessage, group, contextText, options = {})
   if (provider === 'perplexity') {
     return callPerplexityChat({
       message: trimmed,
-      contextText,
+      contextText: baseContext,
       systemPrompt: stageSystemPrompt || config.systemPrompt,
     });
   }
   return callOpenAiChat({
     message: trimmed,
-    contextText,
+    contextText: baseContext,
     systemPrompt: stageSystemPrompt || evalPrompt || config.systemPrompt,
   });
 }
@@ -1688,14 +1695,18 @@ function resolveAiProvider(stage, group) {
   return 'openai';
 }
 
-function buildTranscriptText(sessionId) {
+function buildTranscriptText(sessionId, options = {}) {
   if (!sessionId) return '';
-  const list = (store.messages || []).filter(
+  let list = (store.messages || []).filter(
     (m) => m.channel === 'ai-feedback' && m.sessionId === sessionId
   );
   if (!list.length) return '';
+  const limit = Number(options.limit || 0);
+  list = list.sort((a, b) => Number(a.ts || 0) - Number(b.ts || 0));
+  if (limit > 0 && list.length > limit) {
+    list = list.slice(-limit);
+  }
   const lines = list
-    .sort((a, b) => Number(a.ts || 0) - Number(b.ts || 0))
     .map((m) => {
       const role = m.role || m.senderId || '';
       return `${role}: ${m.text || ''}`;
