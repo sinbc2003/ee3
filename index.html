@@ -371,7 +371,7 @@
             description: '2차시~5차시 구성 (AI/동료 토론 통합)',
             group: 'A',
             aiStages: [1, 2, 3, 4, 5],
-            peerStages: [3],
+            peerStages: [],
             stepTemplate: [
               { badge: '1', stage: 1 },
               { badge: '2', stage: 2 },
@@ -401,7 +401,7 @@
           [TYPE_KEYS.TYPE_A]: [
           { name: '2차시', headline: '논거 점검', description: '찬·반 입장으로 질문하며 논거를 점검하세요. 정답 생성 대신 토론 연습에 집중합니다.' },
           { name: '3차시-1', headline: 'ChatGPT 모의 토론 (gpt-4.1-mini)', description: 'AI와 토론을 이어가며 핵심 반론과 근거를 정리하세요.' },
-          { name: '3차시-2', headline: '동료 토론', description: '동료와 상호 피드백을 주고받으며 글을 다듬으세요.' },
+          { name: '3차시-2', headline: '동료 토론 평가', description: '3-1차시 AI 대화를 다시 읽고 토론을 평가하세요.' },
           { name: '4차시-1', headline: '4-1차시 토론 발문', description: '관리자가 제공한 발문을 다시 확인하고 논리를 점검하세요.' },
           { name: '4차시-2', headline: '4-2차시 정리', description: '4-1차시 대화를 요약하고 추가 메모를 정리하세요.' },
           ],
@@ -423,7 +423,10 @@
             reference: 'ChatGPT와 모의 토론을 진행하며 찬성/반대 입장에서 나올 수 있는 반론을 미리 점검하세요.',
             aiPrompt: '당신은 학생과 토론을 진행하는 AI 멘토입니다. 학생의 주장에 근거를 요구하거나 빈틈을 짚어 주고, 설득력 있는 사례와 데이터로 논리를 강화하도록 유도하세요.',
           },
-          { reference: '동료에게 줄 피드백 포인트를 메모하세요.', aiPrompt: '' },
+          {
+            reference: '3-1차시 AI 대화를 다시 읽고 핵심 주장과 반론을 요약한 뒤, 평가 메모를 작성하세요.',
+            aiPrompt: '당신은 토론 평가자입니다. 학생이 남긴 3-1차시 대화를 바탕으로 강점/보완점/추가 질문을 제안하세요. 구체적인 사례, 논거의 타당성, 반론 대비 등을 평가해 주세요.',
+          },
           {
             reference: '4-1차시 토론 발문을 확인하고, AI와 심층 토론을 이어가세요. 주장·근거·반론을 명확하게 정리해 보세요.',
             aiPrompt: '당신은 학생의 최종 주장을 검토하는 AI 멘토입니다. 학생의 근거에 비판적 질문을 던지고, 더 정교한 논리를 완성하도록 도와주세요.',
@@ -1531,7 +1534,7 @@
           if (!notesInput || !saveBtn || !nextBtn) return;
 
           if (titleEl) {
-            const combined = currentLabel.headline ? `${currentLabel.name || ''} · ${currentLabel.headline}` : (currentLabel.name || '동료 메모');
+          const combined = currentLabel.headline ? `${currentLabel.name || ''} · ${currentLabel.headline}` : (currentLabel.name || '동료 메모');
             titleEl.textContent = combined;
           }
 
@@ -1657,6 +1660,29 @@
           if (stage === 2 && Number(state.stage || 1) >= 3) {
             renderStage3Transcript();
           }
+        }
+
+        function getAiTranscriptEntries(stage){
+          return (state.aiStageLogs[stage] || []).slice();
+        }
+
+        function formatTranscriptEntries(entries){
+          if (!entries.length) return '';
+          return entries
+            .map((entry) => {
+              const speaker = entry.role === 'ai' ? 'AI' : '학생';
+              return `${speaker}: ${entry.text || ''}`;
+            })
+            .join('\n');
+        }
+
+        function buildAiFeedbackContext(stage){
+          if (state.typeMode === TYPE_KEYS.TYPE_A && stage === 3) {
+            const entries = getAiTranscriptEntries(2);
+            if (!entries.length) return '';
+            return `이전 3-1차시 토론 기록:\n${formatTranscriptEntries(entries)}`;
+          }
+          return '';
         }
 
         function renderStage3Transcript(){
@@ -2236,8 +2262,7 @@
           if (!hasGas) return;
           if (!state.aiChat.sessionId) { setStatus('AI 세션이 준비되지 않았습니다.', 'error'); return; }
           const stage = Number(state.stage || 1);
-          const group = (state.group || '').toUpperCase();
-          if (!isAiChatStage(stage, group)) {
+          if (!isAiChatStage(stage)) {
             setStatus('AI 피드백 단계에서만 사용할 수 있습니다.', 'warn');
             return;
           }
@@ -2245,8 +2270,17 @@
           if (!input || input.disabled) return;
           const text = input.value.trim();
           if (!text) return;
+          const contextText = buildAiFeedbackContext(stage);
           input.value = '';
-          const localMessage = { ts: Date.now(), role: 'user', senderId: state.user.id, senderName: state.user.name, text: text };
+          const localMessage = {
+            ts: Date.now(),
+            role: 'user',
+            senderId: state.user.id,
+            senderName: state.user.name,
+            text,
+            stage,
+            ext: { stage },
+          };
           const appended = appendChatMessage('ai', localMessage, { pending: true });
           setAiPending(true);
           setAiLoading(true);
@@ -2261,7 +2295,7 @@
               setAiLoading(false);
               setAiPending(false);
               handleError(err);
-            }).requestAiIfNeeded(state.aiChat.sessionId, state.group, text, '', { channel: 'ai-feedback', sessionKey: state.sessionKey, stage: state.stage });
+            }).requestAiIfNeeded(state.aiChat.sessionId, state.group, text, contextText, { channel: 'ai-feedback', sessionKey: state.sessionKey, stage: state.stage });
           }).withFailureHandler(function(err){
             setAiLoading(false);
             setAiPending(false);
@@ -2492,6 +2526,14 @@
           const meta = el.querySelector('.chat-meta');
           if (meta) {
             meta.textContent = buildChatMeta(channel, original || { role: 'user', senderName: state.user.name, senderId: state.user.id }, serverTs, false);
+          }
+          if (channel === 'ai' && original) {
+            const messageWithStage = {
+              ...original,
+              ts: serverTs,
+              ext: original.ext || { stage: original.stage || state.stage },
+            };
+            recordAiTranscript(messageWithStage, serverTs);
           }
         }
 
