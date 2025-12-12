@@ -2131,6 +2131,8 @@
           working = working.replace(/__(.+?)__/g, '<strong>$1</strong>');
           working = working.replace(/\*(?!\s)([^*]+)\*/g, '<em>$1</em>');
           working = working.replace(/_(?!\s)([^_]+)_/g, '<em>$1</em>');
+          working = working.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
+          working = working.replace(/(https?:\/\/[^\s<]+[^<.,;:)\s])/g, '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>');
           working = convertMarkdownLists(working);
           working = working.replace(/\n{2,}/g, '<br/><br/>').replace(/\n/g, '<br/>');
           codeBlocks.forEach((block, idx) => {
