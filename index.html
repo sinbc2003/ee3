@@ -289,14 +289,26 @@
                 <h2 id="stage5Title">5차시 · 4-1 토론 요약 & 메모 (4-2)</h2>
                 <span id="stage5Subtitle" class="panel-subtext">4-1차시 대화를 요약해 확인하고, 추가로 메모하세요.</span>
               </div>
-              <div class="prewriting-preview-block">
-                <strong>4-1차시 토론 요약</strong>
-                <div id="stage5TranscriptSummary" class="text-block">4-1 토론 기록을 불러오는 중입니다. (추후 연동)</div>
+          <div class="stage3-preview-grid" id="stage5ReviewGrid">
+            <div class="stage3-transcript-block" id="stage5TranscriptBlock">
+              <strong id="stage5TranscriptHeading">4-1차시 토론 기록</strong>
+              <div id="stage5Transcript" class="stage3-transcript-list">
+                <div class="stage3-transcript-line">4-1 토론 기록을 불러오는 중입니다.</div>
               </div>
-              <textarea id="stage5MemoInput" placeholder="추가로 정리하고 싶은 내용을 메모하세요. (현재는 로컬에만 저장됩니다.)"></textarea>
-              <div class="button-row">
-                <button id="btnStage5MemoSave" class="secondary" type="button" disabled>5차시 메모 저장</button>
-              </div>
+            </div>
+            <div>
+              <label for="stage5MemoInput">평가 메모</label>
+              <textarea id="stage5MemoInput" placeholder="4-1차시 대화를 바탕으로 평가 메모를 작성하세요."></textarea>
+              <p id="stage5MemoHelper" class="stage3-memo-helper">4-1차시 대화를 평가하고 피드백을 정리하세요.</p>
+            </div>
+          </div>
+          <div class="prewriting-preview-block" id="stage5SummaryBlock">
+            <strong>4-1차시 토론 요약</strong>
+            <div id="stage5TranscriptSummary" class="text-block">4-1 토론 기록을 불러오는 중입니다. (추후 연동)</div>
+          </div>
+          <div class="button-row">
+            <button id="btnStage5MemoSave" class="secondary" type="button" disabled>5차시 메모 저장</button>
+          </div>
             </section>
           </div>
 
@@ -1624,6 +1636,11 @@
             stage5Prompt.reference || '4-1 토론 기록을 불러오는 중입니다. (추후 연동)',
             '4-1 토론 기록을 불러오는 중입니다. (추후 연동)'
           );
+          setRichText(
+            'stage5MemoHelper',
+            stage5Prompt.reference || '4-1차시 대화를 평가하고 피드백을 정리하세요.',
+            '4-1차시 대화를 평가하고 피드백을 정리하세요.'
+          );
         }
 
         function recordAiTranscript(message, ts){
@@ -1660,6 +1677,9 @@
           if (stage === 2 && Number(state.stage || 1) >= 3) {
             renderStage3Transcript();
           }
+          if (stage === 4 && Number(state.stage || 1) >= 5) {
+            renderStage5Transcript();
+          }
         }
 
         function getAiTranscriptEntries(stage){
@@ -1681,6 +1701,11 @@
             const entries = getAiTranscriptEntries(2);
             if (!entries.length) return '';
             return `이전 3-1차시 토론 기록:\n${formatTranscriptEntries(entries)}`;
+          }
+          if (state.typeMode === TYPE_KEYS.TYPE_A && stage === 5) {
+            const entries = getAiTranscriptEntries(4);
+            if (!entries.length) return '';
+            return `이전 4-1차시 토론 기록:\n${formatTranscriptEntries(entries)}`;
           }
           return '';
         }
@@ -1707,9 +1732,16 @@
         function renderStage5Panel(){
           const memoInput = $('stage5MemoInput');
           const saveBtn = $('btnStage5MemoSave');
+          const transcriptGrid = $('stage5ReviewGrid');
+          const summaryBlock = $('stage5SummaryBlock');
+          const isTypeA = state.typeMode === TYPE_KEYS.TYPE_A;
           const stage = Number(state.stage || 1);
           const enabled = stage >= 5;
           const memoText = state.localStage5Memo || '';
+          const showTranscriptGrid = isTypeA && enabled;
+          if (transcriptGrid) transcriptGrid.style.display = showTranscriptGrid ? 'flex' : 'none';
+          if (summaryBlock) summaryBlock.style.display = showTranscriptGrid ? 'none' : 'block';
+          if (showTranscriptGrid) renderStage5Transcript();
           if (memoInput) {
             memoInput.value = memoText;
             memoInput.disabled = !enabled;
@@ -1717,6 +1749,29 @@
           if (saveBtn) {
             saveBtn.disabled = !enabled || !memoText.trim();
           }
+        }
+
+        function renderStage5Transcript(){
+          const container = $('stage5Transcript');
+          const heading = $('stage5TranscriptHeading');
+          const block = $('stage5TranscriptBlock');
+          if (!container || !heading || !block) return;
+          const isTypeA = state.typeMode === TYPE_KEYS.TYPE_A;
+          block.style.display = isTypeA ? 'block' : 'none';
+          if (!isTypeA) return;
+          heading.textContent = '4-1차시 토론 기록';
+          const entries = getAiTranscriptEntries(4);
+          if (!entries.length) {
+            container.innerHTML = '<div class="stage3-transcript-line">4-1차시 토론 기록이 아직 없습니다.</div>';
+            return;
+          }
+          container.innerHTML = entries
+            .map(function(entry){
+              const label = entry.role === 'ai' ? 'AI 응답' : '학생';
+              const text = escapeHtml(entry.text || '').replace(/\n/g, '<br/>');
+              return `<div class="stage3-transcript-line ${entry.role === 'ai' ? 'ai' : 'me'}"><span class="label">${label}</span>${text}</div>`;
+            })
+            .join('');
         }
 
         function renderFinalChatPanel(){
