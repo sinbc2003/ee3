@@ -39,8 +39,8 @@ export POOL_ID=github-actions-pool     # Workload Identity Pool ID
 export PROVIDER_ID=github-actions      # Workload Identity Provider ID
 ```
 
-1. **프로젝트 선택 & API 활성화**
-   ```bash
+1. **프로젝트 선택 & API 활성화**  
+   ```bash  
    gcloud config set project $PROJECT_ID
    gcloud services enable run.googleapis.com artifactregistry.googleapis.com iam.googleapis.com iamcredentials.googleapis.com storage.googleapis.com secretmanager.googleapis.com logging.googleapis.com compute.googleapis.com
    ```
