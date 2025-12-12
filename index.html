@@ -1499,11 +1499,7 @@
           const moveBtn = $('btnToPeer');
           if (moveBtn) {
             const hasSaved = !!savedText && Number(state.writing.draft.savedAt || 0) > 0;
-            let nextLabel = '다음 단계로 이동';
-            if (group === 'A') nextLabel = '동료 피드백 단계로 이동';
-            else if (group === 'C') nextLabel = '최종 단계로 이동';
-            else if (group === 'B') nextLabel = 'AI 피드백 단계로 이동';
-            moveBtn.textContent = nextLabel;
+            moveBtn.textContent = '다음 단계로 이동';
             moveBtn.disabled = !hasSaved;
           }
           if (titleEl) {
