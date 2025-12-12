@@ -87,6 +87,13 @@
       .history-item .time { margin-left: auto; color: #94a3b8; font-size: 12px; }
       .prewriting-preview-block { display: flex; flex-direction: column; gap: 6px; }
       .prewriting-preview-block strong { font-size: 13px; color: #475569; }
+      .stage3-preview-grid { display: flex; flex-direction: column; gap: 14px; }
+      .stage3-transcript-block { border: 1px dashed #d0d7f3; background: #f5f8ff; border-radius: 10px; padding: 12px; }
+      .stage3-transcript-list { display: flex; flex-direction: column; gap: 8px; max-height: 280px; overflow-y: auto; }
+      .stage3-transcript-line { padding: 10px 12px; border-radius: 10px; border: 1px solid #dfe3f8; background: #fff; font-size: 13px; line-height: 1.45; color: #1f2937; }
+      .stage3-transcript-line.ai { background: #eef2ff; border-color: #c7d2fe; }
+      .stage3-transcript-line .label { display: block; font-weight: 600; color: #4338ca; margin-bottom: 4px; font-size: 12px; }
+      .stage3-memo-helper { font-size: 12px; color: #6b7280; margin: -4px 0 0; }
       .chat-log { flex: 1; min-height: 320px; max-height: 320px; border: 1px solid #d0d7e3; border-radius: 12px; background: radial-gradient(circle at top, #f8fafc 0%, #ffffff 48%); padding: 12px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
       .chat-line { display: flex; flex-direction: column; gap: 4px; max-width: 80%; word-break: break-word; }
       .chat-line.me { align-self: flex-end; text-align: right; }
@@ -267,19 +274,19 @@
                 <h2 id="memoStage3Title">글쓰기 수정 관련 메모</h2>
                 <span id="memoStage3Info" class="panel-subtext">동료의 글을 읽고, 10분 동안 어떤 피드백을 줄지 생각해 보세요. 피드백 내용을 메모 형태로 자유롭게 정리하세요. 동료에게서 받은 피드백을 참고하여, 글을 어떻게 수정할지에 대한 아이디어를 메모 형태로 자유롭게 정리하세요.</span>
               </div>
-              <div class="prewriting-preview-block">
-                <strong>3-1차시 토론 기록</strong>
-                <div id="stage3Transcript" class="text-block">이전 토론 기록을 불러오는 중입니다.</div>
+              <div class="stage3-preview-grid">
+                <div class="stage3-transcript-block">
+                  <strong id="stage3TranscriptHeading">3-1차시 토론 기록</strong>
+                  <div id="stage3Transcript" class="stage3-transcript-list">
+                    <div class="stage3-transcript-line">이전 토론 기록을 불러오는 중입니다.</div>
+                  </div>
+                </div>
+                <div>
+                  <label for="notesInput">질문/아이디어 메모</label>
+                  <textarea id="notesInput" placeholder="3-1차시 토론을 다시 읽고, 궁금한 점이나 보완할 논거를 메모하세요." disabled></textarea>
+                  <p id="stage3MemoHelper" class="stage3-memo-helper">먼저 기록을 보고 핵심 반론·보완점을 정리한 뒤, 오른쪽 AI 평가 패널에 질문을 던져 보세요.</p>
+                </div>
               </div>
-              <div class="prewriting-preview-block">
-                <strong>동료 글</strong>
-                <div id="peerStage3Partner" class="text-block">동료 글을 불러오는 중입니다.</div>
-              </div>
-              <div class="prewriting-preview-block">
-                <strong>나의 사전 글쓰기</strong>
-                <div id="peerStage3Self" class="text-block">사전 글쓰기가 아직 제출되지 않았습니다.</div>
-              </div>
-              <textarea id="notesInput" placeholder="추가로 정리하고 싶은 내용을 메모하세요." disabled></textarea>
               <div class="button-row">
                 <button id="btnStage3Back" class="ghost" type="button">이전 단계로 이동</button>
                 <button id="btnNotesSave" class="secondary" type="button" disabled>3단계 메모 저장</button>
@@ -571,6 +578,9 @@
           status: { message: '식별 번호와 이름을 입력하면 세션이 시작됩니다.', type: 'info' },
           aiChat: { sessionId: '', lastTs: 0, rendered: {}, pending: {}, fetching: false, awaitingResponse: false, welcomeShown: false },
           peerChat: { sessionId: '', lastTs: 0, rendered: {}, pending: {}, fetching: false },
+          aiStageLogs: {},
+          aiTranscriptKeys: {},
+          currentAiStage: 0,
           timers: { ai: null, peer: null, state: null, presence: null },
           refreshingState: false,
           dictionaryHistory: [],
@@ -810,6 +820,9 @@
           state.localDraftBuffer = '';
           state.localStage3Memo = '';
           state.localStage5Memo = '';
+          state.aiStageLogs = {};
+          state.aiTranscriptKeys = {};
+          state.currentAiStage = 0;
           state.aiAvatarUrl = publicConfig.aiAvatarUrl || DEFAULT_AI_AVATAR;
         }
 
@@ -1001,6 +1014,10 @@
           if (stage2) {
             setText('draftTitle', combine(stage2, '3-1차시 · 토론 메모'));
             setText('draftInfo', stage2.description || 'ChatGPT와 모의 토론 중 떠오른 생각을 정리하세요.');
+            const transcriptHeading = $('stage3TranscriptHeading');
+            if (transcriptHeading) {
+              transcriptHeading.textContent = (stage2.name || '3-1차시') + ' 토론 기록';
+            }
           }
           const stage3 = getStageLabel(3);
           if (stage3) {
@@ -1008,6 +1025,8 @@
             setText('memoStage3Info', stage3.description || '동료에게 받은 피드백을 메모하세요.');
             setText('peerStageTitle', stage3.headline || stage3.name || '동료 피드백');
             setText('peerStageSubtitle', stage3.description || '동료와 상호작용하며 피드백을 주고받으세요.');
+            const memoInfoEl = $('memoStage3Info');
+            if (memoInfoEl) memoInfoEl.dataset.baseText = memoInfoEl.textContent || '';
           }
           const stage4 = getStageLabel(4);
           if (stage4) {
@@ -1042,14 +1061,22 @@
           renderDictionaryHistory();
           refreshChatControls();
 
-          // AI/PER chat logs should refresh when stage transitions
-          const aiStageActive = isAiChatStage(state.stage, state.group);
+          // AI/peer 채팅은 단계 전환 시 초기화
+          const numericStage = Number(state.stage || 1);
+          const aiStageActive = isAiChatStage(numericStage, state.group);
           if (!aiStageActive) {
-            clearChatLog('ai');
+            if (state.currentAiStage) {
+              clearChatLog('ai', { keepLastTs: false });
+              state.aiChat.welcomeShown = false;
+            }
+            state.currentAiStage = 0;
+          } else if (state.currentAiStage !== numericStage) {
+            clearChatLog('ai', { keepLastTs: true });
+            state.aiChat.welcomeShown = false;
+            state.currentAiStage = numericStage;
           }
           const peerStageActive =
-            (Number(state.stage || 1) === 2 && state.group === 'B') ||
-            (Number(state.stage || 1) === 3 && state.group === 'A');
+            numericStage === 2 && state.group === 'B';
           if (!peerStageActive) {
             clearChatLog('peer');
           }
@@ -1301,35 +1328,22 @@
           const stage = Number(state.stage || 1);
           const group = (state.group || '').toUpperCase();
           const isMemoStage = stage === 3 && (group === 'A' || group === 'B');
-          const titleEl = $('memoStage3Title');
           const infoEl = $('memoStage3Info');
           const notesInput = $('notesInput');
           const saveBtn = $('btnNotesSave');
           const nextBtn = $('btnPeerNext');
-          const partnerPreview = $('peerStage3Partner');
-          const selfPreview = $('peerStage3Self');
-
           if (!notesInput || !saveBtn || !nextBtn) return;
 
-          if (titleEl) {
-            titleEl.textContent = '3단계 · 글쓰기 수정 관련 메모';
-          }
-
           if (infoEl) {
-            infoEl.textContent = '동료의 글을 읽고, 10분 동안 어떤 피드백을 줄지 생각해 보세요. 피드백 내용을 메모 형태로 자유롭게 정리하세요. 동료에게서 받은 피드백을 참고하여, 글을 어떻게 수정할지에 대한 아이디어를 메모 형태로 자유롭게 정리하세요.';
+            if (!infoEl.dataset.baseText) {
+              infoEl.dataset.baseText = infoEl.textContent || '';
+            }
+            let base = infoEl.dataset.baseText || infoEl.textContent || '';
             const memoSavedAt = Number(state.writing.notes.updatedAt || 0);
-            if (memoSavedAt) infoEl.textContent += ' · 마지막 저장: ' + formatDate(memoSavedAt);
-          }
-
-          if (partnerPreview) {
-            const partnerText = (state.partner && state.partner.prewriting && state.partner.prewriting.text) || '';
-            partnerPreview.textContent = partnerText ? partnerText : '동료 글이 아직 준비되지 않았습니다.';
-          }
-
-          if (selfPreview) {
-            const selfText = (state.writing.prewriting && state.writing.prewriting.text) || '';
-            const submitted = Number(state.writing.prewriting && state.writing.prewriting.submittedAt || 0) > 0;
-            selfPreview.textContent = submitted && selfText ? selfText : '사전 글쓰기가 아직 제출되지 않았습니다.';
+            if (memoSavedAt) {
+              base += ' · 마지막 저장: ' + formatDate(memoSavedAt);
+            }
+            infoEl.textContent = base;
           }
 
           if (state.writing.notes && state.writing.notes.text) {
@@ -1351,6 +1365,8 @@
           nextBtn.textContent = '최종 단계로 이동';
           const hasSaved = !!(state.writing.notes.text && state.writing.notes.updatedAt);
           nextBtn.disabled = !isMemoStage || !hasSaved;
+
+          renderStage3Transcript();
 
           const backBtn = $('btnStage3Back');
           if (backBtn) {
@@ -1383,6 +1399,12 @@
             stage2Prompt.reference || stage1Prompt.reference || publicConfig.promptContent,
             '관리자가 등록한 발문이 여기에 표시됩니다.'
           );
+          const stage3Prompt = getStagePromptData(3);
+          setRichText(
+            'stage3MemoHelper',
+            stage3Prompt.reference || '먼저 3-1차시 기록을 읽고, 보완하고 싶은 근거·질문을 메모하세요.',
+            '먼저 3-1차시 기록을 읽고, 보완하고 싶은 근거·질문을 메모하세요.'
+          );
           const stage4Prompt = getStagePromptData(4);
           setRichText(
             'stage4PromptContent',
@@ -1395,6 +1417,61 @@
             stage5Prompt.reference || '4-1 토론 기록을 불러오는 중입니다. (추후 연동)',
             '4-1 토론 기록을 불러오는 중입니다. (추후 연동)'
           );
+        }
+
+        function recordAiTranscript(message, ts){
+          if (!message) return;
+          const stage =
+            Number(message?.ext?.stage) ||
+            Number(message?.stage) ||
+            Number(message?.metadata?.stage) ||
+            0;
+          if (!stage) return;
+          const key =
+            stage +
+            ':' +
+            (message.role || 'user') +
+            ':' +
+            (message.senderId || '') +
+            ':' +
+            (ts || message.ts || 0) +
+            ':' +
+            (message.text || '').slice(0, 120);
+          if (state.aiTranscriptKeys[key]) return;
+          state.aiTranscriptKeys[key] = true;
+          if (!state.aiStageLogs[stage]) state.aiStageLogs[stage] = [];
+          state.aiStageLogs[stage].push({
+            stage,
+            ts: ts || message.ts || Date.now(),
+            role: message.role || 'user',
+            sender: message.senderName || (message.role === 'ai' ? 'AI' : state.user.name || '학생'),
+            text: message.text || '',
+          });
+          if (state.aiStageLogs[stage].length > 150) {
+            state.aiStageLogs[stage] = state.aiStageLogs[stage].slice(-150);
+          }
+          if (stage === 2 && Number(state.stage || 1) >= 3) {
+            renderStage3Transcript();
+          }
+        }
+
+        function renderStage3Transcript(){
+          const container = $('stage3Transcript');
+          if (!container) return;
+          const logs = (state.aiStageLogs[2] || []).slice(-12);
+          if (!logs.length) {
+            container.innerHTML =
+              '<div class="stage3-transcript-line">3-1차시 토론 기록이 아직 없습니다.</div>';
+            return;
+          }
+          const html = logs
+            .map(function(entry){
+              const label = entry.role === 'ai' ? 'AI 응답' : '나의 질문';
+              const text = escapeHtml(entry.text || '').replace(/\n/g, '<br/>');
+              return `<div class="stage3-transcript-line ${entry.role === 'ai' ? 'ai' : 'me'}"><span class="label">${label}</span>${text}</div>`;
+            })
+            .join('');
+          container.innerHTML = html;
         }
 
         function renderStage5Panel(){
@@ -1441,23 +1518,31 @@
           setStatus('5차시 메모가 로컬에 저장되었습니다. (서버 연동 필요)', 'success');
         }
 
-        function isAiChatStage(stage, group){
-          const upper = (group || '').toUpperCase();
+        function isAiChatStage(stage, _group){
           const numeric = Number(stage || 0);
           if (!numeric) return false;
-          return numeric === 1 || numeric === 2 || (numeric === 3 && upper === 'B');
+          return numeric === 1 || numeric === 2 || numeric === 3;
         }
 
         function renderRightPanels(){
           const stage = Number(state.stage || 1);
           const group = (state.group || '').toUpperCase();
           const showAiChat = isAiChatStage(stage, group);
-          const showPeerChat = stage === 3 && (group === 'A' || group === 'B');
+          const showPeerChat = stage === 2 && group === 'B';
           const showFinalChat = stage >= 4;
+          if (showAiChat) updateAiPanelHeader(stage);
           togglePanel('rightStage2', showAiChat);
           togglePanel('rightStage3', showPeerChat);
           togglePanel('rightStage4', showFinalChat);
           if (showAiChat || showFinalChat) ensureAiWelcomeMessage();
+        }
+
+        function updateAiPanelHeader(stage){
+          const label = getStageLabel(stage);
+          if (!label) return;
+          const combined = label.headline ? `${label.name} · ${label.headline}` : label.name;
+          setText('aiStageTitle', combined || 'AI 토론');
+          setText('aiStageSubtitle', label.description || 'AI와 토론을 이어가며 논거를 점검하세요.');
         }
 
         function togglePanel(id, visible){
@@ -1477,15 +1562,13 @@
             nameEl.textContent = (partner.name || '동료') + ' 학생';
             const peerStageName = formatStageName(partner.stage || 1);
             if (stage === 2 && group === 'B') {
-              infoEl.textContent = '사전 글을 검토 중입니다. 동료 단계: ' + peerStageName;
-            } else if (stage === 3 && group === 'A') {
-              infoEl.textContent = '사후 글을 검토 중입니다. 동료 단계: ' + peerStageName;
+              infoEl.textContent = '동료와 실시간 피드백 단계입니다. 동료 단계: ' + peerStageName;
             } else {
               infoEl.textContent = '현재 단계: ' + peerStageName;
             }
           } else {
             nameEl.textContent = '동료 정보를 불러오는 중...';
-            if (group === 'A' || group === 'B') {
+            if (group === 'B' && stage === 2) {
               infoEl.textContent = '동료 매칭 정보를 기다리고 있습니다.';
             } else {
               infoEl.textContent = '이 단계에서는 동료 정보가 필요하지 않습니다.';
@@ -1513,13 +1596,17 @@
             state.aiChat.welcomeShown = true;
             return;
           }
+          const label = getStageLabel(state.stage || 1);
+          const welcomeText =
+            (label && label.description) ||
+            'AI 패널에 질문을 던지며 논거와 반론을 점검하세요.';
           const appended = appendChatMessage(
             'ai',
             {
               ts: 0,
               role: 'system',
               senderName: '시스템',
-              text: 'AI 웹 검색 기능을 활용해 다양한 관점의 근거와 반론을 찾아보세요.'
+              text: welcomeText
             },
             { pending: false }
           );
@@ -2090,6 +2177,9 @@
           wrapper.appendChild(contentWrap);
           logEl.appendChild(wrapper);
           logEl.scrollTop = logEl.scrollHeight;
+          if (!isPending && channel === 'ai') {
+            recordAiTranscript(message, ts);
+          }
           if (!isPending && channel === 'ai' && role === 'ai') {
             setAiPending(false);
             setAiLoading(false);
@@ -2234,7 +2324,7 @@
           if (!hasGas || !state.peerChat.sessionId) return;
           const stage = Number(state.stage || 1);
           const group = (state.group || '').toUpperCase();
-          const isPeerStage = (stage === 2 && group === 'B') || (stage === 3 && group === 'A');
+          const isPeerStage = stage === 2 && group === 'B';
           if (!isPeerStage) return;
           if (state.peerChat.fetching) return;
           state.peerChat.fetching = true;
@@ -2252,7 +2342,7 @@
           if (state.timers.peer) return;
           const stage = Number(state.stage || 1);
           const group = (state.group || '').toUpperCase();
-          const isPeerStage = (stage === 2 && group === 'B') || (stage === 3 && group === 'A');
+          const isPeerStage = stage === 2 && group === 'B';
           if (!isPeerStage) return;
           state.timers.peer = setInterval(pollPeerMessages, 5000);
           pollPeerMessages();
@@ -2299,7 +2389,7 @@
           const stage = Number(state.stage || 1);
           const group = (state.group || '').toUpperCase();
           const isAiStage = isAiChatStage(stage, group);
-          const isPeerStage = (stage === 2 && group === 'B') || (stage === 3 && group === 'A');
+          const isPeerStage = stage === 2 && group === 'B';
           if (isAiStage && state.aiChat.sessionId) startAiPolling(); else stopAiPolling();
           if (isPeerStage && state.peerChat.sessionId) startPeerPolling(); else stopPeerPolling();
           if (stage >= 4) {
@@ -2317,11 +2407,14 @@
           });
         }
 
-        function clearChatLog(channel){
+        function clearChatLog(channel, options){
+          const opts = options || {};
           const logEl = $(channel === 'ai' ? 'aiChatLog' : 'peerChatLog');
           if (logEl) logEl.innerHTML = '';
           const chatState = channel === 'ai' ? state.aiChat : state.peerChat;
-          chatState.lastTs = 0;
+          if (!opts.keepLastTs) {
+            chatState.lastTs = 0;
+          }
           chatState.rendered = {};
           chatState.pending = {};
           chatState.fetching = false;
