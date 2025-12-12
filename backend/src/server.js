@@ -196,6 +196,8 @@ function defaultPublicSettings() {
     promptContent: '',
     stageLabels: defaultStageLabels(),
     stagePrompts: defaultStagePrompts(),
+    stageLabelsTypeB: defaultStageLabelsTypeB(),
+    stagePromptsTypeB: defaultStagePromptsTypeB(),
   };
 }
 
@@ -248,6 +250,65 @@ function defaultStagePrompts() {
     {
       reference:
         '4-1차시 대화를 요약하고, 최종 주장을 정리하세요. 필요한 경우 AI에게 추가 설명을 요청할 수 있습니다.',
+      aiPrompt: '',
+    },
+  ];
+}
+
+function defaultStageLabelsTypeB() {
+  return [
+    {
+      name: '1차시',
+      headline: '주제 탐구',
+      description: '논제를 이해하고, 배경 지식을 빠르게 정리합니다.',
+    },
+    {
+      name: '2차시',
+      headline: '관점 정리',
+      description: '찬성/반대 관점을 나눠 핵심 근거를 정리합니다.',
+    },
+    {
+      name: '3차시',
+      headline: '3-1/3-2 토론',
+      description: 'AI와 토론을 진행하며, 3-1/3-2 단계에서 질문·답변을 기록합니다.',
+    },
+    {
+      name: '4차시',
+      headline: '4-1/4-2 평가',
+      description: 'AI 평가와 추가 피드백을 받아 논리를 보완합니다.',
+    },
+    {
+      name: '5차시',
+      headline: '최종 정리',
+      description: '모든 토론 내용을 요약하고 최종 주장을 완성합니다.',
+    },
+  ];
+}
+
+function defaultStagePromptsTypeB() {
+  return [
+    {
+      reference: '주제와 배경 정보, 이해한 핵심 개념을 간단히 정리하세요.',
+      aiPrompt:
+        '당신은 학생의 주제 탐구를 돕는 가이드입니다. 핵심 개념과 필요한 배경 정보를 짧고 명확하게 안내하고, 추가로 조사할 키워드를 제안하세요.',
+    },
+    {
+      reference: '찬성/반대 관점에서 떠오르는 주장과 근거를 나열하세요.',
+      aiPrompt:
+        '학생이 제시하는 근거를 검토하고, 양측 관점에서 빠진 논거가 없는지 점검하도록 도와주세요.',
+    },
+    {
+      reference: '3-1/3-2 단계에서 사용할 질문, 예상 반론, 보강할 논지를 적어두세요.',
+      aiPrompt:
+        '학생의 주장에 대해 비판적 질문을 던지고, 추가로 조사할 키워드를 제안하며 토론을 확장하도록 유도하세요.',
+    },
+    {
+      reference: '4-1/4-2 단계에서 받은 AI 피드백을 정리하고, 보완할 내용을 메모하세요.',
+      aiPrompt:
+        '학생의 논리 전개를 평가하고, 반론에 대비할 수 있도록 구체적인 수정 제안을 제공하세요.',
+    },
+    {
+      reference: '최종 주장의 핵심을 요약하고, 다음 활동에 필요한 체크리스트를 작성하세요.',
       aiPrompt: '',
     },
   ];
@@ -817,7 +878,8 @@ async function generateAiFeedback(userMessage, group, contextText, options = {})
   const sessionId = options.sessionId || '';
   const evalPrompt = options.evalPrompt || '';
   const config = getEffectiveAiConfig();
-  const stagePrompt = getStagePrompt(stage);
+  const typeKey = mapGroupToTypeKey(group);
+  const stagePrompt = getStagePrompt(stage, typeKey);
   const stageSystemPrompt = typeof stagePrompt?.aiPrompt === 'string' ? stagePrompt.aiPrompt.trim() : '';
 
   // 3-2 차시: gpt-4.1로 평가, 이전 대화 요약 포함
@@ -1651,6 +1713,12 @@ function sanitizePublicSettings(payload, currentSettings = store.publicSettings)
   if (Array.isArray(payload.stagePrompts)) {
     base.stagePrompts = normalizeStagePrompts(payload.stagePrompts, base.stagePrompts);
   }
+  if (Array.isArray(payload.stageLabelsTypeB)) {
+    base.stageLabelsTypeB = normalizeStageLabels(payload.stageLabelsTypeB, base.stageLabelsTypeB);
+  }
+  if (Array.isArray(payload.stagePromptsTypeB)) {
+    base.stagePromptsTypeB = normalizeStagePrompts(payload.stagePromptsTypeB, base.stagePromptsTypeB);
+  }
   return base;
 }
 
@@ -1703,15 +1771,33 @@ function normalizeStagePrompts(list, fallback) {
   });
 }
 
-function getStagePrompt(stage) {
-  const idx = Math.max(0, Math.min(defaultStagePrompts().length - 1, Number(stage || 1) - 1));
-  const prompts = store.publicSettings?.stagePrompts || defaultStagePrompts();
-  return prompts[idx] || defaultStagePrompts()[idx];
+function mapGroupToTypeKey(group) {
+  return String(group || '').toUpperCase() === 'B' ? 'typeB' : 'typeA';
 }
 
-function getStageLabelName(stage) {
+function getStageLabelsByType(typeKey = 'typeA') {
+  if (typeKey === 'typeB') {
+    return store.publicSettings?.stageLabelsTypeB || defaultStageLabelsTypeB();
+  }
+  return store.publicSettings?.stageLabels || defaultStageLabels();
+}
+
+function getStagePromptsByType(typeKey = 'typeA') {
+  if (typeKey === 'typeB') {
+    return store.publicSettings?.stagePromptsTypeB || defaultStagePromptsTypeB();
+  }
+  return store.publicSettings?.stagePrompts || defaultStagePrompts();
+}
+
+function getStagePrompt(stage, typeKey = 'typeA') {
+  const idx = Math.max(0, Math.min(defaultStagePrompts().length - 1, Number(stage || 1) - 1));
+  const prompts = getStagePromptsByType(typeKey);
+  return prompts[idx] || getStagePromptsByType('typeA')[idx] || defaultStagePrompts()[idx];
+}
+
+function getStageLabelName(stage, typeKey = 'typeA') {
   const idx = Math.max(0, Math.min(defaultStageLabels().length - 1, Number(stage || 1) - 1));
-  const labels = store.publicSettings?.stageLabels || defaultStageLabels();
+  const labels = getStageLabelsByType(typeKey);
   return labels[idx]?.name || `단계 ${stage}`;
 }
 

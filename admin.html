@@ -743,37 +743,63 @@
         let pendingPairings = [];
         let pairingApplyInProgress = false;
         const selectedSessionKeys = new Set();
-        const DEFAULT_STAGE_LABELS = [
-          { name: '2차시', headline: '논거 점검', description: '찬·반 입장으로 질문하며 논거를 점검하세요. 정답 생성 대신 토론 연습에 집중합니다.' },
-          { name: '3차시-1', headline: 'ChatGPT 모의 토론 (gpt-4.1-mini)', description: 'AI와 토론을 이어가며 핵심 반론과 근거를 정리하세요.' },
-          { name: '3차시-2', headline: '동료 토론', description: '동료와 상호 피드백을 주고받으며 글을 다듬으세요.' },
-          { name: '4차시-1', headline: '4-1차시 토론 발문', description: '관리자가 제공한 발문을 다시 확인하고 논리를 점검하세요.' },
-          { name: '4차시-2', headline: '4-2차시 정리', description: '4-1차시 기록을 요약하고 추가 메모를 정리하세요.' },
-        ];
-        const DEFAULT_STAGE_PROMPTS = [
-          {
-            reference: '찬·반 논거를 조사하며 핵심 근거와 반론거리를 메모하세요. AI 웹검색을 활용해 다양한 출처를 탐색해 보세요.',
-            aiPrompt: '당신은 학생의 토론 준비를 돕는 AI 웹연구 도우미입니다. 학생이 던지는 질문에 대해, 공정하게 찬성과 반대 측 근거를 모두 제시하고, 신뢰할 만한 출처 정보도 간단히 언급하세요. 답변은 핵심 bullet 2~3개 중심으로, 쉬운 문장으로 작성합니다.',
-          },
-          {
-            reference: 'ChatGPT와 모의 토론을 진행하며 찬성/반대 입장에서 나올 수 있는 반론을 미리 점검하세요.',
-            aiPrompt: '당신은 학생과 토론을 진행하는 AI 멘토입니다. 학생의 주장에 근거를 요구하거나 빈틈을 짚어 주고, 설득력 있는 사례와 데이터로 논리를 강화하도록 유도하세요.',
-          },
-          { reference: '동료에게 줄 피드백 포인트를 메모하세요.', aiPrompt: '' },
-          {
-            reference: '4-1차시 토론 발문을 확인하고, AI와 심층 토론을 이어가세요. 주장·근거·반론을 명확하게 정리해 보세요.',
-            aiPrompt: '당신은 학생의 최종 주장을 검토하는 AI 멘토입니다. 학생의 근거에 비판적 질문을 던지고, 더 정교한 논리를 완성하도록 도와주세요.',
-          },
-          { reference: '4-1차시 대화를 요약하고, 최종 주장을 정리하세요.', aiPrompt: '' },
-        ];
-        const AI_STAGE_INDICES = [0, 1, 3];
-        let stageContentState = DEFAULT_STAGE_LABELS.map((label, idx) => ({
-          name: label.name,
-          headline: label.headline,
-          description: label.description,
-          reference: DEFAULT_STAGE_PROMPTS[idx].reference,
-          aiPrompt: DEFAULT_STAGE_PROMPTS[idx].aiPrompt,
-        }));
+        const TYPE_KEYS = { TYPE_A: 'TYPE_A', TYPE_B: 'TYPE_B' };
+        const DEFAULT_STAGE_LABELS = {
+          [TYPE_KEYS.TYPE_A]: [
+            { name: '2차시', headline: '논거 점검', description: '찬·반 입장으로 질문하며 논거를 점검하세요. 정답 생성 대신 토론 연습에 집중합니다.' },
+            { name: '3차시-1', headline: 'ChatGPT 모의 토론 (gpt-4.1-mini)', description: 'AI와 토론을 이어가며 핵심 반론과 근거를 정리하세요.' },
+            { name: '3차시-2', headline: '동료 토론', description: '동료와 상호 피드백을 주고받으며 글을 다듬으세요.' },
+            { name: '4차시-1', headline: '4-1차시 토론 발문', description: '관리자가 제공한 발문을 다시 확인하고 논리를 점검하세요.' },
+            { name: '4차시-2', headline: '4-2차시 정리', description: '4-1차시 기록을 요약하고 추가 메모를 정리하세요.' },
+          ],
+          [TYPE_KEYS.TYPE_B]: [
+            { name: '1차시', headline: '토론 관련 발문', description: '핵심 발문을 확인하고 배경 지식을 정리하세요.' },
+            { name: '2차시', headline: '동료 간 토론 (사전)', description: '동료와 사전 토론을 진행하며 생각을 공유하세요.' },
+            { name: '3차시', headline: '3-1/3-2 토론', description: '3-1, 3-2 세부 단계에서 질문과 반론을 정리하세요.' },
+            { name: '4차시', headline: '4-1/4-2 평가', description: '4-1, 4-2 단계에서 AI 평가와 보완을 진행하세요.' },
+            { name: '5차시', headline: '최종 정리', description: '모든 토론 내용을 요약하고 마무리합니다.' },
+          ],
+        };
+        const DEFAULT_STAGE_PROMPTS = {
+          [TYPE_KEYS.TYPE_A]: [
+            {
+              reference: '찬·반 논거를 조사하며 핵심 근거와 반론거리를 메모하세요. AI 웹검색을 활용해 다양한 출처를 탐색해 보세요.',
+              aiPrompt: '당신은 학생의 토론 준비를 돕는 AI 웹연구 도우미입니다. 학생이 던지는 질문에 대해, 공정하게 찬성과 반대 측 근거를 모두 제시하고, 신뢰할 만한 출처 정보도 간단히 언급하세요. 답변은 핵심 bullet 2~3개 중심으로, 쉬운 문장으로 작성합니다.',
+            },
+            {
+              reference: 'ChatGPT와 모의 토론을 진행하며 찬성/반대 입장에서 나올 수 있는 반론을 미리 점검하세요.',
+              aiPrompt: '당신은 학생과 토론을 진행하는 AI 멘토입니다. 학생의 주장에 근거를 요구하거나 빈틈을 짚어 주고, 설득력 있는 사례와 데이터로 논리를 강화하도록 유도하세요.',
+            },
+            { reference: '동료에게 줄 피드백 포인트를 메모하세요.', aiPrompt: '' },
+            {
+              reference: '4-1차시 토론 발문을 확인하고, AI와 심층 토론을 이어가세요. 주장·근거·반론을 명확하게 정리해 보세요.',
+              aiPrompt: '당신은 학생의 최종 주장을 검토하는 AI 멘토입니다. 학생의 근거에 비판적 질문을 던지고, 더 정교한 논리를 완성하도록 도와주세요.',
+            },
+            { reference: '4-1차시 대화를 요약하고, 최종 주장을 정리하세요.', aiPrompt: '' },
+          ],
+          [TYPE_KEYS.TYPE_B]: [
+            {
+              reference: '토론 관련 발문을 확인하고, 핵심 질문을 정리하세요.',
+              aiPrompt: '발문에서 찾은 핵심 이슈를 정리하고, 추가로 조사할 키워드를 제안하세요.',
+            },
+            {
+              reference: '동료와 사전 토론을 진행하며 주요 논점을 메모하세요.',
+              aiPrompt: '',
+            },
+            {
+              reference: '3-1/3-2 단계에서 사용할 질문/반론을 정리하세요.',
+              aiPrompt: '학생의 주장에 후속 질문을 던지고, 부족한 논거를 제안하세요.',
+            },
+            {
+              reference: '4-1/4-2 단계에서 받은 피드백을 요약하고 보완할 사항을 정리하세요.',
+              aiPrompt: '학생의 논리를 평가하고 구체적 수정 방향을 제안하세요.',
+            },
+            {
+              reference: '최종 주장을 요약하고, 다음 활동을 위한 체크리스트를 작성하세요.',
+              aiPrompt: '',
+            },
+          ],
+        };
         let stageContentDirty = false;
 
         function normalizeBaseUrl(url){

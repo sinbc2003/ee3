@@ -18,8 +18,18 @@
       .group-button { min-width: 160px; padding: 18px 20px; border-radius: 12px; border: 1px solid #d0d7e3; background: linear-gradient(135deg, #f8fafc, #eef2ff); font-weight: 700; font-size: 16px; color: #1d4ed8; cursor: pointer; transition: transform 0.18s ease, box-shadow 0.18s ease; }
       .group-button:hover { transform: translateY(-4px); box-shadow: 0 14px 26px rgba(37, 99, 235, 0.18); }
       .group-button:active { transform: translateY(-1px); }
-      .login-card { display: block; max-width: 520px; margin: 0 auto; }
+      .type-card { max-width: 720px; margin: 0 auto; text-align: center; }
+      .type-card p { margin: 10px 0 20px; color: #475569; font-size: 14px; }
+      .type-buttons { display: flex; flex-wrap: wrap; gap: 16px; justify-content: center; }
+      .type-option { flex: 1; min-width: 220px; padding: 18px; border-radius: 14px; border: 1px solid #cbd5f5; background: #f8fafc; display: flex; flex-direction: column; gap: 6px; align-items: flex-start; text-align: left; cursor: pointer; transition: transform 0.15s ease, box-shadow 0.15s ease, border-color 0.15s ease; }
+      .type-option:hover { transform: translateY(-2px); border-color: #94a3ff; }
+      .type-option strong { font-size: 18px; color: #111827; }
+      .type-option span { font-size: 13px; color: #475569; }
+      .type-option.active { border-color: #2563eb; box-shadow: 0 12px 24px rgba(37, 99, 235, 0.2); background: #eef2ff; }
+      .login-card { display: none; max-width: 520px; margin: 0 auto; }
       .login-header { display: flex; flex-direction: column; gap: 6px; margin-bottom: 18px; }
+      .login-group-row { display: flex; align-items: center; gap: 8px; }
+      .login-group-row .ghost { padding: 6px 10px; font-size: 12px; }
       .login-group { font-size: 18px; font-weight: 700; color: #1d4ed8; }
       .login-message { font-size: 13px; color: #64748b; }
       .login-card form { display: flex; flex-direction: column; gap: 16px; }
@@ -47,7 +57,7 @@
       .status-bar.error { border-color: #fecaca; background: #fee2e2; color: #b91c1c; }
       .step-indicator { display: flex; gap: 12px; flex-wrap: wrap; }
       .step-item { flex: 1; min-width: 150px; display: flex; align-items: center; gap: 10px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 10px 12px; transition: border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease; }
-      .step-number { width: 32px; height: 32px; border-radius: 50%; background: #e2e8f0; color: #1f2937; display: flex; align-items: center; justify-content: center; font-weight: 700; }
+      .step-number { min-width: 36px; padding: 0 6px; height: 32px; border-radius: 999px; background: #e2e8f0; color: #1f2937; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13px; }
       .step-info { display: flex; flex-direction: column; gap: 2px; }
       .step-title { font-size: 14px; font-weight: 700; color: #1f2937; }
       .step-caption { font-size: 12px; color: #64748b; }
@@ -151,9 +161,27 @@
   </head>
   <body>
     <div class="page-container">
+      <div id="typeCard" class="card type-card">
+        <h1>학습 Type을 선택하세요</h1>
+        <p>Type A는 기존 토론/AI 결합형 흐름이며, Type B는 1~5차시 중 3·4차시가 세부 단계(3-1/3-2, 4-1/4-2)로 구성됩니다.</p>
+        <div class="type-buttons">
+          <button class="type-option active" data-type-option="TYPE_A">
+            <strong>Type A</strong>
+            <span>현재 사용 중인 토론/AI 결합형 단계</span>
+          </button>
+          <button class="type-option" data-type-option="TYPE_B">
+            <strong>Type B</strong>
+            <span>3·4차시가 2단계로 세분화된 확장형 흐름</span>
+          </button>
+        </div>
+      </div>
+
       <div id="loginCard" class="card login-card">
         <div class="login-header">
-          <div id="selectedGroupLabel" class="login-group">로그인</div>
+          <div class="login-group-row">
+            <div id="selectedTypeLabel" class="login-group">Type A · 기본</div>
+            <button id="btnChangeType" class="ghost" type="button">타입 변경</button>
+          </div>
           <div id="loginMessage" class="login-message">식별번호와 이름을 정확하게 입력해주세요.</div>
         </div>
         <form id="loginForm">
@@ -178,41 +206,6 @@
           </div>
         <div id="statusBar" class="status-bar info">식별 번호와 이름을 입력하면 세션이 시작됩니다.</div>
         <div id="stepIndicator" class="step-indicator">
-          <div class="step-item" data-step="1">
-            <div class="step-number">1</div>
-            <div class="step-info">
-              <div class="step-title">2차시</div>
-              <div class="step-caption">사전 글쓰기</div>
-            </div>
-          </div>
-          <div class="step-item" data-step="2">
-            <div class="step-number">2</div>
-            <div class="step-info">
-              <div class="step-title">3차시-1</div>
-              <div class="step-caption">AI/동료 토론(1)</div>
-            </div>
-          </div>
-          <div class="step-item" data-step="3">
-            <div class="step-number">3</div>
-            <div class="step-info">
-              <div class="step-title">3차시-2</div>
-              <div class="step-caption">AI/동료 토론(2)</div>
-            </div>
-          </div>
-          <div class="step-item" data-step="4">
-            <div class="step-number">4</div>
-            <div class="step-info">
-              <div class="step-title">4차시</div>
-              <div class="step-caption">최종 수정 및 제출</div>
-            </div>
-          </div>
-          <div class="step-item" data-step="5">
-            <div class="step-number">5</div>
-            <div class="step-info">
-              <div class="step-title">5차시</div>
-              <div class="step-caption">추후 진행</div>
-            </div>
-          </div>
         </div>
 
         <div class="workspace-grid">
@@ -369,15 +362,56 @@
         'use strict';
 
         const APP_CONFIG = window.APP_CONFIG || { apiBaseUrl: '/api', apiKey: '' };
-        const DEFAULT_GROUP = 'A';
-        const DEFAULT_STAGE_LABELS = [
+        const TYPE_KEYS = { TYPE_A: 'TYPE_A', TYPE_B: 'TYPE_B' };
+        const DEFAULT_TYPE = TYPE_KEYS.TYPE_A;
+        const TYPE_CONFIGS = {
+          [TYPE_KEYS.TYPE_A]: {
+            id: TYPE_KEYS.TYPE_A,
+            label: 'Type A · 기존 흐름',
+            description: '2차시~5차시 구성 (AI/동료 토론 통합)',
+            group: 'A',
+            stepTemplate: [
+              { badge: '1', stage: 1 },
+              { badge: '2', stage: 2 },
+              { badge: '3', stage: 3 },
+              { badge: '4', stage: 4 },
+              { badge: '5', stage: 5 },
+            ],
+          },
+          [TYPE_KEYS.TYPE_B]: {
+            id: TYPE_KEYS.TYPE_B,
+            label: 'Type B · 세분화 흐름',
+            description: '1~5차시 중 3·4차시가 2단계로 분리',
+            group: 'B',
+            stepTemplate: [
+              { badge: '1', stage: 1 },
+              { badge: '2', stage: 2 },
+              { badge: '3-1', stage: 3, segment: 'a', titleOverride: '3-1차시' },
+              { badge: '3-2', stage: 3, segment: 'b', titleOverride: '3-2차시' },
+              { badge: '4-1', stage: 4, segment: 'a', titleOverride: '4-1차시' },
+              { badge: '4-2', stage: 4, segment: 'b', titleOverride: '4-2차시' },
+              { badge: '5', stage: 5 },
+            ],
+          },
+        };
+        const DEFAULT_STAGE_LABELS_BY_TYPE = {
+          [TYPE_KEYS.TYPE_A]: [
           { name: '2차시', headline: '논거 점검', description: '찬·반 입장으로 질문하며 논거를 점검하세요. 정답 생성 대신 토론 연습에 집중합니다.' },
           { name: '3차시-1', headline: 'ChatGPT 모의 토론 (gpt-4.1-mini)', description: 'AI와 토론을 이어가며 핵심 반론과 근거를 정리하세요.' },
           { name: '3차시-2', headline: '동료 토론', description: '동료와 상호 피드백을 주고받으며 글을 다듬으세요.' },
           { name: '4차시-1', headline: '4-1차시 토론 발문', description: '관리자가 제공한 발문을 다시 확인하고 논리를 점검하세요.' },
           { name: '4차시-2', headline: '4-2차시 정리', description: '4-1차시 대화를 요약하고 추가 메모를 정리하세요.' },
-        ];
-        const DEFAULT_STAGE_PROMPTS = [
+          ],
+          [TYPE_KEYS.TYPE_B]: [
+            { name: '1차시', headline: '주제 탐구', description: '배경 지식을 모으고 주제를 이해합니다.' },
+            { name: '2차시', headline: '관점 정리', description: '찬성/반대 관점을 나누어 근거를 정리합니다.' },
+            { name: '3차시', headline: '3-1/3-2 토론', description: 'AI와 토론하며 떠오르는 질문을 기록합니다.' },
+            { name: '4차시', headline: '4-1/4-2 평가', description: 'AI 피드백을 바탕으로 논리를 보완합니다.' },
+            { name: '5차시', headline: '최종 정리', description: '핵심 주장과 후속 과제를 정리합니다.' },
+          ],
+        };
+        const DEFAULT_STAGE_PROMPTS_BY_TYPE = {
+          [TYPE_KEYS.TYPE_A]: [
           {
             reference: '찬·반 논거를 조사하며 핵심 근거와 반론거리를 메모하세요. AI 웹검색을 활용해 다양한 출처를 탐색해 보세요.',
             aiPrompt: '당신은 학생의 토론 준비를 돕는 AI 웹연구 도우미입니다. 학생이 던지는 질문에 대해, 공정하게 찬성과 반대 측 근거를 모두 제시하고, 신뢰할 만한 출처 정보도 간단히 언급하세요. 답변은 핵심 bullet 2~3개 중심으로, 쉬운 문장으로 작성합니다.',
@@ -392,7 +426,30 @@
             aiPrompt: '당신은 학생의 최종 주장을 검토하는 AI 멘토입니다. 학생의 근거에 비판적 질문을 던지고, 더 정교한 논리를 완성하도록 도와주세요.',
           },
           { reference: '4-1차시 대화를 요약하고, 최종 주장을 정리하세요.', aiPrompt: '' },
-        ];
+          ],
+          [TYPE_KEYS.TYPE_B]: [
+            {
+              reference: '주제 이해를 위해 핵심 키워드·배경 정보를 정리하세요.',
+              aiPrompt: '학생이 놓친 배경 정보를 제시하고, 더 조사할 지점을 제안해 주세요.',
+            },
+            {
+              reference: '찬/반 주장의 핵심 근거를 각각 2가지 이상 작성하세요.',
+              aiPrompt: '양측 논거의 취약점을 짚고, 보완할 데이터를 제안해 주세요.',
+            },
+            {
+              reference: '3-1/3-2 단계에서 사용할 질문 또는 반론을 메모하세요.',
+              aiPrompt: '학생의 질문을 바탕으로 더 깊은 토론이 이뤄지도록 후속 질문을 던져 주세요.',
+            },
+            {
+              reference: 'AI 피드백을 요약하고, 추가로 확인할 근거를 적어두세요.',
+              aiPrompt: '학생의 주장에 논리적 빈틈이 없도록 점검하고 구체적 수정 방향을 제안하세요.',
+            },
+            {
+              reference: '최종 주장을 요약하고, 다음 활동을 위한 체크리스트를 작성하세요.',
+              aiPrompt: '',
+            },
+          ],
+        };
 
         function normalizeApiBaseUrl(path){
           if (!path) return `${window.location.origin}/api/`;
@@ -549,7 +606,8 @@
         const DEFAULT_AI_AVATAR = '/chatgpt.png';
 
         const state = {
-          group: DEFAULT_GROUP,
+          typeMode: DEFAULT_TYPE,
+          group: TYPE_CONFIGS[DEFAULT_TYPE].group,
           sessionKey: '',
           user: { id: '', name: '' },
           stage: 1,
@@ -585,12 +643,21 @@
         const publicConfig = {
           aiAvatarUrl: DEFAULT_AI_AVATAR,
           promptContent: '',
-          stageLabels: DEFAULT_STAGE_LABELS.map((label) => ({ ...label })),
-          stagePrompts: DEFAULT_STAGE_PROMPTS.map((prompt) => ({ ...prompt })),
+          stageLabelsByType: {
+            [TYPE_KEYS.TYPE_A]: DEFAULT_STAGE_LABELS_BY_TYPE[TYPE_KEYS.TYPE_A].map((label) => ({ ...label })),
+            [TYPE_KEYS.TYPE_B]: DEFAULT_STAGE_LABELS_BY_TYPE[TYPE_KEYS.TYPE_B].map((label) => ({ ...label })),
+          },
+          stagePromptsByType: {
+            [TYPE_KEYS.TYPE_A]: DEFAULT_STAGE_PROMPTS_BY_TYPE[TYPE_KEYS.TYPE_A].map((prompt) => ({ ...prompt })),
+            [TYPE_KEYS.TYPE_B]: DEFAULT_STAGE_PROMPTS_BY_TYPE[TYPE_KEYS.TYPE_B].map((prompt) => ({ ...prompt })),
+          },
         };
 
-        function normalizeStageLabels(list){
-          return DEFAULT_STAGE_LABELS.map((label, idx) => {
+        function normalizeStageLabels(list, fallbackList){
+          const baseList =
+            (Array.isArray(fallbackList) && fallbackList.length ? fallbackList : DEFAULT_STAGE_LABELS_BY_TYPE[TYPE_KEYS.TYPE_A]) ||
+            [];
+          return baseList.map((label, idx) => {
             const incoming = Array.isArray(list) && list[idx] ? list[idx] : {};
             return {
               name: typeof incoming.name === 'string' ? incoming.name.trim() || label.name : label.name,
@@ -603,13 +670,25 @@
           });
         }
 
-        function getStageLabel(stageNumber){
-          const index = Math.max(0, Math.min(DEFAULT_STAGE_LABELS.length - 1, Number(stageNumber || 1) - 1));
-          return publicConfig.stageLabels[index] || DEFAULT_STAGE_LABELS[index];
+        function getStageLabelsForType(typeKey){
+          const key = TYPE_CONFIGS[typeKey] ? typeKey : TYPE_KEYS.TYPE_A;
+          const stored = publicConfig.stageLabelsByType[key];
+          if (Array.isArray(stored) && stored.length) return stored;
+          return DEFAULT_STAGE_LABELS_BY_TYPE[key] || DEFAULT_STAGE_LABELS_BY_TYPE[TYPE_KEYS.TYPE_A];
         }
 
-        function normalizeStagePrompts(list){
-          return DEFAULT_STAGE_PROMPTS.map((prompt, idx) => {
+        function getStageLabel(stageNumber){
+          const typeKey = state.typeMode || TYPE_KEYS.TYPE_A;
+          const labels = getStageLabelsForType(typeKey);
+          const index = Math.max(0, Math.min(labels.length - 1, Number(stageNumber || 1) - 1));
+          return labels[index] || labels[0];
+        }
+
+        function normalizeStagePrompts(list, fallbackList){
+          const baseList =
+            (Array.isArray(fallbackList) && fallbackList.length ? fallbackList : DEFAULT_STAGE_PROMPTS_BY_TYPE[TYPE_KEYS.TYPE_A]) ||
+            [];
+          return baseList.map((prompt, idx) => {
             const incoming = Array.isArray(list) && list[idx] ? list[idx] : {};
             return {
               reference:
@@ -628,9 +707,18 @@
           });
         }
 
+        function getStagePromptsForType(typeKey){
+          const key = TYPE_CONFIGS[typeKey] ? typeKey : TYPE_KEYS.TYPE_A;
+          const stored = publicConfig.stagePromptsByType[key];
+          if (Array.isArray(stored) && stored.length) return stored;
+          return DEFAULT_STAGE_PROMPTS_BY_TYPE[key] || DEFAULT_STAGE_PROMPTS_BY_TYPE[TYPE_KEYS.TYPE_A];
+        }
+
         function getStagePromptData(stageNumber){
-          const index = Math.max(0, Math.min(DEFAULT_STAGE_PROMPTS.length - 1, Number(stageNumber || 1) - 1));
-          return publicConfig.stagePrompts[index] || DEFAULT_STAGE_PROMPTS[index];
+          const typeKey = state.typeMode || TYPE_KEYS.TYPE_A;
+          const prompts = getStagePromptsForType(typeKey);
+          const index = Math.max(0, Math.min(prompts.length - 1, Number(stageNumber || 1) - 1));
+          return prompts[index] || prompts[0];
         }
 
         function setRichText(id, text, fallback){
@@ -644,10 +732,63 @@
           el.innerHTML = escapeHtml(content).replace(/\n/g, '<br/>');
         }
 
-        function updateGroupLabel(){
-          const label = $('selectedGroupLabel');
+        function getTypeConfig(typeKey){
+          return TYPE_CONFIGS[typeKey] || TYPE_CONFIGS[TYPE_KEYS.TYPE_A];
+        }
+
+        function mapGroupToTypeKey(group){
+          return String(group || '').toUpperCase() === 'B' ? TYPE_KEYS.TYPE_B : TYPE_KEYS.TYPE_A;
+        }
+
+        function setTypeMode(typeKey, options){
+          const opts = options || {};
+          const config = getTypeConfig(typeKey);
+          const prevType = state.typeMode;
+          state.typeMode = config.id;
+          state.group = config.group;
+          if (!opts.silent || !prevType || prevType !== config.id) {
+            updateSelectedTypeLabel();
+            highlightTypeButtons();
+          }
+          if (opts.skipWorkspace) {
+            buildStepIndicator();
+            updateStepIndicator();
+            return;
+          }
+          renderWorkspace();
+        }
+
+        function updateSelectedTypeLabel(){
+          const label = $('selectedTypeLabel');
           if (!label) return;
-          label.textContent = '로그인';
+          const config = getTypeConfig(state.typeMode);
+          label.textContent = config.label || 'Type A';
+        }
+
+        function highlightTypeButtons(){
+          const current = state.typeMode || TYPE_KEYS.TYPE_A;
+          document.querySelectorAll('[data-type-option]').forEach(function(btn){
+            btn.classList.toggle('active', btn.dataset.typeOption === current);
+          });
+        }
+
+        function showTypeSelection(){
+          const typeCard = $('typeCard');
+          const loginCard = $('loginCard');
+          if (typeCard) typeCard.style.display = 'block';
+          if (loginCard) loginCard.style.display = 'none';
+          highlightTypeButtons();
+        }
+
+        function showLoginCard(){
+          const typeCard = $('typeCard');
+          const loginCard = $('loginCard');
+          if (typeCard) typeCard.style.display = 'none';
+          if (loginCard) {
+            loginCard.style.display = 'block';
+            const studentIdInput = $('studentIdInput');
+            if (studentIdInput) studentIdInput.focus();
+          }
         }
 
         function setText(id, text){
@@ -781,8 +922,13 @@
           });
         }
 
-        function resetState(){
-          state.group = DEFAULT_GROUP;
+        function resetState(options){
+          const opts = options || {};
+          if (opts.typeMode) {
+            state.typeMode = opts.typeMode;
+          }
+          const config = getTypeConfig(state.typeMode);
+          state.group = config.group;
           state.sessionKey = '';
           state.user = { id: '', name: '' };
           state.stage = 1;
@@ -815,18 +961,17 @@
           state.aiAvatarUrl = publicConfig.aiAvatarUrl || DEFAULT_AI_AVATAR;
         }
 
-        function resetToGroupSelection(clearInput){
+        function resetToTypeSelection(clearInput){
           clearAllTimers();
           resetState();
           $('workspace').style.display = 'none';
-          $('loginCard').style.display = 'block';
+          showTypeSelection();
           if (clearInput) {
             $('studentIdInput').value = '';
             $('studentNameInput').value = '';
           }
-          renderWorkspace();
-          setStatus('식별 번호와 이름을 입력하면 세션이 시작됩니다.', 'info');
-          updateGroupLabel();
+          setStatus('Type을 선택한 뒤 식별 번호와 이름을 입력하세요.', 'info');
+          updateSelectedTypeLabel();
           renderUserInfo();
         }
 
