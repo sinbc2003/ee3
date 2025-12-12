@@ -370,6 +370,8 @@
             label: 'Type A · 기존 흐름',
             description: '2차시~5차시 구성 (AI/동료 토론 통합)',
             group: 'A',
+            aiStages: [1, 2, 3, 4, 5],
+            peerStages: [3],
             stepTemplate: [
               { badge: '1', stage: 1 },
               { badge: '2', stage: 2 },
@@ -383,14 +385,15 @@
             label: 'Type B · 세분화 흐름',
             description: '1~5차시 중 3·4차시가 2단계로 분리',
             group: 'B',
+            aiStages: [2, 3, 4, 5],
+            peerStages: [1, 3],
             stepTemplate: [
-              { badge: '1', stage: 1 },
-              { badge: '2', stage: 2 },
+              { badge: '1', stage: 1, titleOverride: '1차시' },
+              { badge: '2', stage: 2, titleOverride: '2차시' },
               { badge: '3-1', stage: 3, segment: 'a', titleOverride: '3-1차시' },
-              { badge: '3-2', stage: 3, segment: 'b', titleOverride: '3-2차시' },
-              { badge: '4-1', stage: 4, segment: 'a', titleOverride: '4-1차시' },
-              { badge: '4-2', stage: 4, segment: 'b', titleOverride: '4-2차시' },
-              { badge: '5', stage: 5 },
+              { badge: '3-2', stage: 4, segment: 'b', titleOverride: '3-2차시' },
+              { badge: '4-1', stage: 5, segment: 'a', titleOverride: '4-1차시' },
+              { badge: '4-2', stage: 5, segment: 'b', titleOverride: '4-2차시' },
             ],
           },
         };
@@ -750,8 +753,8 @@
             updateSelectedTypeLabel();
             highlightTypeButtons();
           }
+          buildStepIndicator();
           if (opts.skipWorkspace) {
-            buildStepIndicator();
             updateStepIndicator();
             return;
           }
@@ -798,14 +801,32 @@
         }
 
         function init(){
-          document.querySelectorAll('#stepIndicator .step-item').forEach(function(item){
-            item.addEventListener('click', onStepIndicatorClick);
-          });
-
           const loginForm = $('loginForm');
           if (loginForm) loginForm.addEventListener('submit', onLoginSubmit);
           const restartBtn = $('btnRestart');
-          if (restartBtn) restartBtn.addEventListener('click', function(){ if (!state.sessionKey || confirm('현재 세션을 종료하고 처음 화면으로 돌아가시겠습니까?')) resetToGroupSelection(true); });
+          if (restartBtn) restartBtn.addEventListener('click', function(){
+            if (state.sessionKey && !confirm('현재 세션을 종료하고 처음 화면으로 돌아가시겠습니까?')) return;
+            resetToTypeSelection(true, DEFAULT_TYPE);
+          });
+
+          document.querySelectorAll('[data-type-option]').forEach(function(btn){
+            btn.addEventListener('click', function(){
+              const typeKey = btn.dataset.typeOption;
+              if (!typeKey) return;
+              resetState({ typeMode: typeKey });
+              setTypeMode(typeKey, { skipWorkspace: true });
+              buildStepIndicator();
+              renderWorkspace();
+              showLoginCard();
+              setStatus(`${getTypeConfig(typeKey).label || 'Type'}을 선택했습니다. 식별 번호와 이름을 입력하세요.`, 'info');
+            });
+          });
+
+          const changeTypeBtn = $('btnChangeType');
+          if (changeTypeBtn) changeTypeBtn.addEventListener('click', function(){
+            if (state.sessionKey && !confirm('현재 진행 중인 세션이 종료됩니다. 계속할까요?')) return;
+            resetToTypeSelection(true, state.typeMode || DEFAULT_TYPE);
+          });
 
           const prewritingInput = $('prewritingInput');
           if (prewritingInput) prewritingInput.addEventListener('input', function(){
@@ -892,14 +913,14 @@
           const peerNextBtn = $('btnPeerNext');
           if (peerNextBtn) peerNextBtn.addEventListener('click', onPeerNextStage);
 
-          updateGroupLabel();
-          $('loginCard').style.display = 'block';
-          const studentIdInput = $('studentIdInput');
-          if (studentIdInput) studentIdInput.focus();
+          highlightTypeButtons();
+          showTypeSelection();
 
           loadPublicSettings();
+          buildStepIndicator();
           renderWorkspace();
-          setStatus(state.status.message, state.status.type);
+          updateSelectedTypeLabel();
+          setStatus('Type을 선택한 뒤 식별 번호와 이름을 입력하세요.', 'info');
 
           if (hasGas) {
             try {
@@ -961,18 +982,23 @@
           state.aiAvatarUrl = publicConfig.aiAvatarUrl || DEFAULT_AI_AVATAR;
         }
 
-        function resetToTypeSelection(clearInput){
+        function resetToTypeSelection(clearInput, nextType){
           clearAllTimers();
-          resetState();
+          if (nextType) {
+            resetState({ typeMode: nextType });
+          } else {
+            resetState();
+          }
           $('workspace').style.display = 'none';
           showTypeSelection();
           if (clearInput) {
             $('studentIdInput').value = '';
             $('studentNameInput').value = '';
           }
-          setStatus('Type을 선택한 뒤 식별 번호와 이름을 입력하세요.', 'info');
+          buildStepIndicator();
           updateSelectedTypeLabel();
           renderUserInfo();
+          setStatus('Type을 선택한 뒤 식별 번호와 이름을 입력하세요.', 'info');
         }
 
         function onLoginSubmit(e){
@@ -1001,7 +1027,10 @@
 
         function onSessionStart(res){
           if (!res) { handleError('세션 정보를 불러오지 못했습니다.'); return; }
-          state.group = (res.mode || DEFAULT_GROUP || state.group || '').toUpperCase();
+          const resolvedGroup = (res.mode || res.group || state.group || getTypeConfig(state.typeMode || TYPE_KEYS.TYPE_A).group || 'A').toUpperCase();
+          const resolvedType = mapGroupToTypeKey(resolvedGroup);
+          setTypeMode(resolvedType, { skipWorkspace: true });
+          state.group = resolvedGroup;
           state.user = { id: (res.you && res.you.id) || '', name: (res.you && res.you.name) || '' };
           state.sessionKey = res.sessionKey || '';
           state.aiChat = { sessionId: res.aiSessionId || '', lastTs: 0, rendered: {}, pending: {}, fetching: false, awaitingResponse: false, welcomeShown: false };
@@ -1009,7 +1038,7 @@
           state.aiAvatarUrl = publicConfig.aiAvatarUrl || state.aiAvatarUrl || DEFAULT_AI_AVATAR;
           state.localPrewritingDraft = '';
           state.stageChangePending = false;
-          updateGroupLabel();
+          updateSelectedTypeLabel();
           $('loginCard').style.display = 'none';
           $('workspace').style.display = 'flex';
           const sessionState = {
@@ -1182,7 +1211,7 @@
 
           // AI/peer 채팅은 단계 전환 시 초기화
           const numericStage = Number(state.stage || 1);
-          const aiStageActive = isAiChatStage(numericStage, state.group);
+          const aiStageActive = isAiChatStage(numericStage);
           if (!aiStageActive) {
             if (state.currentAiStage) {
               clearChatLog('ai', { keepLastTs: false });
@@ -1194,8 +1223,7 @@
             state.aiChat.welcomeShown = false;
             state.currentAiStage = numericStage;
           }
-          const peerStageActive =
-            numericStage === 2 && state.group === 'B';
+          const peerStageActive = isPeerChatStage(numericStage);
           if (!peerStageActive) {
             clearChatLog('peer');
           }
@@ -1214,16 +1242,17 @@
 
         function updateStageVisibility(){
           const stage = Number(state.stage || 1);
-          const group = (state.group || '').toUpperCase();
+          const typeKey = state.typeMode || TYPE_KEYS.TYPE_A;
           const showStage1 = stage <= 1;
           const showStage2 = stage === 2;
-          const showStage3 = stage === 3 && (group === 'A' || group === 'B');
+          const showStage3 = stage === 3;
+          const showStage4 = stage === 4;
           const showStage5 = stage >= 5;
           setPanelVisibility('panelPrompt', stage === 1);
-          setPanelVisibility('panelPrewriting', showStage1);
+          setPanelVisibility('panelPrewriting', showStage1 && typeKey === TYPE_KEYS.TYPE_A);
           setPanelVisibility('panelDraft', showStage2);
           setPanelVisibility('panelMemoStage3', showStage3);
-          setPanelVisibility('panelFinalSummary', stage === 4);
+          setPanelVisibility('panelFinalSummary', showStage4);
           setPanelVisibility('panelStage5', showStage5);
         }
 
@@ -1233,13 +1262,52 @@
           el.style.display = visible ? 'flex' : 'none';
         }
 
+        function buildStepIndicator(){
+          const container = $('stepIndicator');
+          if (!container) return;
+          container.innerHTML = '';
+          const typeConfig = getTypeConfig(state.typeMode || TYPE_KEYS.TYPE_A);
+          const labels = getStageLabelsForType(state.typeMode || TYPE_KEYS.TYPE_A);
+          const template = Array.isArray(typeConfig.stepTemplate) ? typeConfig.stepTemplate : [];
+          template.forEach(function(entry){
+            const item = document.createElement('div');
+            item.className = 'step-item';
+            item.dataset.step = entry.stage;
+            if (entry.segment) item.dataset.segment = entry.segment;
+            item.dataset.titleOverride = entry.titleOverride || '';
+            const number = document.createElement('div');
+            number.className = 'step-number';
+            number.textContent = entry.badge || entry.stage;
+            const info = document.createElement('div');
+            info.className = 'step-info';
+            const title = document.createElement('div');
+            title.className = 'step-title';
+            const labelIndex = Math.max(0, Math.min(labels.length - 1, Number(entry.stage || 1) - 1));
+            const label = labels[labelIndex] || {};
+            title.textContent = entry.titleOverride || label.name || `단계 ${entry.stage}`;
+            const caption = document.createElement('div');
+            caption.className = 'step-caption';
+            caption.textContent = label.headline || label.description || '';
+            info.appendChild(title);
+            info.appendChild(caption);
+            item.appendChild(number);
+            item.appendChild(info);
+            item.addEventListener('click', onStepIndicatorClick);
+            container.appendChild(item);
+          });
+          updateStepIndicator();
+        }
+
         function renderUserInfo(){
           const el = $('userInfo');
           if (!el) return;
+          const config = getTypeConfig(state.typeMode || TYPE_KEYS.TYPE_A);
+          const typeLabel = config.label || 'Type A';
           if (state.sessionKey) {
-            el.textContent = `${state.user.id || ''} ${state.user.name || ''}`.trim();
+            const userLabel = `${state.user.id || ''} ${state.user.name || ''}`.trim();
+            el.textContent = userLabel ? `${typeLabel} · ${userLabel}` : typeLabel;
           } else {
-            el.textContent = '';
+            el.textContent = typeLabel;
           }
         }
 
@@ -1249,17 +1317,20 @@
             const step = Number(item.dataset.step);
             item.classList.toggle('active', step === current);
             item.classList.toggle('completed', step < current);
-            const canNavigate = step !== current && canSelectStage(step) && !state.stageChangePending;
+            const canNavigate = step !== current && canSelectStage(step) && !state.stageChangePending && !state.sessionKey;
             item.classList.toggle('clickable', canNavigate);
             item.setAttribute('aria-disabled', canNavigate ? 'false' : 'true');
             item.style.cursor = canNavigate ? 'pointer' : '';
             const titleNode = item.querySelector('.step-title');
             const captionNode = item.querySelector('.step-caption');
             const label = getStageLabel(step);
-            const fallbackTitles = ['', '2차시', '3차시-1', '3차시-2', '4차시-1', '4차시-2'];
-            const fallbackCaptions = ['', '자료 조사·메모', 'ChatGPT 모의 토론', '동료 토론', '토론 발문', '최종 정리'];
-            if (titleNode) titleNode.textContent = label?.name || fallbackTitles[step] || '';
-            if (captionNode) captionNode.textContent = label?.headline || fallbackCaptions[step] || label?.description || '';
+            if (titleNode) {
+              const override = item.dataset.titleOverride;
+              titleNode.textContent = override || label?.name || `단계 ${step}`;
+            }
+            if (captionNode) {
+              captionNode.textContent = label?.headline || label?.description || '';
+            }
           });
         }
 
@@ -1383,15 +1454,11 @@
           const info = $('draftInfo');
           const titleEl = $('draftTitle');
           const previewEl = $('prewritingPreview');
-          const promptEl = $('draftPromptContent');
           if (!textarea || !info) return;
           const stage = Number(state.stage || 1);
           const group = (state.group || '').toUpperCase();
           const editable = stage === 2 && !state.writing.final.submittedAt;
           const savedText = state.writing.draft.text || '';
-          if (promptEl) {
-            promptEl.textContent = publicConfig.promptContent || '관리자가 등록한 발문이 여기에 표시됩니다.';
-          }
           if (previewEl) {
             const prewritingText = (state.writing.prewriting && state.writing.prewriting.text) || '';
             previewEl.textContent = prewritingText ? prewritingText : '2차시 메모가 아직 저장되지 않았습니다.';
@@ -1445,25 +1512,34 @@
 
         function renderPeerPanel(){
           const stage = Number(state.stage || 1);
-          const group = (state.group || '').toUpperCase();
-          const isMemoStage = stage === 3 && (group === 'A' || group === 'B');
+          const isMemoStage = stage === 3;
+          const currentLabel = getStageLabel(stage) || {};
+          const titleEl = $('memoStage3Title');
           const infoEl = $('memoStage3Info');
           const notesInput = $('notesInput');
           const saveBtn = $('btnNotesSave');
           const nextBtn = $('btnPeerNext');
           if (!notesInput || !saveBtn || !nextBtn) return;
 
+          if (titleEl) {
+            const combined = currentLabel.headline ? `${currentLabel.name || ''} · ${currentLabel.headline}` : (currentLabel.name || '동료 메모');
+            titleEl.textContent = combined;
+          }
+
           if (infoEl) {
             if (!infoEl.dataset.baseText) {
-              infoEl.dataset.baseText = infoEl.textContent || '';
+              infoEl.dataset.baseText = infoEl.textContent || currentLabel.description || '';
             }
-            let base = infoEl.dataset.baseText || infoEl.textContent || '';
+            let base = infoEl.dataset.baseText || currentLabel.description || infoEl.textContent || '';
             const memoSavedAt = Number(state.writing.notes.updatedAt || 0);
             if (memoSavedAt) {
               base += ' · 마지막 저장: ' + formatDate(memoSavedAt);
             }
             infoEl.textContent = base;
           }
+
+          const transcriptBlock = document.querySelector('.stage3-transcript-block');
+          if (transcriptBlock) transcriptBlock.style.display = stage === 3 ? 'block' : 'none';
 
           if (state.writing.notes && state.writing.notes.text) {
             if (!isMemoStage || !state.localStage3Memo || state.localStage3Memo === state.writing.notes.text) {
@@ -1637,19 +1713,25 @@
           setStatus('5차시 메모가 로컬에 저장되었습니다. (서버 연동 필요)', 'success');
         }
 
-        function isAiChatStage(stage, _group){
-          const numeric = Number(stage || 0);
-          if (!numeric) return false;
-          return numeric === 1 || numeric === 2 || numeric === 3;
+        function isAiChatStage(stage){
+          const config = getTypeConfig(state.typeMode || TYPE_KEYS.TYPE_A);
+          const list = Array.isArray(config.aiStages) ? config.aiStages : [];
+          return list.includes(Number(stage || 0));
+        }
+
+        function isPeerChatStage(stage){
+          const config = getTypeConfig(state.typeMode || TYPE_KEYS.TYPE_A);
+          const list = Array.isArray(config.peerStages) ? config.peerStages : [];
+          return list.includes(Number(stage || 0));
         }
 
         function renderRightPanels(){
           const stage = Number(state.stage || 1);
-          const group = (state.group || '').toUpperCase();
-          const showAiChat = isAiChatStage(stage, group);
-          const showPeerChat = stage === 2 && group === 'B';
+          const showAiChat = isAiChatStage(stage);
+          const showPeerChat = isPeerChatStage(stage);
           const showFinalChat = stage >= 4;
           if (showAiChat) updateAiPanelHeader(stage);
+          if (showPeerChat) updatePeerPanelHeader(stage);
           togglePanel('rightStage2', showAiChat);
           togglePanel('rightStage3', showPeerChat);
           togglePanel('rightStage4', showFinalChat);
@@ -1664,6 +1746,14 @@
           setText('aiStageSubtitle', label.description || 'AI와 토론을 이어가며 논거를 점검하세요.');
         }
 
+        function updatePeerPanelHeader(stage){
+          const label = getStageLabel(stage);
+          if (!label) return;
+          const combined = label.headline ? `${label.name} · ${label.headline}` : label.name;
+          setText('peerStageTitle', combined || '동료 토론');
+          setText('peerStageSubtitle', label.description || '동료와 상호작용하며 피드백을 주고받으세요.');
+        }
+
         function togglePanel(id, visible){
           const el = $(id);
           if (!el) return;
@@ -1672,22 +1762,18 @@
 
         function renderPartnerPanel(){
           const partner = state.partner;
-          const group = (state.group || '').toUpperCase();
           const stage = Number(state.stage || 1);
           const nameEl = $('partnerName');
           const infoEl = $('partnerInfoBox');
           if (!nameEl || !infoEl) return;
+          const isPeerStage = isPeerChatStage(stage);
           if (partner) {
             nameEl.textContent = (partner.name || '동료') + ' 학생';
             const peerStageName = formatStageName(partner.stage || 1);
-            if (stage === 2 && group === 'B') {
-              infoEl.textContent = '동료와 실시간 피드백 단계입니다. 동료 단계: ' + peerStageName;
-            } else {
-              infoEl.textContent = '현재 단계: ' + peerStageName;
-            }
+            infoEl.textContent = (isPeerStage ? '동료와 실시간 피드백 단계입니다. 동료 단계: ' : '현재 단계: ') + peerStageName;
           } else {
             nameEl.textContent = '동료 정보를 불러오는 중...';
-            if (group === 'B' && stage === 2) {
+            if (isPeerStage) {
               infoEl.textContent = '동료 매칭 정보를 기다리고 있습니다.';
             } else {
               infoEl.textContent = '이 단계에서는 동료 정보가 필요하지 않습니다.';
@@ -2409,8 +2495,7 @@
         function pollAiMessages(){
           if (!hasGas || !state.aiChat.sessionId) return;
           const stage = Number(state.stage || 1);
-          const group = (state.group || '').toUpperCase();
-          if (!isAiChatStage(stage, group)) return;
+          if (!isAiChatStage(stage)) return;
           if (state.aiChat.fetching) return;
           state.aiChat.fetching = true;
           google.script.run.withSuccessHandler(function(list){
@@ -2426,8 +2511,7 @@
         function startAiPolling(){
           if (state.timers.ai) return;
           const stage = Number(state.stage || 1);
-          const group = (state.group || '').toUpperCase();
-          if (!isAiChatStage(stage, group)) return;
+          if (!isAiChatStage(stage)) return;
           state.timers.ai = setInterval(pollAiMessages, 5000);
           pollAiMessages();
         }
@@ -2442,9 +2526,7 @@
         function pollPeerMessages(){
           if (!hasGas || !state.peerChat.sessionId) return;
           const stage = Number(state.stage || 1);
-          const group = (state.group || '').toUpperCase();
-          const isPeerStage = stage === 2 && group === 'B';
-          if (!isPeerStage) return;
+          if (!isPeerChatStage(stage)) return;
           if (state.peerChat.fetching) return;
           state.peerChat.fetching = true;
           google.script.run.withSuccessHandler(function(list){
@@ -2460,9 +2542,7 @@
         function startPeerPolling(){
           if (state.timers.peer) return;
           const stage = Number(state.stage || 1);
-          const group = (state.group || '').toUpperCase();
-          const isPeerStage = stage === 2 && group === 'B';
-          if (!isPeerStage) return;
+          if (!isPeerChatStage(stage)) return;
           state.timers.peer = setInterval(pollPeerMessages, 5000);
           pollPeerMessages();
         }
@@ -2506,9 +2586,8 @@
           startStatePolling();
           startPresencePing();
           const stage = Number(state.stage || 1);
-          const group = (state.group || '').toUpperCase();
-          const isAiStage = isAiChatStage(stage, group);
-          const isPeerStage = stage === 2 && group === 'B';
+          const isAiStage = isAiChatStage(stage);
+          const isPeerStage = isPeerChatStage(stage);
           if (isAiStage && state.aiChat.sessionId) startAiPolling(); else stopAiPolling();
           if (isPeerStage && state.peerChat.sessionId) startPeerPolling(); else stopPeerPolling();
           if (stage >= 4) {
@@ -2571,15 +2650,8 @@
         }
 
         function formatStageName(step){
-          const group = (state.group || '').toUpperCase();
-          switch (Number(step)) {
-            case 1: return '2차시 (자료 조사·메모)';
-            case 2: return '3차시-1 (ChatGPT 모의 토론)';
-            case 3: return group === 'A' ? '3차시-2 (동료 토론)' : '3차시-2 (ChatGPT/동료)';
-            case 4: return '4차시 (최종 수정 및 제출)';
-            case 5: return '5차시';
-            default: return step + '단계';
-          }
+          const label = getStageLabel(step);
+          return label?.name || `단계 ${step}`;
         }
 
         function describePresence(info){
@@ -2610,9 +2682,24 @@
               if (!cfg) return;
               publicConfig.aiAvatarUrl = cfg.aiAvatarUrl || DEFAULT_AI_AVATAR;
               publicConfig.promptContent = cfg.promptContent || '';
-              publicConfig.stageLabels = normalizeStageLabels(cfg.stageLabels);
-              publicConfig.stagePrompts = normalizeStagePrompts(cfg.stagePrompts);
+              publicConfig.stageLabelsByType[TYPE_KEYS.TYPE_A] = normalizeStageLabels(
+                cfg.stageLabels,
+                DEFAULT_STAGE_LABELS_BY_TYPE[TYPE_KEYS.TYPE_A]
+              );
+              publicConfig.stageLabelsByType[TYPE_KEYS.TYPE_B] = normalizeStageLabels(
+                cfg.stageLabelsTypeB,
+                DEFAULT_STAGE_LABELS_BY_TYPE[TYPE_KEYS.TYPE_B]
+              );
+              publicConfig.stagePromptsByType[TYPE_KEYS.TYPE_A] = normalizeStagePrompts(
+                cfg.stagePrompts,
+                DEFAULT_STAGE_PROMPTS_BY_TYPE[TYPE_KEYS.TYPE_A]
+              );
+              publicConfig.stagePromptsByType[TYPE_KEYS.TYPE_B] = normalizeStagePrompts(
+                cfg.stagePromptsTypeB,
+                DEFAULT_STAGE_PROMPTS_BY_TYPE[TYPE_KEYS.TYPE_B]
+              );
               state.aiAvatarUrl = publicConfig.aiAvatarUrl || DEFAULT_AI_AVATAR;
+              buildStepIndicator();
               applyStageLabelsToPanels();
               renderStagePrompts();
               updateStepIndicator();

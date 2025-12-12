@@ -375,6 +375,27 @@
         margin: 6px 0 0;
         font-size: 12px;
       }
+      .stage-type-tabs {
+        display: flex;
+        gap: 8px;
+        margin-bottom: 16px;
+        flex-wrap: wrap;
+      }
+      .stage-type-tab {
+        border: 1px solid #cbd5f5;
+        background: #f8fafc;
+        border-radius: 999px;
+        padding: 6px 14px;
+        font-weight: 600;
+        color: #1f2937;
+        cursor: pointer;
+        transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+      }
+      .stage-type-tab.active {
+        background: #2563eb;
+        border-color: #1d4ed8;
+        color: #ffffff;
+      }
       .stage-label-grid {
         display: grid;
         gap: 16px;
@@ -533,7 +554,11 @@
 
         <section class="card" id="stageLabelSection">
           <h2>차시 안내</h2>
-          <p class="muted" style="margin-bottom: 12px;">2차시~4차시-2까지 단계 이름과 안내 문구를 수정하세요. 학생 화면 상단과 단계 패널에 반영됩니다.</p>
+          <p class="muted" style="margin-bottom: 12px;">Type별 단계 이름·발문·AI 프롬프트를 수정하세요. 학생 화면 상단과 단계 패널에 즉시 반영됩니다.</p>
+          <div class="stage-type-tabs">
+            <button type="button" class="stage-type-tab active" data-stage-type="TYPE_A">Type A</button>
+            <button type="button" class="stage-type-tab" data-stage-type="TYPE_B">Type B</button>
+          </div>
           <div class="stage-label-grid">
             <div class="stage-label-item">
               <h3>단계 1</h3>
@@ -800,7 +825,31 @@
             },
           ],
         };
-        let stageContentDirty = false;
+        const AI_STAGE_INDICES = {
+          [TYPE_KEYS.TYPE_A]: [0, 1, 3],
+          [TYPE_KEYS.TYPE_B]: [1, 2, 3],
+        };
+        let currentStageType = TYPE_KEYS.TYPE_A;
+        let stageContentState = {
+          [TYPE_KEYS.TYPE_A]: DEFAULT_STAGE_LABELS[TYPE_KEYS.TYPE_A].map((label, idx) => ({
+            name: label.name,
+            headline: label.headline,
+            description: label.description,
+            reference: DEFAULT_STAGE_PROMPTS[TYPE_KEYS.TYPE_A][idx].reference,
+            aiPrompt: DEFAULT_STAGE_PROMPTS[TYPE_KEYS.TYPE_A][idx].aiPrompt,
+          })),
+          [TYPE_KEYS.TYPE_B]: DEFAULT_STAGE_LABELS[TYPE_KEYS.TYPE_B].map((label, idx) => ({
+            name: label.name,
+            headline: label.headline,
+            description: label.description,
+            reference: DEFAULT_STAGE_PROMPTS[TYPE_KEYS.TYPE_B][idx].reference,
+            aiPrompt: DEFAULT_STAGE_PROMPTS[TYPE_KEYS.TYPE_B][idx].aiPrompt,
+          })),
+        };
+        let stageContentDirty = {
+          [TYPE_KEYS.TYPE_A]: false,
+          [TYPE_KEYS.TYPE_B]: false,
+        };
 
         function normalizeBaseUrl(url){
           if (!url) return `${window.location.origin}/api/`;
@@ -1246,6 +1295,15 @@
         document.querySelectorAll('[data-stage-field]').forEach((input) => {
           input.addEventListener('input', handleStageLabelInput);
         });
+        document.querySelectorAll('[data-stage-type]').forEach((button) => {
+          button.addEventListener('click', () => {
+            const nextType = button.dataset.stageType;
+            if (!nextType || nextType === currentStageType) return;
+            currentStageType = nextType;
+            renderStageTypeFields();
+            updateStageLabelSaveButton();
+          });
+        });
         $('btnStageLabelsSave').addEventListener('click', saveStageLabels);
         $('btnRosterDownloadTemplate').addEventListener('click', downloadRosterTemplate);
         $('rosterFileInput').addEventListener('change', handleRosterFileInput);
@@ -1278,6 +1336,7 @@
         $('rosterTextarea').addEventListener('input', handleRosterInput);
 
         updateSessionActionButtons();
+        renderStageTypeFields();
         attemptAutoLogin();
         function resetDetailPanels(){
           $('sessionDetailSection').classList.add('hidden');
@@ -1453,8 +1512,9 @@
           preview.innerHTML = escaped;
         }
 
-        function normalizeStageLabelsInput(list){
-          return DEFAULT_STAGE_LABELS.map((label, idx) => {
+        function normalizeStageLabelsInput(list, typeKey){
+          const defaults = DEFAULT_STAGE_LABELS[typeKey] || [];
+          return defaults.map((label, idx) => {
             const incoming = Array.isArray(list) && list[idx] ? list[idx] : {};
             return {
               name: typeof incoming.name === 'string' ? incoming.name.trim() || label.name : label.name,
@@ -1467,8 +1527,9 @@
           });
         }
 
-        function normalizeStagePromptsInput(list){
-          return DEFAULT_STAGE_PROMPTS.map((prompt, idx) => {
+        function normalizeStagePromptsInput(list, typeKey){
+          const defaults = DEFAULT_STAGE_PROMPTS[typeKey] || [];
+          return defaults.map((prompt, idx) => {
             const incoming = Array.isArray(list) && list[idx] ? list[idx] : {};
             return {
               reference:
@@ -1487,37 +1548,60 @@
           });
         }
 
-        function populateStageLabelInputs(labels, prompts){
-          const normalizedLabels = normalizeStageLabelsInput(labels);
-          const normalizedPrompts = normalizeStagePromptsInput(prompts);
-          stageContentState = normalizedLabels.map((label, idx) => ({
+        function buildStageEntries(typeKey, labels, prompts){
+          const normalizedLabels = normalizeStageLabelsInput(labels, typeKey);
+          const normalizedPrompts = normalizeStagePromptsInput(prompts, typeKey);
+          return normalizedLabels.map((label, idx) => ({
             name: label.name,
             headline: label.headline,
             description: label.description,
-            reference: normalizedPrompts[idx].reference,
-            aiPrompt: normalizedPrompts[idx].aiPrompt,
+            reference: normalizedPrompts[idx]?.reference || '',
+            aiPrompt: normalizedPrompts[idx]?.aiPrompt || '',
           }));
-          stageContentDirty = false;
-          stageContentState.forEach((content, idx) => {
+        }
+
+        function getStageState(typeKey){
+          return stageContentState[typeKey] || [];
+        }
+
+        function setStageState(typeKey, entries){
+          stageContentState[typeKey] = entries;
+        }
+
+        function populateStageLabelInputs(labelsA, promptsA, labelsB, promptsB){
+          setStageState(TYPE_KEYS.TYPE_A, buildStageEntries(TYPE_KEYS.TYPE_A, labelsA, promptsA));
+          setStageState(TYPE_KEYS.TYPE_B, buildStageEntries(TYPE_KEYS.TYPE_B, labelsB, promptsB));
+          stageContentDirty[TYPE_KEYS.TYPE_A] = false;
+          stageContentDirty[TYPE_KEYS.TYPE_B] = false;
+          renderStageTypeFields();
+          updateStageLabelSaveButton();
+        }
+
+        function renderStageTypeFields(){
+          const entries = getStageState(currentStageType);
+          const aiStages = AI_STAGE_INDICES[currentStageType] || [];
+          entries.forEach((content, idx) => {
             const index = idx + 1;
             const nameInput = $('stageLabelName' + index);
             const headlineInput = $('stageLabelHeadline' + index);
             const descInput = $('stageLabelDesc' + index);
             const refInput = $('stageLabelReference' + index);
             const promptInput = $('stageLabelPrompt' + index);
-            const promptField = document.querySelector(`.stage-prompt-field[data-stage-index="${idx}"]`);
+            const promptField = document.querySelector(`.stage-prompt-field[data-stage-index=\"${idx}\"]`);
             if (nameInput) nameInput.value = content.name || '';
             if (headlineInput) headlineInput.value = content.headline || '';
             if (descInput) descInput.value = content.description || '';
             if (refInput) refInput.value = content.reference || '';
-            const isAiStage = AI_STAGE_INDICES.includes(idx);
+            const isAiStage = aiStages.includes(idx);
             if (promptField) promptField.style.display = isAiStage ? 'block' : 'none';
             if (promptInput) {
               promptInput.disabled = !isAiStage;
               promptInput.value = isAiStage ? content.aiPrompt || '' : '';
             }
           });
-          updateStageLabelSaveButton();
+          document.querySelectorAll('[data-stage-type]').forEach((btn) => {
+            btn.classList.toggle('active', btn.dataset.stageType === currentStageType);
+          });
         }
 
         function handleStageLabelInput(event){
@@ -1526,49 +1610,76 @@
           const index = Number(target.dataset.stageIndex);
           const field = target.dataset.stageField;
           if (!Number.isFinite(index) || !field) return;
-          if (!stageContentState[index]) {
-            stageContentState[index] = {
-              ...DEFAULT_STAGE_LABELS[index],
-              reference: DEFAULT_STAGE_PROMPTS[index].reference,
-              aiPrompt: DEFAULT_STAGE_PROMPTS[index].aiPrompt,
+          const entries = getStageState(currentStageType).slice();
+          if (!entries[index]) {
+            const fallbackLabel = (DEFAULT_STAGE_LABELS[currentStageType] || [])[index] || {};
+            const fallbackPrompt = (DEFAULT_STAGE_PROMPTS[currentStageType] || [])[index] || {};
+            entries[index] = {
+              name: fallbackLabel.name || '',
+              headline: fallbackLabel.headline || '',
+              description: fallbackLabel.description || '',
+              reference: fallbackPrompt.reference || '',
+              aiPrompt: fallbackPrompt.aiPrompt || '',
             };
           }
-          stageContentState[index][field] = target.value;
-          stageContentDirty = true;
+          entries[index][field] = target.value;
+          setStageState(currentStageType, entries);
+          stageContentDirty[currentStageType] = true;
           updateStageLabelSaveButton();
         }
 
         function updateStageLabelSaveButton(){
           const btn = $('btnStageLabelsSave');
-          if (btn) btn.disabled = !stageContentDirty;
+          if (btn) btn.disabled = !Object.values(stageContentDirty).some(Boolean);
         }
 
         async function saveStageLabels(){
-          if (!stageContentDirty) return;
+          if (!Object.values(stageContentDirty).some(Boolean)) return;
           const btn = $('btnStageLabelsSave');
           if (btn) btn.disabled = true;
           try {
-            const labelsPayload = stageContentState.map((label) => ({
-              name: String(label.name || '').trim(),
-              headline: String(label.headline || '').trim(),
-              description: String(label.description || '').trim(),
-            }));
-            const promptsPayload = stageContentState.map((label, idx) => ({
-              reference: String(label.reference || '').trim(),
-              aiPrompt: AI_STAGE_INDICES.includes(idx) ? String(label.aiPrompt || '').trim() : '',
-            }));
+            const labelsPayloadA = buildStageLabelPayload(TYPE_KEYS.TYPE_A);
+            const promptsPayloadA = buildStagePromptPayload(TYPE_KEYS.TYPE_A);
+            const labelsPayloadB = buildStageLabelPayload(TYPE_KEYS.TYPE_B);
+            const promptsPayloadB = buildStagePromptPayload(TYPE_KEYS.TYPE_B);
             const response = await apiRequest('public-settings', {
               method: 'POST',
-              body: { stageLabels: labelsPayload, stagePrompts: promptsPayload },
+              body: {
+                stageLabels: labelsPayloadA,
+                stagePrompts: promptsPayloadA,
+                stageLabelsTypeB: labelsPayloadB,
+                stagePromptsTypeB: promptsPayloadB,
+              },
             });
-            populateStageLabelInputs(response?.stageLabels || labelsPayload, response?.stagePrompts || promptsPayload);
+            populateStageLabelInputs(
+              response?.stageLabels || labelsPayloadA,
+              response?.stagePrompts || promptsPayloadA,
+              response?.stageLabelsTypeB || labelsPayloadB,
+              response?.stagePromptsTypeB || promptsPayloadB
+            );
             setStatus('차시 안내를 저장했습니다.', 'success');
           } catch (error) {
-            stageContentDirty = true;
+            stageContentDirty[currentStageType] = true;
             setStatus(error.message || '차시 안내를 저장하지 못했습니다.', 'error');
           } finally {
             updateStageLabelSaveButton();
           }
+        }
+
+        function buildStageLabelPayload(typeKey){
+          return getStageState(typeKey).map((label) => ({
+            name: String(label.name || '').trim(),
+            headline: String(label.headline || '').trim(),
+            description: String(label.description || '').trim(),
+          }));
+        }
+
+        function buildStagePromptPayload(typeKey){
+          const aiStages = AI_STAGE_INDICES[typeKey] || [];
+          return getStageState(typeKey).map((label, idx) => ({
+            reference: String(label.reference || '').trim(),
+            aiPrompt: aiStages.includes(idx) ? String(label.aiPrompt || '').trim() : '',
+          }));
         }
 
         function updatePromptSaveButton(){
@@ -1589,7 +1700,12 @@
               textarea.value = currentPromptContent;
             }
             renderPromptPreview(currentPromptContent);
-            populateStageLabelInputs(settings?.stageLabels, settings?.stagePrompts);
+            populateStageLabelInputs(
+              settings?.stageLabels,
+              settings?.stagePrompts,
+              settings?.stageLabelsTypeB,
+              settings?.stagePromptsTypeB
+            );
             updatePromptSaveButton();
             if (showStatus) {
               setStatus('제시문을 불러왔습니다.', 'success');
