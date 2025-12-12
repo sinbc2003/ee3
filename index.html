@@ -1041,6 +1041,18 @@
           renderPresence();
           renderDictionaryHistory();
           refreshChatControls();
+
+          // AI/PER chat logs should refresh when stage transitions
+          const aiStageActive = isAiChatStage(state.stage, state.group);
+          if (!aiStageActive) {
+            clearChatLog('ai');
+          }
+          const peerStageActive =
+            (Number(state.stage || 1) === 2 && state.group === 'B') ||
+            (Number(state.stage || 1) === 3 && state.group === 'A');
+          if (!peerStageActive) {
+            clearChatLog('peer');
+          }
         }
 
         function getPreviousStageNumber(){
