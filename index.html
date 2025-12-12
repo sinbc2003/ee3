@@ -380,7 +380,7 @@
         const APP_CONFIG = window.APP_CONFIG || { apiBaseUrl: '/api', apiKey: '' };
         const DEFAULT_GROUP = 'A';
         const DEFAULT_STAGE_LABELS = [
-          { name: '2차시', headline: 'AI 웹검색', description: '찬·반 입장으로 질문하며 논거를 점검하세요. 정답 생성 대신 토론 연습에 집중합니다.' },
+          { name: '2차시', headline: '논거 점검', description: '찬·반 입장으로 질문하며 논거를 점검하세요. 정답 생성 대신 토론 연습에 집중합니다.' },
           { name: '3차시-1', headline: 'ChatGPT 모의 토론 (gpt-4.1-mini)', description: 'AI와 토론을 이어가며 핵심 반론과 근거를 정리하세요.' },
           { name: '3차시-2', headline: '동료 토론', description: '동료와 상호 피드백을 주고받으며 글을 다듬으세요.' },
           { name: '4차시-1', headline: '4-1차시 토론 발문', description: '관리자가 제공한 발문을 다시 확인하고 논리를 점검하세요.' },
@@ -1512,7 +1512,7 @@
               ts: 0,
               role: 'system',
               senderName: '시스템',
-              text: 'ChatGPT(gpt-4.1-mini)와 모의 토론을 시작하세요. 예) “나는 찬성 측인데 주요 반론이 뭐가 있을까?”, “이 근거의 약점을 지적해줘”.'
+              text: 'AI 웹 검색 기능을 활용해 다양한 관점의 근거와 반론을 찾아보세요.'
             },
             { pending: false }
           );

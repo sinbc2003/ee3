@@ -164,7 +164,7 @@ function defaultStageLabels() {
   return [
     {
       name: '2차시',
-      headline: 'AI 웹검색',
+      headline: '논거 점검',
       description: '찬·반 입장으로 질문하며 논거를 점검하세요. 정답 생성 대신 토론 연습에 집중합니다.',
     },
     {
