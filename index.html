@@ -383,7 +383,7 @@
             description: '2차시~5차시 구성 (AI/동료 토론 통합)',
             group: 'A',
             aiStages: [1, 2, 3, 4, 5],
-            peerStages: [],
+            peerStages: [3],
             stepTemplate: [
               { badge: '1', stage: 1 },
               { badge: '2', stage: 2 },
@@ -1600,10 +1600,8 @@
             moveBtn.textContent = '다음 단계로 이동';
             moveBtn.disabled = !hasSaved;
           }
-          if (titleEl) {
-            if (overrideTitle) titleEl.textContent = overrideTitle;
-            else if (group === 'B') titleEl.textContent = '2단계 · 동료 메모';
-            else titleEl.textContent = '2단계 · 글쓰기 수정 관련 메모';
+          if (titleEl && overrideTitle) {
+            titleEl.textContent = overrideTitle;
           }
           const savedAt = Number(state.writing.draft.savedAt || 0);
           if (savedAt) {
@@ -1611,8 +1609,6 @@
         } else {
             if (overrideSubtitle) {
               info.textContent = overrideSubtitle;
-            } else if (group === 'B') {
-              info.textContent = '동료와의 대화에서 얻은 포인트를 기록한 뒤 이동하세요.';
             } else {
               info.textContent =
                 'AI 튜터에게 받은 피드백을 참고하여, 글을 어떻게 수정할지에 대한 아이디어를 메모 형태로 자유롭게 정리하세요.';
@@ -2129,23 +2125,12 @@
           if (!hasGas) return;
           const stage = Number(state.stage || 1);
           const group = (state.group || '').toUpperCase();
-          if (stage === 2 && group === 'A') {
-            if (!confirm('동료 메모 단계로 이동하시겠습니까?')) return;
+          if (stage === 2 && (group === 'A' || group === 'B')) {
+            if (!confirm('다음 단계로 이동하시겠습니까?')) return;
             $('btnToPeer').disabled = true;
-            setStatus('동료 메모 단계를 여는 중입니다...', 'info');
+            setStatus('다음 단계를 여는 중입니다...', 'info');
             google.script.run.withSuccessHandler(function(res){
-              setStatus('동료 메모 단계가 열렸습니다.', 'success');
-              syncSessionState(res);
-            }).withFailureHandler(function(err){
-              $('btnToPeer').disabled = false;
-              handleError(err);
-            }).advanceToPeerStage(state.sessionKey);
-          } else if (stage === 2 && group === 'B') {
-            if (!confirm('AI 피드백 단계로 이동하시겠습니까?')) return;
-            $('btnToPeer').disabled = true;
-            setStatus('AI 피드백 단계를 여는 중입니다...', 'info');
-            google.script.run.withSuccessHandler(function(res){
-              setStatus('AI 피드백 단계가 열렸습니다.', 'success');
+              setStatus('다음 단계로 이동했습니다.', 'success');
               syncSessionState(res);
             }).withFailureHandler(function(err){
               $('btnToPeer').disabled = false;
@@ -2479,8 +2464,7 @@
         function sendPeerMessage(){
           if (!hasGas || !state.peerChat.sessionId) return;
           const stage = Number(state.stage || 1);
-          const group = (state.group || '').toUpperCase();
-          const isPeerStage = (stage === 2 && group === 'B') || (stage === 3 && group === 'A');
+          const isPeerStage = isPeerChatStage(stage);
           if (!isPeerStage) { setStatus('동료 협업 단계에서만 사용할 수 있습니다.', 'warn'); return; }
           const input = $('peerInput');
           if (!input || input.disabled) return;
