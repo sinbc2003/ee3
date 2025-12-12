@@ -47,6 +47,7 @@ class FileStore {
       'public-settings.json',
       defaultPublicSettings()
     );
+    this.publicSettings = sanitizePublicSettings({}, this.publicSettings);
     this.roster = await this.readJson('roster.json', defaultRoster());
     this.adminOverrides = await this.readJson(
       'admin-config.json',
@@ -155,6 +156,7 @@ function defaultPublicSettings() {
     aiAvatarUrl: '',
     promptContent: '',
     stageLabels: defaultStageLabels(),
+    stagePrompts: defaultStagePrompts(),
   };
 }
 
@@ -184,6 +186,30 @@ function defaultStageLabels() {
       name: '4차시-2',
       headline: '4-2차시 정리',
       description: '4-1차시 기록을 요약하고 추가 메모를 정리하세요.',
+    },
+  ];
+}
+
+function defaultStagePrompts() {
+  return [
+    {
+      reference:
+        '찬·반 논거를 조사하며 핵심 근거와 반론거리를 메모하세요. AI 웹검색을 활용해 다양한 출처를 탐색해 보세요.',
+      aiPrompt:
+        '당신은 학생의 토론 준비를 돕는 AI 웹연구 도우미입니다. 학생이 던지는 질문에 대해, 공정하게 찬성과 반대 측 근거를 모두 제시하고, 신뢰할 만한 출처 정보도 간단히 언급하세요. 답변은 핵심 bullet 2~3개 중심으로, 쉬운 문장으로 작성합니다.',
+    },
+    { reference: '', aiPrompt: '' },
+    { reference: '', aiPrompt: '' },
+    {
+      reference:
+        '4-1차시 토론 발문을 확인하고, AI와 심층 토론을 이어가세요. 주장·근거·반론을 명확하게 정리해 보세요.',
+      aiPrompt:
+        '당신은 학생의 찬반 토론을 도와주는 AI 멘토입니다. 학생의 주장에 날카로운 질문을 던지고, 근거의 빈틈을 짚어 주며, 구체적인 사례/통계를 제안해 주세요.',
+    },
+    {
+      reference:
+        '4-1차시 대화를 요약하고, 최종 주장을 정리하세요. 필요한 경우 AI에게 추가 설명을 요청할 수 있습니다.',
+      aiPrompt: '',
     },
   ];
 }
@@ -752,6 +778,8 @@ async function generateAiFeedback(userMessage, group, contextText, options = {})
   const sessionId = options.sessionId || '';
   const evalPrompt = options.evalPrompt || '';
   const config = getEffectiveAiConfig();
+  const stagePrompt = getStagePrompt(stage);
+  const stageSystemPrompt = typeof stagePrompt?.aiPrompt === 'string' ? stagePrompt.aiPrompt.trim() : '';
 
   // 3-2 차시: gpt-4.1로 평가, 이전 대화 요약 포함
   if (stage >= 3) {
@@ -766,14 +794,22 @@ async function generateAiFeedback(userMessage, group, contextText, options = {})
       message: trimmed,
       contextText: mergedContext,
       model: 'gpt-4.1',
-      systemPrompt: evalPrompt || config.systemPrompt,
+      systemPrompt: stageSystemPrompt || evalPrompt || config.systemPrompt,
     });
   }
 
   if (provider === 'perplexity') {
-    return callPerplexityChat({ message: trimmed, contextText });
+    return callPerplexityChat({
+      message: trimmed,
+      contextText,
+      systemPrompt: stageSystemPrompt || config.systemPrompt,
+    });
   }
-  return callOpenAiChat({ message: trimmed, contextText });
+  return callOpenAiChat({
+    message: trimmed,
+    contextText,
+    systemPrompt: stageSystemPrompt || evalPrompt || config.systemPrompt,
+  });
 }
 
 async function callOpenAiChat({ message, contextText, model, systemPrompt, temperature }) {
@@ -803,16 +839,18 @@ async function callOpenAiChat({ message, contextText, model, systemPrompt, tempe
   return text.trim() || '응답을 생성하지 못했습니다.';
 }
 
-async function callPerplexityChat({ message, contextText }) {
+async function callPerplexityChat({ message, contextText, systemPrompt }) {
   const config = getEffectiveAiConfig();
   const apiKey = config.perplexity.apiKey || '';
   if (!apiKey) {
     throw createHttpError(500, 'Perplexity API 키가 설정되지 않았습니다.');
   }
-  const systemPrompt = config.systemPrompt || '';
+  const effectivePrompt = typeof systemPrompt === 'string' && systemPrompt.trim()
+    ? systemPrompt
+    : config.systemPrompt || '';
   const modelName = config.perplexity.model || 'llama-3.1-sonar-small-128k-online';
   const messages = [];
-  if (systemPrompt) messages.push({ role: 'system', content: systemPrompt });
+  if (effectivePrompt) messages.push({ role: 'system', content: effectivePrompt });
   if (contextText) {
     messages.push({ role: 'system', content: `[참고]\n${contextText}` });
   }
@@ -1571,13 +1609,16 @@ function sanitizePublicSettings(payload, currentSettings = store.publicSettings)
   if (Array.isArray(payload.stageLabels)) {
     base.stageLabels = normalizeStageLabels(payload.stageLabels, base.stageLabels);
   }
+  if (Array.isArray(payload.stagePrompts)) {
+    base.stagePrompts = normalizeStagePrompts(payload.stagePrompts, base.stagePrompts);
+  }
   return base;
 }
 
 function normalizeStageLabels(list, fallback) {
   const source = Array.isArray(fallback) && fallback.length ? fallback : defaultStageLabels();
   const normalized = source.map((item, idx) => {
-    const incoming = list[idx] || {};
+    const incoming = Array.isArray(list) && list[idx] ? list[idx] : {};
     return {
       name:
         typeof incoming.name === 'string'
@@ -1600,6 +1641,39 @@ function normalizeStageLabels(list, fallback) {
     };
   });
   return normalized;
+}
+
+function normalizeStagePrompts(list, fallback) {
+  const source = Array.isArray(fallback) && fallback.length ? fallback : defaultStagePrompts();
+  return source.map((item, idx) => {
+    const incoming = Array.isArray(list) && list[idx] ? list[idx] : {};
+    return {
+      reference:
+        typeof incoming.reference === 'string'
+          ? incoming.reference
+          : typeof item.reference === 'string'
+            ? item.reference
+            : '',
+      aiPrompt:
+        typeof incoming.aiPrompt === 'string'
+          ? incoming.aiPrompt
+          : typeof item.aiPrompt === 'string'
+            ? item.aiPrompt
+            : '',
+    };
+  });
+}
+
+function getStagePrompt(stage) {
+  const idx = Math.max(0, Math.min(defaultStagePrompts().length - 1, Number(stage || 1) - 1));
+  const prompts = store.publicSettings?.stagePrompts || defaultStagePrompts();
+  return prompts[idx] || defaultStagePrompts()[idx];
+}
+
+function getStageLabelName(stage) {
+  const idx = Math.max(0, Math.min(defaultStageLabels().length - 1, Number(stage || 1) - 1));
+  const labels = store.publicSettings?.stageLabels || defaultStageLabels();
+  return labels[idx]?.name || `단계 ${stage}`;
 }
 
 function collectMessages(sessionId, channel) {

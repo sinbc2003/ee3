@@ -18,7 +18,7 @@
       .group-button { min-width: 160px; padding: 18px 20px; border-radius: 12px; border: 1px solid #d0d7e3; background: linear-gradient(135deg, #f8fafc, #eef2ff); font-weight: 700; font-size: 16px; color: #1d4ed8; cursor: pointer; transition: transform 0.18s ease, box-shadow 0.18s ease; }
       .group-button:hover { transform: translateY(-4px); box-shadow: 0 14px 26px rgba(37, 99, 235, 0.18); }
       .group-button:active { transform: translateY(-1px); }
-      .login-card { display: none; max-width: 520px; margin: 0 auto; }
+      .login-card { display: block; max-width: 520px; margin: 0 auto; }
       .login-header { display: flex; flex-direction: column; gap: 6px; margin-bottom: 18px; }
       .login-group { font-size: 18px; font-weight: 700; color: #1d4ed8; }
       .login-message { font-size: 13px; color: #64748b; }
@@ -148,43 +148,37 @@
   </head>
   <body>
     <div class="page-container">
-      <div id="groupCard" class="card hero-card">
+      <div class="card hero-card">
         <h1>토론 플랫폼</h1>
-        <p>집단을 선택하고 식별 번호와 이름으로 로그인하세요.</p>
-        <div class="group-buttons">
-          <button class="group-button" data-group-select="A">A 집단</button>
-          <button class="group-button" data-group-select="B">B 집단</button>
-          <button class="group-button" data-group-select="C">C 집단</button>
-        </div>
-          </div>
+        <p>단일 집단(A) 기준으로 진행합니다. 식별번호와 이름을 입력해 세션을 시작하세요.</p>
+      </div>
 
       <div id="loginCard" class="card login-card">
         <div class="login-header">
-          <div id="selectedGroupLabel" class="login-group">집단 미선택</div>
+          <div id="selectedGroupLabel" class="login-group">단일 집단 (A)</div>
           <div id="loginMessage" class="login-message">식별번호와 이름을 정확하게 입력해주세요.</div>
-          </div>
+        </div>
         <form id="loginForm">
           <div class="field">
             <label for="studentIdInput">식별 번호</label>
             <input id="studentIdInput" type="text" placeholder="예) A10100" autocomplete="off" />
-        </div>
+          </div>
           <div class="field">
             <label for="studentNameInput">이름</label>
             <input id="studentNameInput" type="text" placeholder="이름을 입력하세요" autocomplete="off" />
-        </div>
+          </div>
           <div class="login-actions">
             <button id="loginSubmit" class="primary" type="submit">실험 시작</button>
-            <button id="btnChangeGroup" class="ghost" type="button">다른 집단 선택</button>
-      </div>
+          </div>
         </form>
-    </div>
+      </div>
 
       <div id="workspace" class="workspace">
         <div class="workspace-toolbar">
           <div id="userInfo" class="user-info"></div>
           <button id="btnRestart" class="link-button" type="button">처음으로 돌아가기</button>
           </div>
-        <div id="statusBar" class="status-bar info">집단을 선택하고 로그인하세요.</div>
+        <div id="statusBar" class="status-bar info">식별 번호와 이름을 입력하면 세션이 시작됩니다.</div>
         <div class="stage-headline" id="stageHeadline" style="display: none;">
           <div class="stage-headline-name" id="stageHeadlineName">2차시</div>
           <div class="stage-headline-title" id="stageHeadlineTitle">AI 웹검색</div>
@@ -384,12 +378,29 @@
         'use strict';
 
         const APP_CONFIG = window.APP_CONFIG || { apiBaseUrl: '/api', apiKey: '' };
+        const DEFAULT_GROUP = 'A';
         const DEFAULT_STAGE_LABELS = [
           { name: '2차시', headline: 'AI 웹검색', description: '찬·반 입장으로 질문하며 논거를 점검하세요. 정답 생성 대신 토론 연습에 집중합니다.' },
           { name: '3차시-1', headline: 'ChatGPT 모의 토론 (gpt-4.1-mini)', description: 'AI와 토론을 이어가며 핵심 반론과 근거를 정리하세요.' },
           { name: '3차시-2', headline: '동료 토론', description: '동료와 상호 피드백을 주고받으며 글을 다듬으세요.' },
           { name: '4차시-1', headline: '4-1차시 토론 발문', description: '관리자가 제공한 발문을 다시 확인하고 논리를 점검하세요.' },
           { name: '4차시-2', headline: '4-2차시 정리', description: '4-1차시 대화를 요약하고 추가 메모를 정리하세요.' },
+        ];
+        const DEFAULT_STAGE_PROMPTS = [
+          {
+            reference: '찬·반 논거를 조사하며 핵심 근거와 반론거리를 메모하세요. AI 웹검색을 활용해 다양한 출처를 탐색해 보세요.',
+            aiPrompt: '당신은 학생의 토론 준비를 돕는 AI 웹연구 도우미입니다. 학생이 던지는 질문에 대해, 공정하게 찬성과 반대 측 근거를 모두 제시하고, 신뢰할 만한 출처 정보도 간단히 언급하세요. 답변은 핵심 bullet 2~3개 중심으로, 쉬운 문장으로 작성합니다.',
+          },
+          {
+            reference: 'ChatGPT와 모의 토론을 진행하며 찬성/반대 입장에서 나올 수 있는 반론을 미리 점검하세요.',
+            aiPrompt: '당신은 학생과 토론을 진행하는 AI 멘토입니다. 학생의 주장에 근거를 요구하거나 빈틈을 짚어 주고, 설득력 있는 사례와 데이터로 논리를 강화하도록 유도하세요.',
+          },
+          { reference: '동료에게 줄 피드백 포인트를 메모하세요.', aiPrompt: '' },
+          {
+            reference: '4-1차시 토론 발문을 확인하고, AI와 심층 토론을 이어가세요. 주장·근거·반론을 명확하게 정리해 보세요.',
+            aiPrompt: '당신은 학생의 최종 주장을 검토하는 AI 멘토입니다. 학생의 근거에 비판적 질문을 던지고, 더 정교한 논리를 완성하도록 도와주세요.',
+          },
+          { reference: '4-1차시 대화를 요약하고, 최종 주장을 정리하세요.', aiPrompt: '' },
         ];
 
         function normalizeApiBaseUrl(path){
@@ -547,7 +558,7 @@
         const DEFAULT_AI_AVATAR = '/chatgpt.png';
 
         const state = {
-          group: '',
+          group: DEFAULT_GROUP,
           sessionKey: '',
           user: { id: '', name: '' },
           stage: 1,
@@ -562,7 +573,7 @@
           steps: {},
           partner: null,
           presence: null,
-          status: { message: '집단을 선택하고 로그인하세요.', type: 'info' },
+          status: { message: '식별 번호와 이름을 입력하면 세션이 시작됩니다.', type: 'info' },
           aiChat: { sessionId: '', lastTs: 0, rendered: {}, pending: {}, fetching: false, awaitingResponse: false, welcomeShown: false },
           peerChat: { sessionId: '', lastTs: 0, rendered: {}, pending: {}, fetching: false },
           timers: { ai: null, peer: null, state: null, presence: null },
@@ -581,6 +592,7 @@
           aiAvatarUrl: DEFAULT_AI_AVATAR,
           promptContent: '',
           stageLabels: DEFAULT_STAGE_LABELS.map((label) => ({ ...label })),
+          stagePrompts: DEFAULT_STAGE_PROMPTS.map((prompt) => ({ ...prompt })),
         };
 
         function normalizeStageLabels(list){
@@ -602,6 +614,49 @@
           return publicConfig.stageLabels[index] || DEFAULT_STAGE_LABELS[index];
         }
 
+        function normalizeStagePrompts(list){
+          return DEFAULT_STAGE_PROMPTS.map((prompt, idx) => {
+            const incoming = Array.isArray(list) && list[idx] ? list[idx] : {};
+            return {
+              reference:
+                typeof incoming.reference === 'string'
+                  ? incoming.reference
+                  : typeof prompt.reference === 'string'
+                    ? prompt.reference
+                    : '',
+              aiPrompt:
+                typeof incoming.aiPrompt === 'string'
+                  ? incoming.aiPrompt
+                  : typeof prompt.aiPrompt === 'string'
+                    ? prompt.aiPrompt
+                    : '',
+            };
+          });
+        }
+
+        function getStagePromptData(stageNumber){
+          const index = Math.max(0, Math.min(DEFAULT_STAGE_PROMPTS.length - 1, Number(stageNumber || 1) - 1));
+          return publicConfig.stagePrompts[index] || DEFAULT_STAGE_PROMPTS[index];
+        }
+
+        function setRichText(id, text, fallback){
+          const el = $(id);
+          if (!el) return;
+          const content = String(text || '').trim();
+          if (!content) {
+            el.innerHTML = fallback || '';
+            return;
+          }
+          el.innerHTML = escapeHtml(content).replace(/\n/g, '<br/>');
+        }
+
+        function updateGroupLabel(){
+          const label = $('selectedGroupLabel');
+          if (!label) return;
+          const groupName = state.group || DEFAULT_GROUP;
+          label.textContent = `단일 집단 (${groupName})`;
+        }
+
         function setText(id, text){
           const el = $(id);
           if (!el) return;
@@ -609,18 +664,12 @@
         }
 
         function init(){
-          document.querySelectorAll('[data-group-select]').forEach(function(btn){
-            btn.addEventListener('click', function(){ selectGroup(btn.dataset.groupSelect); });
-          });
-
           document.querySelectorAll('#stepIndicator .step-item').forEach(function(item){
             item.addEventListener('click', onStepIndicatorClick);
           });
 
           const loginForm = $('loginForm');
           if (loginForm) loginForm.addEventListener('submit', onLoginSubmit);
-          const changeBtn = $('btnChangeGroup');
-          if (changeBtn) changeBtn.addEventListener('click', function(){ resetToGroupSelection(true); });
           const restartBtn = $('btnRestart');
           if (restartBtn) restartBtn.addEventListener('click', function(){ if (!state.sessionKey || confirm('현재 세션을 종료하고 처음 화면으로 돌아가시겠습니까?')) resetToGroupSelection(true); });
 
@@ -709,6 +758,11 @@
           const peerNextBtn = $('btnPeerNext');
           if (peerNextBtn) peerNextBtn.addEventListener('click', onPeerNextStage);
 
+          updateGroupLabel();
+          $('loginCard').style.display = 'block';
+          const studentIdInput = $('studentIdInput');
+          if (studentIdInput) studentIdInput.focus();
+
           loadPublicSettings();
           renderWorkspace();
           setStatus(state.status.message, state.status.type);
@@ -734,18 +788,8 @@
           });
         }
 
-        function selectGroup(group){
-          state.group = (group || '').toUpperCase();
-          $('selectedGroupLabel').textContent = state.group + ' 집단';
-          $('groupCard').style.display = 'none';
-          $('loginCard').style.display = 'block';
-          $('studentIdInput').focus();
-          setStatus('식별 번호와 이름을 입력하면 세션이 시작됩니다.', 'info');
-          renderUserInfo();
-        }
-
         function resetState(){
-          state.group = '';
+          state.group = DEFAULT_GROUP;
           state.sessionKey = '';
           state.user = { id: '', name: '' };
           state.stage = 1;
@@ -760,7 +804,7 @@
           state.steps = {};
           state.partner = null;
           state.presence = null;
-          state.status = { message: '집단을 선택하고 로그인하세요.', type: 'info' };
+          state.status = { message: '식별 번호와 이름을 입력하면 세션이 시작됩니다.', type: 'info' };
           state.aiChat = { sessionId: '', lastTs: 0, rendered: {}, pending: {}, fetching: false, awaitingResponse: false, welcomeShown: false };
           state.peerChat = { sessionId: '', lastTs: 0, rendered: {}, pending: {}, fetching: false };
           state.dictionaryHistory = [];
@@ -771,6 +815,7 @@
           state.localFinalDraft = '';
           state.localDraftBuffer = '';
           state.localStage3Memo = '';
+          state.localStage5Memo = '';
           state.aiAvatarUrl = publicConfig.aiAvatarUrl || DEFAULT_AI_AVATAR;
         }
 
@@ -778,14 +823,15 @@
           clearAllTimers();
           resetState();
           $('workspace').style.display = 'none';
-          $('loginCard').style.display = 'none';
-          $('groupCard').style.display = 'block';
+          $('loginCard').style.display = 'block';
           if (clearInput) {
             $('studentIdInput').value = '';
             $('studentNameInput').value = '';
           }
           renderWorkspace();
-          setStatus('집단을 선택하고 로그인하세요.', 'info');
+          setStatus('식별 번호와 이름을 입력하면 세션이 시작됩니다.', 'info');
+          updateGroupLabel();
+          renderUserInfo();
         }
 
         function onLoginSubmit(e){
@@ -796,7 +842,6 @@
           }
           const sid = $('studentIdInput').value.trim();
           const name = $('studentNameInput').value.trim();
-          if (!state.group) { setStatus('먼저 집단을 선택하세요.', 'warn'); return; }
           if (!sid || !name) { setStatus('식별 번호와 이름을 모두 입력하세요.', 'warn'); return; }
           $('loginSubmit').disabled = true;
           $('loginSubmit').textContent = '진행 중...';
@@ -815,7 +860,7 @@
 
         function onSessionStart(res){
           if (!res) { handleError('세션 정보를 불러오지 못했습니다.'); return; }
-          state.group = (res.mode || state.group || '').toUpperCase();
+          state.group = (res.mode || DEFAULT_GROUP || state.group || '').toUpperCase();
           state.user = { id: (res.you && res.you.id) || '', name: (res.you && res.you.name) || '' };
           state.sessionKey = res.sessionKey || '';
           state.aiChat = { sessionId: res.aiSessionId || '', lastTs: 0, rendered: {}, pending: {}, fetching: false, awaitingResponse: false, welcomeShown: false };
@@ -823,8 +868,8 @@
           state.aiAvatarUrl = publicConfig.aiAvatarUrl || state.aiAvatarUrl || DEFAULT_AI_AVATAR;
           state.localPrewritingDraft = '';
           state.stageChangePending = false;
+          updateGroupLabel();
           $('loginCard').style.display = 'none';
-          $('groupCard').style.display = 'none';
           $('workspace').style.display = 'flex';
           const sessionState = {
             sessionKey: res.sessionKey,
@@ -993,8 +1038,8 @@
           renderPrewritingPanel();
           renderDraftPanel();
           renderPeerPanel();
+          renderStagePrompts();
           renderFinalPanel();
-          renderStage4Prompt();
           renderStage5Panel();
         renderFinalChatPanel();
           renderRightPanels();
@@ -1039,12 +1084,11 @@
         function renderUserInfo(){
           const el = $('userInfo');
           if (!el) return;
+          const groupLabel = state.group || DEFAULT_GROUP;
           if (state.sessionKey) {
-            el.textContent = state.group + '집단 · ' + (state.user.id || '') + ' ' + (state.user.name || '');
-          } else if (state.group) {
-            el.textContent = state.group + '집단을 선택했습니다.';
+            el.textContent = `단일 집단 (${groupLabel}) · ${(state.user.id || '')} ${(state.user.name || '')}`.trim();
           } else {
-            el.textContent = '';
+            el.textContent = `단일 집단 (${groupLabel})`;
           }
         }
 
@@ -1188,7 +1232,6 @@
           const info = $('draftInfo');
           const titleEl = $('draftTitle');
           const previewEl = $('prewritingPreview');
-          const promptEl = $('draftPromptContent');
           if (!textarea || !info) return;
           const stage = Number(state.stage || 1);
           const group = (state.group || '').toUpperCase();
@@ -1321,18 +1364,34 @@
           // 4차시는 발문/챗봇 중심 UI로 전환되어 최종 글쓰기 패널 사용 안 함
         }
 
-        function renderStage4Prompt(){
-          const promptEl = $('stage4PromptContent');
-          if (promptEl) {
-            promptEl.textContent = publicConfig.promptContent || '관리자가 등록한 발문이 여기에 표시됩니다.';
-          }
+        function renderStagePrompts(){
+          const stage1Prompt = getStagePromptData(1);
+          setRichText(
+            'promptContent',
+            stage1Prompt.reference || publicConfig.promptContent,
+            '토론 발문이 아직 등록되지 않았습니다.'
+          );
+          const stage2Prompt = getStagePromptData(2);
+          setRichText(
+            'draftPromptContent',
+            stage2Prompt.reference || stage1Prompt.reference || publicConfig.promptContent,
+            '관리자가 등록한 발문이 여기에 표시됩니다.'
+          );
+          const stage4Prompt = getStagePromptData(4);
+          setRichText(
+            'stage4PromptContent',
+            stage4Prompt.reference || publicConfig.promptContent,
+            '관리자가 등록한 발문이 여기에 표시됩니다.'
+          );
+          const stage5Prompt = getStagePromptData(5);
+          setRichText(
+            'stage5TranscriptSummary',
+            stage5Prompt.reference || '4-1 토론 기록을 불러오는 중입니다. (추후 연동)',
+            '4-1 토론 기록을 불러오는 중입니다. (추후 연동)'
+          );
         }
 
         function renderStage5Panel(){
-          const summaryEl = $('stage5TranscriptSummary');
-          if (summaryEl) {
-            summaryEl.textContent = '4-1 토론 요약을 불러오는 중입니다. (추후 연동)';
-          }
           const memoInput = $('stage5MemoInput');
           const saveBtn = $('btnStage5MemoSave');
           const stage = Number(state.stage || 1);
@@ -2332,12 +2391,10 @@
               publicConfig.aiAvatarUrl = cfg.aiAvatarUrl || DEFAULT_AI_AVATAR;
               publicConfig.promptContent = cfg.promptContent || '';
               publicConfig.stageLabels = normalizeStageLabels(cfg.stageLabels);
+              publicConfig.stagePrompts = normalizeStagePrompts(cfg.stagePrompts);
               state.aiAvatarUrl = publicConfig.aiAvatarUrl || DEFAULT_AI_AVATAR;
-              const promptEl = $('promptContent');
-              if (promptEl) {
-                promptEl.textContent = publicConfig.promptContent || '제시문이 아직 등록되지 않았습니다.';
-              }
               applyStageLabelsToPanels();
+              renderStagePrompts();
               renderStageHeadline();
               updateStepIndicator();
               renderRightPanels();

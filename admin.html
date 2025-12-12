@@ -365,6 +365,16 @@
         background: #ffffff;
         box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
       }
+      .stage-prompt-field {
+        margin-top: 12px;
+      }
+      .stage-prompt-field textarea {
+        min-height: 90px;
+      }
+      .stage-prompt-field .muted {
+        margin: 6px 0 0;
+        font-size: 12px;
+      }
       .stage-label-grid {
         display: grid;
         gap: 16px;
@@ -533,6 +543,13 @@
               <input id="stageLabelHeadline1" type="text" data-stage-field="headline" data-stage-index="0" placeholder="예: AI 웹검색" />
               <label for="stageLabelDesc1" style="margin-top: 10px;">설명</label>
               <textarea id="stageLabelDesc1" data-stage-field="description" data-stage-index="0" placeholder="학생 안내 문구를 입력하세요."></textarea>
+              <label for="stageLabelReference1" style="margin-top: 10px;">차시 자료·발문</label>
+              <textarea id="stageLabelReference1" data-stage-field="reference" data-stage-index="0" placeholder="학생에게 보여줄 발문, 자료 요약 등을 입력하세요."></textarea>
+              <div class="stage-prompt-field" data-stage-index="0" data-ai-only="true">
+                <label for="stageLabelPrompt1">AI 시스템 프롬프트</label>
+                <textarea id="stageLabelPrompt1" data-stage-field="aiPrompt" data-stage-index="0" placeholder="AI에게 적용할 시스템 프롬프트를 입력하세요."></textarea>
+                <p class="muted">AI와 대화하는 차시에만 사용됩니다.</p>
+              </div>
             </div>
             <div class="stage-label-item">
               <h3>단계 2</h3>
@@ -542,6 +559,13 @@
               <input id="stageLabelHeadline2" type="text" data-stage-field="headline" data-stage-index="1" placeholder="예: ChatGPT 모의 토론" />
               <label for="stageLabelDesc2" style="margin-top: 10px;">설명</label>
               <textarea id="stageLabelDesc2" data-stage-field="description" data-stage-index="1" placeholder="학생 안내 문구를 입력하세요."></textarea>
+              <label for="stageLabelReference2" style="margin-top: 10px;">차시 자료·발문</label>
+              <textarea id="stageLabelReference2" data-stage-field="reference" data-stage-index="1" placeholder="학생에게 보여줄 발문, 자료 요약 등을 입력하세요."></textarea>
+              <div class="stage-prompt-field" data-stage-index="1" data-ai-only="true">
+                <label for="stageLabelPrompt2">AI 시스템 프롬프트</label>
+                <textarea id="stageLabelPrompt2" data-stage-field="aiPrompt" data-stage-index="1" placeholder="AI에게 적용할 시스템 프롬프트를 입력하세요."></textarea>
+                <p class="muted">AI와 대화하는 차시에만 사용됩니다.</p>
+              </div>
             </div>
             <div class="stage-label-item">
               <h3>단계 3</h3>
@@ -551,6 +575,8 @@
               <input id="stageLabelHeadline3" type="text" data-stage-field="headline" data-stage-index="2" placeholder="예: 동료 토론" />
               <label for="stageLabelDesc3" style="margin-top: 10px;">설명</label>
               <textarea id="stageLabelDesc3" data-stage-field="description" data-stage-index="2" placeholder="학생 안내 문구를 입력하세요."></textarea>
+              <label for="stageLabelReference3" style="margin-top: 10px;">차시 자료·발문</label>
+              <textarea id="stageLabelReference3" data-stage-field="reference" data-stage-index="2" placeholder="학생에게 보여줄 발문, 자료 요약 등을 입력하세요."></textarea>
             </div>
             <div class="stage-label-item">
               <h3>단계 4</h3>
@@ -560,6 +586,13 @@
               <input id="stageLabelHeadline4" type="text" data-stage-field="headline" data-stage-index="3" placeholder="예: 4-1차시 토론 발문" />
               <label for="stageLabelDesc4" style="margin-top: 10px;">설명</label>
               <textarea id="stageLabelDesc4" data-stage-field="description" data-stage-index="3" placeholder="학생 안내 문구를 입력하세요."></textarea>
+              <label for="stageLabelReference4" style="margin-top: 10px;">차시 자료·발문</label>
+              <textarea id="stageLabelReference4" data-stage-field="reference" data-stage-index="3" placeholder="학생에게 보여줄 발문, 자료 요약 등을 입력하세요."></textarea>
+              <div class="stage-prompt-field" data-stage-index="3" data-ai-only="true">
+                <label for="stageLabelPrompt4">AI 시스템 프롬프트</label>
+                <textarea id="stageLabelPrompt4" data-stage-field="aiPrompt" data-stage-index="3" placeholder="AI에게 적용할 시스템 프롬프트를 입력하세요."></textarea>
+                <p class="muted">AI와 대화하는 차시에만 사용됩니다.</p>
+              </div>
             </div>
             <div class="stage-label-item">
               <h3>단계 5</h3>
@@ -569,6 +602,8 @@
               <input id="stageLabelHeadline5" type="text" data-stage-field="headline" data-stage-index="4" placeholder="예: 4-2차시 정리" />
               <label for="stageLabelDesc5" style="margin-top: 10px;">설명</label>
               <textarea id="stageLabelDesc5" data-stage-field="description" data-stage-index="4" placeholder="학생 안내 문구를 입력하세요."></textarea>
+              <label for="stageLabelReference5" style="margin-top: 10px;">차시 자료·발문</label>
+              <textarea id="stageLabelReference5" data-stage-field="reference" data-stage-index="4" placeholder="학생에게 보여줄 발문, 자료 요약 등을 입력하세요."></textarea>
             </div>
           </div>
           <div class="match-actions" style="margin-top: 16px; justify-content: flex-end;">
@@ -715,8 +750,31 @@
           { name: '4차시-1', headline: '4-1차시 토론 발문', description: '관리자가 제공한 발문을 다시 확인하고 논리를 점검하세요.' },
           { name: '4차시-2', headline: '4-2차시 정리', description: '4-1차시 기록을 요약하고 추가 메모를 정리하세요.' },
         ];
-        let stageLabelsState = DEFAULT_STAGE_LABELS.map((label) => ({ ...label }));
-        let stageLabelsDirty = false;
+        const DEFAULT_STAGE_PROMPTS = [
+          {
+            reference: '찬·반 논거를 조사하며 핵심 근거와 반론거리를 메모하세요. AI 웹검색을 활용해 다양한 출처를 탐색해 보세요.',
+            aiPrompt: '당신은 학생의 토론 준비를 돕는 AI 웹연구 도우미입니다. 학생이 던지는 질문에 대해, 공정하게 찬성과 반대 측 근거를 모두 제시하고, 신뢰할 만한 출처 정보도 간단히 언급하세요. 답변은 핵심 bullet 2~3개 중심으로, 쉬운 문장으로 작성합니다.',
+          },
+          {
+            reference: 'ChatGPT와 모의 토론을 진행하며 찬성/반대 입장에서 나올 수 있는 반론을 미리 점검하세요.',
+            aiPrompt: '당신은 학생과 토론을 진행하는 AI 멘토입니다. 학생의 주장에 근거를 요구하거나 빈틈을 짚어 주고, 설득력 있는 사례와 데이터로 논리를 강화하도록 유도하세요.',
+          },
+          { reference: '동료에게 줄 피드백 포인트를 메모하세요.', aiPrompt: '' },
+          {
+            reference: '4-1차시 토론 발문을 확인하고, AI와 심층 토론을 이어가세요. 주장·근거·반론을 명확하게 정리해 보세요.',
+            aiPrompt: '당신은 학생의 최종 주장을 검토하는 AI 멘토입니다. 학생의 근거에 비판적 질문을 던지고, 더 정교한 논리를 완성하도록 도와주세요.',
+          },
+          { reference: '4-1차시 대화를 요약하고, 최종 주장을 정리하세요.', aiPrompt: '' },
+        ];
+        const AI_STAGE_INDICES = [0, 1, 3];
+        let stageContentState = DEFAULT_STAGE_LABELS.map((label, idx) => ({
+          name: label.name,
+          headline: label.headline,
+          description: label.description,
+          reference: DEFAULT_STAGE_PROMPTS[idx].reference,
+          aiPrompt: DEFAULT_STAGE_PROMPTS[idx].aiPrompt,
+        }));
+        let stageContentDirty = false;
 
         function normalizeBaseUrl(url){
           if (!url) return `${window.location.origin}/api/`;
@@ -1370,7 +1428,7 @@
         }
 
         function normalizeStageLabelsInput(list){
-          const normalized = DEFAULT_STAGE_LABELS.map((label, idx) => {
+          return DEFAULT_STAGE_LABELS.map((label, idx) => {
             const incoming = Array.isArray(list) && list[idx] ? list[idx] : {};
             return {
               name: typeof incoming.name === 'string' ? incoming.name.trim() || label.name : label.name,
@@ -1381,20 +1439,57 @@
                   : label.description,
             };
           });
-          return normalized;
         }
 
-        function populateStageLabelInputs(labels){
-          stageLabelsState = normalizeStageLabelsInput(labels);
-          stageLabelsDirty = false;
-          stageLabelsState.forEach((label, idx) => {
+        function normalizeStagePromptsInput(list){
+          return DEFAULT_STAGE_PROMPTS.map((prompt, idx) => {
+            const incoming = Array.isArray(list) && list[idx] ? list[idx] : {};
+            return {
+              reference:
+                typeof incoming.reference === 'string'
+                  ? incoming.reference
+                  : typeof prompt.reference === 'string'
+                    ? prompt.reference
+                    : '',
+              aiPrompt:
+                typeof incoming.aiPrompt === 'string'
+                  ? incoming.aiPrompt
+                  : typeof prompt.aiPrompt === 'string'
+                    ? prompt.aiPrompt
+                    : '',
+            };
+          });
+        }
+
+        function populateStageLabelInputs(labels, prompts){
+          const normalizedLabels = normalizeStageLabelsInput(labels);
+          const normalizedPrompts = normalizeStagePromptsInput(prompts);
+          stageContentState = normalizedLabels.map((label, idx) => ({
+            name: label.name,
+            headline: label.headline,
+            description: label.description,
+            reference: normalizedPrompts[idx].reference,
+            aiPrompt: normalizedPrompts[idx].aiPrompt,
+          }));
+          stageContentDirty = false;
+          stageContentState.forEach((content, idx) => {
             const index = idx + 1;
             const nameInput = $('stageLabelName' + index);
             const headlineInput = $('stageLabelHeadline' + index);
             const descInput = $('stageLabelDesc' + index);
-            if (nameInput) nameInput.value = label.name || '';
-            if (headlineInput) headlineInput.value = label.headline || '';
-            if (descInput) descInput.value = label.description || '';
+            const refInput = $('stageLabelReference' + index);
+            const promptInput = $('stageLabelPrompt' + index);
+            const promptField = document.querySelector(`.stage-prompt-field[data-stage-index="${idx}"]`);
+            if (nameInput) nameInput.value = content.name || '';
+            if (headlineInput) headlineInput.value = content.headline || '';
+            if (descInput) descInput.value = content.description || '';
+            if (refInput) refInput.value = content.reference || '';
+            const isAiStage = AI_STAGE_INDICES.includes(idx);
+            if (promptField) promptField.style.display = isAiStage ? 'block' : 'none';
+            if (promptInput) {
+              promptInput.disabled = !isAiStage;
+              promptInput.value = isAiStage ? content.aiPrompt || '' : '';
+            }
           });
           updateStageLabelSaveButton();
         }
@@ -1405,34 +1500,45 @@
           const index = Number(target.dataset.stageIndex);
           const field = target.dataset.stageField;
           if (!Number.isFinite(index) || !field) return;
-          if (!stageLabelsState[index]) {
-            stageLabelsState[index] = { ...DEFAULT_STAGE_LABELS[index] };
+          if (!stageContentState[index]) {
+            stageContentState[index] = {
+              ...DEFAULT_STAGE_LABELS[index],
+              reference: DEFAULT_STAGE_PROMPTS[index].reference,
+              aiPrompt: DEFAULT_STAGE_PROMPTS[index].aiPrompt,
+            };
           }
-          stageLabelsState[index][field] = target.value;
-          stageLabelsDirty = true;
+          stageContentState[index][field] = target.value;
+          stageContentDirty = true;
           updateStageLabelSaveButton();
         }
 
         function updateStageLabelSaveButton(){
           const btn = $('btnStageLabelsSave');
-          if (btn) btn.disabled = !stageLabelsDirty;
+          if (btn) btn.disabled = !stageContentDirty;
         }
 
         async function saveStageLabels(){
-          if (!stageLabelsDirty) return;
+          if (!stageContentDirty) return;
           const btn = $('btnStageLabelsSave');
           if (btn) btn.disabled = true;
           try {
-            const payload = stageLabelsState.map((label) => ({
+            const labelsPayload = stageContentState.map((label) => ({
               name: String(label.name || '').trim(),
               headline: String(label.headline || '').trim(),
               description: String(label.description || '').trim(),
             }));
-            const response = await apiRequest('public-settings', { method: 'POST', body: { stageLabels: payload } });
-            populateStageLabelInputs(response?.stageLabels || payload);
+            const promptsPayload = stageContentState.map((label, idx) => ({
+              reference: String(label.reference || '').trim(),
+              aiPrompt: AI_STAGE_INDICES.includes(idx) ? String(label.aiPrompt || '').trim() : '',
+            }));
+            const response = await apiRequest('public-settings', {
+              method: 'POST',
+              body: { stageLabels: labelsPayload, stagePrompts: promptsPayload },
+            });
+            populateStageLabelInputs(response?.stageLabels || labelsPayload, response?.stagePrompts || promptsPayload);
             setStatus('차시 안내를 저장했습니다.', 'success');
           } catch (error) {
-            stageLabelsDirty = true;
+            stageContentDirty = true;
             setStatus(error.message || '차시 안내를 저장하지 못했습니다.', 'error');
           } finally {
             updateStageLabelSaveButton();
@@ -1457,7 +1563,7 @@
               textarea.value = currentPromptContent;
             }
             renderPromptPreview(currentPromptContent);
-            populateStageLabelInputs(settings?.stageLabels);
+            populateStageLabelInputs(settings?.stageLabels, settings?.stagePrompts);
             updatePromptSaveButton();
             if (showStatus) {
               setStatus('제시문을 불러왔습니다.', 'success');
