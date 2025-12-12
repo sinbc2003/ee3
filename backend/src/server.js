@@ -154,7 +154,38 @@ function defaultPublicSettings() {
     topLinkText: '',
     aiAvatarUrl: '',
     promptContent: '',
+    stageLabels: defaultStageLabels(),
   };
+}
+
+function defaultStageLabels() {
+  return [
+    {
+      name: '2차시',
+      headline: 'AI 웹검색',
+      description: '찬·반 입장으로 질문하며 논거를 점검하세요. 정답 생성 대신 토론 연습에 집중합니다.',
+    },
+    {
+      name: '3차시-1',
+      headline: 'ChatGPT 모의 토론 (gpt-4.1-mini)',
+      description: 'AI와 토론을 이어가며 핵심 반론과 근거를 정리하세요.',
+    },
+    {
+      name: '3차시-2',
+      headline: '동료 토론',
+      description: '동료와 상호 피드백을 주고받으며 글을 다듬으세요.',
+    },
+    {
+      name: '4차시-1',
+      headline: '4-1차시 토론 발문',
+      description: '관리자가 제공한 발문을 다시 확인하고 논리를 점검하세요.',
+    },
+    {
+      name: '4차시-2',
+      headline: '4-2차시 정리',
+      description: '4-1차시 기록을 요약하고 추가 메모를 정리하세요.',
+    },
+  ];
 }
 
 function defaultRoster() {
@@ -1024,11 +1055,7 @@ adminRouter.get('/public-settings', (_req, res) => {
 
 adminRouter.post('/public-settings', async (req, res, next) => {
   try {
-    store.publicSettings = {
-      ...defaultPublicSettings(),
-      ...(store.publicSettings || {}),
-      ...sanitizePublicSettings(req.body || {}),
-    };
+    store.publicSettings = sanitizePublicSettings(req.body || {}, store.publicSettings);
     await store.savePublicSettings();
     res.json(store.publicSettings);
   } catch (err) {
@@ -1524,13 +1551,55 @@ async function summarizeTranscript(text) {
   });
 }
 
-function sanitizePublicSettings(payload) {
-  const result = {};
-  if (typeof payload.topLinkUrl === 'string') result.topLinkUrl = payload.topLinkUrl.trim();
-  if (typeof payload.topLinkText === 'string') result.topLinkText = payload.topLinkText.trim();
-  if (typeof payload.aiAvatarUrl === 'string') result.aiAvatarUrl = payload.aiAvatarUrl.trim();
-  if (typeof payload.promptContent === 'string') result.promptContent = payload.promptContent;
-  return result;
+function sanitizePublicSettings(payload, currentSettings = store.publicSettings) {
+  const base = {
+    ...defaultPublicSettings(),
+    ...(currentSettings || {}),
+  };
+  if (Object.prototype.hasOwnProperty.call(payload, 'topLinkUrl') && typeof payload.topLinkUrl === 'string') {
+    base.topLinkUrl = payload.topLinkUrl.trim();
+  }
+  if (Object.prototype.hasOwnProperty.call(payload, 'topLinkText') && typeof payload.topLinkText === 'string') {
+    base.topLinkText = payload.topLinkText.trim();
+  }
+  if (Object.prototype.hasOwnProperty.call(payload, 'aiAvatarUrl') && typeof payload.aiAvatarUrl === 'string') {
+    base.aiAvatarUrl = payload.aiAvatarUrl.trim();
+  }
+  if (Object.prototype.hasOwnProperty.call(payload, 'promptContent') && typeof payload.promptContent === 'string') {
+    base.promptContent = payload.promptContent;
+  }
+  if (Array.isArray(payload.stageLabels)) {
+    base.stageLabels = normalizeStageLabels(payload.stageLabels, base.stageLabels);
+  }
+  return base;
+}
+
+function normalizeStageLabels(list, fallback) {
+  const source = Array.isArray(fallback) && fallback.length ? fallback : defaultStageLabels();
+  const normalized = source.map((item, idx) => {
+    const incoming = list[idx] || {};
+    return {
+      name:
+        typeof incoming.name === 'string'
+          ? incoming.name.trim()
+          : typeof item.name === 'string'
+            ? item.name
+            : '',
+      headline:
+        typeof incoming.headline === 'string'
+          ? incoming.headline.trim()
+          : typeof item.headline === 'string'
+            ? item.headline
+            : '',
+      description:
+        typeof incoming.description === 'string'
+          ? incoming.description.trim()
+          : typeof item.description === 'string'
+            ? item.description
+            : '',
+    };
+  });
+  return normalized;
 }
 
 function collectMessages(sessionId, channel) {

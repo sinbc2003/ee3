@@ -365,6 +365,20 @@
         background: #ffffff;
         box-shadow: 0 1px 2px rgba(15, 23, 42, 0.06);
       }
+      .stage-label-grid {
+        display: grid;
+        gap: 16px;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      }
+      .stage-label-item textarea {
+        min-height: 90px;
+        resize: vertical;
+      }
+      .stage-label-item h3 {
+        margin: 0 0 8px;
+        font-size: 15px;
+        color: #0f172a;
+      }
       .stage-title {
         font-weight: 700;
         margin-bottom: 6px;
@@ -507,6 +521,61 @@
           <div id="promptPreview" class="prompt-preview empty">제시문이 아직 등록되지 않았습니다.</div>
         </section>
 
+        <section class="card" id="stageLabelSection">
+          <h2>차시 안내</h2>
+          <p class="muted" style="margin-bottom: 12px;">2차시~4차시-2까지 단계 이름과 안내 문구를 수정하세요. 학생 화면 상단과 단계 패널에 반영됩니다.</p>
+          <div class="stage-label-grid">
+            <div class="stage-label-item">
+              <h3>단계 1</h3>
+              <label for="stageLabelName1">표시 이름</label>
+              <input id="stageLabelName1" type="text" data-stage-field="name" data-stage-index="0" placeholder="예: 2차시" />
+              <label for="stageLabelHeadline1" style="margin-top: 10px;">헤드라인</label>
+              <input id="stageLabelHeadline1" type="text" data-stage-field="headline" data-stage-index="0" placeholder="예: AI 웹검색" />
+              <label for="stageLabelDesc1" style="margin-top: 10px;">설명</label>
+              <textarea id="stageLabelDesc1" data-stage-field="description" data-stage-index="0" placeholder="학생 안내 문구를 입력하세요."></textarea>
+            </div>
+            <div class="stage-label-item">
+              <h3>단계 2</h3>
+              <label for="stageLabelName2">표시 이름</label>
+              <input id="stageLabelName2" type="text" data-stage-field="name" data-stage-index="1" placeholder="예: 3차시-1" />
+              <label for="stageLabelHeadline2" style="margin-top: 10px;">헤드라인</label>
+              <input id="stageLabelHeadline2" type="text" data-stage-field="headline" data-stage-index="1" placeholder="예: ChatGPT 모의 토론" />
+              <label for="stageLabelDesc2" style="margin-top: 10px;">설명</label>
+              <textarea id="stageLabelDesc2" data-stage-field="description" data-stage-index="1" placeholder="학생 안내 문구를 입력하세요."></textarea>
+            </div>
+            <div class="stage-label-item">
+              <h3>단계 3</h3>
+              <label for="stageLabelName3">표시 이름</label>
+              <input id="stageLabelName3" type="text" data-stage-field="name" data-stage-index="2" placeholder="예: 3차시-2" />
+              <label for="stageLabelHeadline3" style="margin-top: 10px;">헤드라인</label>
+              <input id="stageLabelHeadline3" type="text" data-stage-field="headline" data-stage-index="2" placeholder="예: 동료 토론" />
+              <label for="stageLabelDesc3" style="margin-top: 10px;">설명</label>
+              <textarea id="stageLabelDesc3" data-stage-field="description" data-stage-index="2" placeholder="학생 안내 문구를 입력하세요."></textarea>
+            </div>
+            <div class="stage-label-item">
+              <h3>단계 4</h3>
+              <label for="stageLabelName4">표시 이름</label>
+              <input id="stageLabelName4" type="text" data-stage-field="name" data-stage-index="3" placeholder="예: 4차시-1" />
+              <label for="stageLabelHeadline4" style="margin-top: 10px;">헤드라인</label>
+              <input id="stageLabelHeadline4" type="text" data-stage-field="headline" data-stage-index="3" placeholder="예: 4-1차시 토론 발문" />
+              <label for="stageLabelDesc4" style="margin-top: 10px;">설명</label>
+              <textarea id="stageLabelDesc4" data-stage-field="description" data-stage-index="3" placeholder="학생 안내 문구를 입력하세요."></textarea>
+            </div>
+            <div class="stage-label-item">
+              <h3>단계 5</h3>
+              <label for="stageLabelName5">표시 이름</label>
+              <input id="stageLabelName5" type="text" data-stage-field="name" data-stage-index="4" placeholder="예: 4차시-2" />
+              <label for="stageLabelHeadline5" style="margin-top: 10px;">헤드라인</label>
+              <input id="stageLabelHeadline5" type="text" data-stage-field="headline" data-stage-index="4" placeholder="예: 4-2차시 정리" />
+              <label for="stageLabelDesc5" style="margin-top: 10px;">설명</label>
+              <textarea id="stageLabelDesc5" data-stage-field="description" data-stage-index="4" placeholder="학생 안내 문구를 입력하세요."></textarea>
+            </div>
+          </div>
+          <div class="match-actions" style="margin-top: 16px; justify-content: flex-end;">
+            <button id="btnStageLabelsSave" class="primary" type="button" disabled>차시 안내 저장</button>
+          </div>
+        </section>
+
         <section class="card" id="quickMatchSection">
           <h2>빠른 동료 매칭</h2>
           <p class="muted" style="margin-bottom: 12px;">서로 다른 두 세션을 선택해 빠르게 매칭하세요. 아래 목록에서 미매칭 학생을 클릭하면 입력란에 자동으로 채워집니다.</p>
@@ -639,6 +708,15 @@
         let pendingPairings = [];
         let pairingApplyInProgress = false;
         const selectedSessionKeys = new Set();
+        const DEFAULT_STAGE_LABELS = [
+          { name: '2차시', headline: 'AI 웹검색', description: '찬·반 입장으로 질문하며 논거를 점검하세요. 정답 생성 대신 토론 연습에 집중합니다.' },
+          { name: '3차시-1', headline: 'ChatGPT 모의 토론 (gpt-4.1-mini)', description: 'AI와 토론을 이어가며 핵심 반론과 근거를 정리하세요.' },
+          { name: '3차시-2', headline: '동료 토론', description: '동료와 상호 피드백을 주고받으며 글을 다듬으세요.' },
+          { name: '4차시-1', headline: '4-1차시 토론 발문', description: '관리자가 제공한 발문을 다시 확인하고 논리를 점검하세요.' },
+          { name: '4차시-2', headline: '4-2차시 정리', description: '4-1차시 기록을 요약하고 추가 메모를 정리하세요.' },
+        ];
+        let stageLabelsState = DEFAULT_STAGE_LABELS.map((label) => ({ ...label }));
+        let stageLabelsDirty = false;
 
         function normalizeBaseUrl(url){
           if (!url) return `${window.location.origin}/api/`;
@@ -1081,6 +1159,10 @@
         });
         $('btnPromptSave').addEventListener('click', savePrompt);
         $('btnPromptReload').addEventListener('click', () => loadPublicSettings(true));
+        document.querySelectorAll('[data-stage-field]').forEach((input) => {
+          input.addEventListener('input', handleStageLabelInput);
+        });
+        $('btnStageLabelsSave').addEventListener('click', saveStageLabels);
         $('btnRosterDownloadTemplate').addEventListener('click', downloadRosterTemplate);
         $('rosterFileInput').addEventListener('change', handleRosterFileInput);
         $('btnApplyCsvPairings').addEventListener('click', async () => {
@@ -1287,6 +1369,76 @@
           preview.innerHTML = escaped;
         }
 
+        function normalizeStageLabelsInput(list){
+          const normalized = DEFAULT_STAGE_LABELS.map((label, idx) => {
+            const incoming = Array.isArray(list) && list[idx] ? list[idx] : {};
+            return {
+              name: typeof incoming.name === 'string' ? incoming.name.trim() || label.name : label.name,
+              headline: typeof incoming.headline === 'string' ? incoming.headline.trim() || label.headline : label.headline,
+              description:
+                typeof incoming.description === 'string'
+                  ? incoming.description.trim() || label.description
+                  : label.description,
+            };
+          });
+          return normalized;
+        }
+
+        function populateStageLabelInputs(labels){
+          stageLabelsState = normalizeStageLabelsInput(labels);
+          stageLabelsDirty = false;
+          stageLabelsState.forEach((label, idx) => {
+            const index = idx + 1;
+            const nameInput = $('stageLabelName' + index);
+            const headlineInput = $('stageLabelHeadline' + index);
+            const descInput = $('stageLabelDesc' + index);
+            if (nameInput) nameInput.value = label.name || '';
+            if (headlineInput) headlineInput.value = label.headline || '';
+            if (descInput) descInput.value = label.description || '';
+          });
+          updateStageLabelSaveButton();
+        }
+
+        function handleStageLabelInput(event){
+          const target = event.currentTarget;
+          if (!target) return;
+          const index = Number(target.dataset.stageIndex);
+          const field = target.dataset.stageField;
+          if (!Number.isFinite(index) || !field) return;
+          if (!stageLabelsState[index]) {
+            stageLabelsState[index] = { ...DEFAULT_STAGE_LABELS[index] };
+          }
+          stageLabelsState[index][field] = target.value;
+          stageLabelsDirty = true;
+          updateStageLabelSaveButton();
+        }
+
+        function updateStageLabelSaveButton(){
+          const btn = $('btnStageLabelsSave');
+          if (btn) btn.disabled = !stageLabelsDirty;
+        }
+
+        async function saveStageLabels(){
+          if (!stageLabelsDirty) return;
+          const btn = $('btnStageLabelsSave');
+          if (btn) btn.disabled = true;
+          try {
+            const payload = stageLabelsState.map((label) => ({
+              name: String(label.name || '').trim(),
+              headline: String(label.headline || '').trim(),
+              description: String(label.description || '').trim(),
+            }));
+            const response = await apiRequest('public-settings', { method: 'POST', body: { stageLabels: payload } });
+            populateStageLabelInputs(response?.stageLabels || payload);
+            setStatus('차시 안내를 저장했습니다.', 'success');
+          } catch (error) {
+            stageLabelsDirty = true;
+            setStatus(error.message || '차시 안내를 저장하지 못했습니다.', 'error');
+          } finally {
+            updateStageLabelSaveButton();
+          }
+        }
+
         function updatePromptSaveButton(){
           const textarea = $('promptTextarea');
           const button = $('btnPromptSave');
@@ -1305,6 +1457,7 @@
               textarea.value = currentPromptContent;
             }
             renderPromptPreview(currentPromptContent);
+            populateStageLabelInputs(settings?.stageLabels);
             updatePromptSaveButton();
             if (showStatus) {
               setStatus('제시문을 불러왔습니다.', 'success');
