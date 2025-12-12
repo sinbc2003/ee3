@@ -877,6 +877,15 @@ app.use(API_PREFIX, router);
 // 정적 파일 서빙(가능한 경우)
 if (PUBLIC_DIR) {
   app.use(express.static(PUBLIC_DIR));
+
+  const serveHtml = (file) => (req, res, next) =>
+    res.sendFile(path.join(PUBLIC_DIR, file), (err) => {
+      if (err) next(err);
+    });
+
+  app.get('/admin', serveHtml('admin.html'));
+  app.get('/chat', serveHtml('chat.html'));
+  app.get('/modal', serveHtml('modal.html'));
 }
 
 // 헬스체크
