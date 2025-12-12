@@ -7,6 +7,7 @@ import { fileURLToPath } from 'url';
 import crypto from 'crypto';
 import OpenAI from 'openai';
 import ExcelJS from 'exceljs';
+import { Storage } from '@google-cloud/storage';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -21,6 +22,10 @@ const PRESENCE_TTL_MS = 20_000;
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || '159753tt!';
 const ADMIN_SESSION_TTL_MS = 1000 * 60 * 60 * 12;
 const adminTokens = new Map();
+const DATA_BUCKET = process.env.DATA_BUCKET || '';
+const DATA_BUCKET_PREFIX = process.env.DATA_BUCKET_PREFIX || 'local-data';
+const storageClient = DATA_BUCKET ? new Storage() : null;
+const dataBucket = DATA_BUCKET && storageClient ? storageClient.bucket(DATA_BUCKET) : null;
 
 const app = express();
 
@@ -29,8 +34,10 @@ await fs.mkdir(DATA_DIR, { recursive: true });
 
 // ----- 스토리지 유틸 -----
 class FileStore {
-  constructor(rootDir) {
+  constructor(rootDir, { bucket = null, bucketPrefix = 'local-data' } = {}) {
     this.rootDir = rootDir;
+    this.bucket = bucket;
+    this.bucketPrefix = bucketPrefix;
     this.sessions = [];
     this.messages = [];
     this.matchups = [];
@@ -56,19 +63,48 @@ class FileStore {
   }
 
   async readJson(filename, fallback) {
+    if (this.bucket) {
+      try {
+        const [contents] = await this.bucket
+          .file(this.buildBucketPath(filename))
+          .download();
+        return JSON.parse(contents.toString('utf8'));
+      } catch (err) {
+        if (err.code !== 404) {
+          console.warn('[FileStore] Failed to read from bucket', filename, err.message);
+        }
+      }
+    }
+    return this.readJsonFromDisk(filename, fallback);
+  }
+
+  async readJsonFromDisk(filename, fallback) {
     const filePath = path.join(this.rootDir, filename);
     try {
       const raw = await fs.readFile(filePath, 'utf8');
       return JSON.parse(raw);
-    } catch (err) {
+    } catch (_err) {
       return fallback;
     }
   }
 
   async writeJson(filename, data) {
-    const filePath = path.join(this.rootDir, filename);
     const json = JSON.stringify(data, null, 2);
+    if (this.bucket) {
+      try {
+        await this.bucket
+          .file(this.buildBucketPath(filename))
+          .save(json, { contentType: 'application/json' });
+      } catch (err) {
+        console.error('[FileStore] Failed to write to bucket', filename, err.message);
+      }
+    }
+    const filePath = path.join(this.rootDir, filename);
     await fs.writeFile(filePath, json, 'utf8');
+  }
+
+  buildBucketPath(filename) {
+    return `${this.bucketPrefix}/${filename}`;
   }
 
   async saveSessions() {
@@ -102,7 +138,10 @@ class FileStore {
   }
 }
 
-const store = new FileStore(DATA_DIR);
+const store = new FileStore(DATA_DIR, {
+  bucket: dataBucket,
+  bucketPrefix: DATA_BUCKET_PREFIX,
+});
 await store.init();
 
 const baseAiConfig = buildBaseAiConfig();

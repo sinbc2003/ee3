@@ -3,7 +3,7 @@
 영어 글쓰기 실험 플랫폼을 Google Cloud Run + Cloud Storage 중심 아키텍처로 재구성했습니다. 기존 Google Apps Script + Google Sheet 구조 대신, 다음과 같이 분리된 구조를 사용합니다.
 
 - **프론트엔드**: 정적 `index.html` + 순수 자바스크립트. `app-config.js`에서 Cloud Run 백엔드 주소를 설정합니다.
-- **백엔드** (`backend/`): Node.js (Express) 애플리케이션. Cloud Storage에 세션/채팅 데이터를 JSON으로 저장하고, Vertex AI(Gemini)로 AI 피드백을 생성합니다.
+- **백엔드** (`backend/`): Node.js (Express) 애플리케이션. Cloud Storage에 세션/채팅 데이터를 JSON으로 저장하고, Vertex AI(Gemini)로 AI 피드백을 생성합니다. Cloud Run 환경 변수 `DATA_BUCKET`(+선택 `DATA_BUCKET_PREFIX`)을 설정하면 `sessions.json`, `admin-config.json`, `public-settings.json` 등 모든 데이터가 지정 버킷에 저장되므로 재배포 후에도 유지됩니다. 버킷 권한에 `Storage Object Admin`을 부여해야 합니다.
 - **GitHub Actions**: `master` 브랜치 푸시 시 Cloud Run에 자동 배포.
 
 > 현재 플랫폼은 단일 집단(A)을 기본으로 사용합니다. 학생은 집단 선택 없이 식별 번호와 이름만 입력하면 세션이 시작되며, 관리자 페이지에서 차시별 안내/발문/AI 프롬프트를 직접 편집할 수 있습니다.
