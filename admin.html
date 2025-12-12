@@ -396,6 +396,29 @@
         border-color: #1d4ed8;
         color: #ffffff;
       }
+      .panel-copy-grid {
+        display: grid;
+        gap: 16px;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      }
+      .panel-copy-item {
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 16px;
+        background: #fbfcff;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .panel-copy-item h3 {
+        margin: 0;
+        font-size: 15px;
+        font-weight: 700;
+        color: #0f172a;
+      }
+      .panel-copy-item textarea {
+        min-height: 72px;
+      }
       .stage-label-grid {
         display: grid;
         gap: 16px;
@@ -636,6 +659,92 @@
           </div>
         </section>
 
+        <section class="card" id="panelCopySection">
+          <h2>차시 박스 제목·설명</h2>
+          <p class="muted" style="margin-bottom: 12px;">좌우 패널(제시문, 메모, 챗봇 등)의 제목과 설명을 타입별로 덮어쓸 수 있습니다. 비워두면 차시 안내 문구가 사용됩니다.</p>
+          <div class="stage-type-tabs">
+            <button type="button" class="stage-type-tab active" data-stage-type="TYPE_A">Type A</button>
+            <button type="button" class="stage-type-tab" data-stage-type="TYPE_B">Type B</button>
+          </div>
+          <div class="panel-copy-grid">
+            <div class="panel-copy-item" data-panel-key="prompt">
+              <h3>1단계 · 제시문 카드</h3>
+              <label>제목</label>
+              <input type="text" data-panel-field="title" data-panel-key="prompt" placeholder="예: 2차시 · 토론 관련 발문" />
+              <label>설명</label>
+              <textarea data-panel-field="subtitle" data-panel-key="prompt" placeholder="예: 논제를 이해하고 핵심 발문을 확인하세요."></textarea>
+              <p class="muted">학생 화면 좌측 상단 발문 카드</p>
+            </div>
+            <div class="panel-copy-item" data-panel-key="prewriting">
+              <h3>1단계 · 메모장</h3>
+              <label>제목</label>
+              <input type="text" data-panel-field="title" data-panel-key="prewriting" placeholder="예: 2차시 · 메모장" />
+              <label>설명</label>
+              <textarea data-panel-field="subtitle" data-panel-key="prewriting" placeholder="예: 조사한 근거를 자유롭게 메모하세요."></textarea>
+              <p class="muted">사전 메모 입력 패널</p>
+            </div>
+            <div class="panel-copy-item" data-panel-key="ai">
+              <h3>1단계 · AI/웹검색 패널</h3>
+              <label>제목</label>
+              <input type="text" data-panel-field="title" data-panel-key="ai" placeholder="예: AI 웹검색" />
+              <label>설명</label>
+              <textarea data-panel-field="subtitle" data-panel-key="ai" placeholder="예: 다양한 관점을 조사해 보세요."></textarea>
+              <p class="muted">학생 화면 오른쪽 AI 챗봇</p>
+            </div>
+            <div class="panel-copy-item" data-panel-key="draft">
+              <h3>2단계 · 토론 메모</h3>
+              <label>제목</label>
+              <input type="text" data-panel-field="title" data-panel-key="draft" placeholder="예: 3-1차시 · 토론 메모" />
+              <label>설명</label>
+              <textarea data-panel-field="subtitle" data-panel-key="draft" placeholder="예: AI와 토론하며 떠오른 생각을 정리하세요."></textarea>
+              <p class="muted">왼쪽 2단계 메모 패널</p>
+            </div>
+            <div class="panel-copy-item" data-panel-key="memo">
+              <h3>3단계 · 평가 메모</h3>
+              <label>제목</label>
+              <input type="text" data-panel-field="title" data-panel-key="memo" placeholder="예: 3-2차시 · 평가 메모" />
+              <label>설명</label>
+              <textarea data-panel-field="subtitle" data-panel-key="memo" placeholder="예: 이전 토론을 읽고 메모하세요."></textarea>
+              <p class="muted">3단계 좌측 메모 패널</p>
+            </div>
+            <div class="panel-copy-item" data-panel-key="peer">
+              <h3>3단계 · 오른쪽 챗봇</h3>
+              <label>제목</label>
+              <input type="text" data-panel-field="title" data-panel-key="peer" placeholder="예: 동료 피드백" />
+              <label>설명</label>
+              <textarea data-panel-field="subtitle" data-panel-key="peer" placeholder="예: 동료와 상호 질문을 주고받으세요."></textarea>
+              <p class="muted">3단계 오른쪽 챗봇/동료 패널</p>
+            </div>
+            <div class="panel-copy-item" data-panel-key="stage4">
+              <h3>4단계 · 발문 카드</h3>
+              <label>제목</label>
+              <input type="text" data-panel-field="title" data-panel-key="stage4" placeholder="예: 4차시 · 토론 발문" />
+              <label>설명</label>
+              <textarea data-panel-field="subtitle" data-panel-key="stage4" placeholder="예: 관리자 발문을 확인하세요."></textarea>
+              <p class="muted">왼쪽 4단계 발문 패널</p>
+            </div>
+            <div class="panel-copy-item" data-panel-key="final">
+              <h3>4단계 · 평가 챗봇</h3>
+              <label>제목</label>
+              <input type="text" data-panel-field="title" data-panel-key="final" placeholder="예: AI 평가 챗봇" />
+              <label>설명</label>
+              <textarea data-panel-field="subtitle" data-panel-key="final" placeholder="예: 이전 대화를 기반으로 평가합니다."></textarea>
+              <p class="muted">4단계 오른쪽 챗봇</p>
+            </div>
+            <div class="panel-copy-item" data-panel-key="stage5">
+              <h3>5단계 · 정리 카드</h3>
+              <label>제목</label>
+              <input type="text" data-panel-field="title" data-panel-key="stage5" placeholder="예: 5차시 · 최종 정리" />
+              <label>설명</label>
+              <textarea data-panel-field="subtitle" data-panel-key="stage5" placeholder="예: 4-1차시 기록을 요약하세요."></textarea>
+              <p class="muted">마지막 정리/메모 패널</p>
+            </div>
+          </div>
+          <div class="match-actions" style="margin-top: 16px; justify-content: flex-end;">
+            <button id="btnPanelCopySave" class="primary" type="button" disabled>박스 문구 저장</button>
+          </div>
+        </section>
+
         <section class="card" id="quickMatchSection">
           <h2>빠른 동료 매칭</h2>
           <p class="muted" style="margin-bottom: 12px;">서로 다른 두 세션을 선택해 빠르게 매칭하세요. 아래 목록에서 미매칭 학생을 클릭하면 입력란에 자동으로 채워집니다.</p>
@@ -769,6 +878,38 @@
         let pairingApplyInProgress = false;
         const selectedSessionKeys = new Set();
         const TYPE_KEYS = { TYPE_A: 'TYPE_A', TYPE_B: 'TYPE_B' };
+        const PANEL_COPY_KEYS = [
+          'prompt',
+          'prewriting',
+          'ai',
+          'draft',
+          'memo',
+          'peer',
+          'stage4',
+          'final',
+          'stage5',
+        ];
+        function createEmptyPanelCopy(){
+          return PANEL_COPY_KEYS.reduce((acc, key) => {
+            acc[key] = { title: '', subtitle: '' };
+            return acc;
+          }, {});
+        }
+        function clonePanelCopy(source){
+          const base = {};
+          PANEL_COPY_KEYS.forEach((key) => {
+            const entry = (source && source[key]) || { title: '', subtitle: '' };
+            base[key] = {
+              title: typeof entry.title === 'string' ? entry.title : '',
+              subtitle: typeof entry.subtitle === 'string' ? entry.subtitle : '',
+            };
+          });
+          return base;
+        }
+        const DEFAULT_PANEL_COPY = {
+          [TYPE_KEYS.TYPE_A]: createEmptyPanelCopy(),
+          [TYPE_KEYS.TYPE_B]: createEmptyPanelCopy(),
+        };
         const DEFAULT_STAGE_LABELS = {
           [TYPE_KEYS.TYPE_A]: [
             { name: '2차시', headline: '논거 점검', description: '찬·반 입장으로 질문하며 논거를 점검하세요. 정답 생성 대신 토론 연습에 집중합니다.' },
@@ -847,6 +988,14 @@
           })),
         };
         let stageContentDirty = {
+          [TYPE_KEYS.TYPE_A]: false,
+          [TYPE_KEYS.TYPE_B]: false,
+        };
+        let panelCopyState = {
+          [TYPE_KEYS.TYPE_A]: clonePanelCopy(DEFAULT_PANEL_COPY[TYPE_KEYS.TYPE_A]),
+          [TYPE_KEYS.TYPE_B]: clonePanelCopy(DEFAULT_PANEL_COPY[TYPE_KEYS.TYPE_B]),
+        };
+        let panelCopyDirty = {
           [TYPE_KEYS.TYPE_A]: false,
           [TYPE_KEYS.TYPE_B]: false,
         };
@@ -1295,6 +1444,9 @@
         document.querySelectorAll('[data-stage-field]').forEach((input) => {
           input.addEventListener('input', handleStageLabelInput);
         });
+        document.querySelectorAll('[data-panel-field]').forEach((input) => {
+          input.addEventListener('input', handlePanelCopyInput);
+        });
         document.querySelectorAll('[data-stage-type]').forEach((button) => {
           button.addEventListener('click', () => {
             const nextType = button.dataset.stageType;
@@ -1305,6 +1457,7 @@
           });
         });
         $('btnStageLabelsSave').addEventListener('click', saveStageLabels);
+        $('btnPanelCopySave').addEventListener('click', savePanelCopy);
         $('btnRosterDownloadTemplate').addEventListener('click', downloadRosterTemplate);
         $('rosterFileInput').addEventListener('change', handleRosterFileInput);
         $('btnApplyCsvPairings').addEventListener('click', async () => {
@@ -1602,6 +1755,8 @@
           document.querySelectorAll('[data-stage-type]').forEach((btn) => {
             btn.classList.toggle('active', btn.dataset.stageType === currentStageType);
           });
+          renderPanelCopyFields();
+          updatePanelCopySaveButton();
         }
 
         function handleStageLabelInput(event){
@@ -1682,6 +1837,99 @@
           }));
         }
 
+        function buildPanelCopyEntries(raw, typeKey){
+          const defaults = clonePanelCopy(DEFAULT_PANEL_COPY[typeKey]);
+          const source = raw && typeof raw === 'object' ? raw : {};
+          PANEL_COPY_KEYS.forEach((key) => {
+            const incoming = source[key];
+            defaults[key] = {
+              title: typeof incoming?.title === 'string' ? incoming.title : defaults[key].title,
+              subtitle: typeof incoming?.subtitle === 'string' ? incoming.subtitle : defaults[key].subtitle,
+            };
+          });
+          return defaults;
+        }
+
+        function populatePanelCopyInputs(copyA, copyB){
+          panelCopyState[TYPE_KEYS.TYPE_A] = buildPanelCopyEntries(copyA, TYPE_KEYS.TYPE_A);
+          panelCopyState[TYPE_KEYS.TYPE_B] = buildPanelCopyEntries(copyB, TYPE_KEYS.TYPE_B);
+          panelCopyDirty[TYPE_KEYS.TYPE_A] = false;
+          panelCopyDirty[TYPE_KEYS.TYPE_B] = false;
+          renderPanelCopyFields();
+          updatePanelCopySaveButton();
+        }
+
+        function renderPanelCopyFields(){
+          const entries = panelCopyState[currentStageType] || {};
+          PANEL_COPY_KEYS.forEach((key) => {
+            const titleInput = document.querySelector(`[data-panel-field="title"][data-panel-key="${key}"]`);
+            const subtitleInput = document.querySelector(`[data-panel-field="subtitle"][data-panel-key="${key}"]`);
+            if (titleInput) {
+              const nextValue = entries[key]?.title || '';
+              if (titleInput.value !== nextValue) titleInput.value = nextValue;
+            }
+            if (subtitleInput) {
+              const nextValue = entries[key]?.subtitle || '';
+              if (subtitleInput.value !== nextValue) subtitleInput.value = nextValue;
+            }
+          });
+        }
+
+        function handlePanelCopyInput(event){
+          const target = event.currentTarget;
+          if (!target) return;
+          const key = target.dataset.panelKey;
+          const field = target.dataset.panelField;
+          if (!key || !field) return;
+          const entries = { ...(panelCopyState[currentStageType] || clonePanelCopy(DEFAULT_PANEL_COPY[currentStageType])) };
+          const entry = { ...(entries[key] || { title: '', subtitle: '' }) };
+          entry[field] = target.value;
+          entries[key] = entry;
+          panelCopyState[currentStageType] = entries;
+          panelCopyDirty[currentStageType] = true;
+          updatePanelCopySaveButton();
+        }
+
+        function updatePanelCopySaveButton(){
+          const btn = $('btnPanelCopySave');
+          if (btn) btn.disabled = !Object.values(panelCopyDirty).some(Boolean);
+        }
+
+        function buildPanelCopyPayload(typeKey){
+          const entries = panelCopyState[typeKey] || {};
+          return PANEL_COPY_KEYS.reduce((acc, key) => {
+            const entry = entries[key] || { title: '', subtitle: '' };
+            acc[key] = {
+              title: String(entry.title || '').trim(),
+              subtitle: String(entry.subtitle || '').trim(),
+            };
+            return acc;
+          }, {});
+        }
+
+        async function savePanelCopy(){
+          if (!Object.values(panelCopyDirty).some(Boolean)) return;
+          const btn = $('btnPanelCopySave');
+          if (btn) btn.disabled = true;
+          try {
+            const payloadA = buildPanelCopyPayload(TYPE_KEYS.TYPE_A);
+            const payloadB = buildPanelCopyPayload(TYPE_KEYS.TYPE_B);
+            const response = await apiRequest('public-settings', {
+              method: 'POST',
+              body: {
+                panelCopy: payloadA,
+                panelCopyTypeB: payloadB,
+              },
+            });
+            populatePanelCopyInputs(response?.panelCopy || payloadA, response?.panelCopyTypeB || payloadB);
+            setStatus('차시 박스 문구를 저장했습니다.', 'success');
+          } catch (error) {
+            setStatus(error.message || '차시 박스 문구를 저장하지 못했습니다.', 'error');
+          } finally {
+            updatePanelCopySaveButton();
+          }
+        }
+
         function updatePromptSaveButton(){
           const textarea = $('promptTextarea');
           const button = $('btnPromptSave');
@@ -1706,6 +1954,7 @@
               settings?.stageLabelsTypeB,
               settings?.stagePromptsTypeB
             );
+            populatePanelCopyInputs(settings?.panelCopy, settings?.panelCopyTypeB);
             updatePromptSaveButton();
             if (showStatus) {
               setStatus('제시문을 불러왔습니다.', 'success');

@@ -188,6 +188,30 @@ function buildPresenceSummary(roomId, studentId, partnerStudentId) {
 }
 
 // ----- 헬퍼 -----
+const PANEL_COPY_KEYS = [
+  'prompt',
+  'prewriting',
+  'ai',
+  'draft',
+  'memo',
+  'peer',
+  'stage4',
+  'final',
+  'stage5',
+];
+
+function emptyPanelCopy() {
+  return PANEL_COPY_KEYS.reduce((acc, key) => {
+    acc[key] = { title: '', subtitle: '' };
+    return acc;
+  }, {});
+}
+
+function defaultPanelCopy(_type = 'TYPE_A') {
+  // 현재는 타입별 기본값 차이가 없지만, 향후 필요 시 분기 추가
+  return emptyPanelCopy();
+}
+
 function defaultPublicSettings() {
   return {
     topLinkUrl: '',
@@ -198,6 +222,8 @@ function defaultPublicSettings() {
     stagePrompts: defaultStagePrompts(),
     stageLabelsTypeB: defaultStageLabelsTypeB(),
     stagePromptsTypeB: defaultStagePromptsTypeB(),
+    panelCopy: defaultPanelCopy('TYPE_A'),
+    panelCopyTypeB: defaultPanelCopy('TYPE_B'),
   };
 }
 
@@ -1719,6 +1745,37 @@ function sanitizePublicSettings(payload, currentSettings = store.publicSettings)
   if (Array.isArray(payload.stagePromptsTypeB)) {
     base.stagePromptsTypeB = normalizeStagePrompts(payload.stagePromptsTypeB, base.stagePromptsTypeB);
   }
+  if (payload.panelCopy && typeof payload.panelCopy === 'object') {
+    base.panelCopy = sanitizePanelCopy(payload.panelCopy, base.panelCopy, 'TYPE_A');
+  }
+  if (payload.panelCopyTypeB && typeof payload.panelCopyTypeB === 'object') {
+    base.panelCopyTypeB = sanitizePanelCopy(payload.panelCopyTypeB, base.panelCopyTypeB, 'TYPE_B');
+  }
+  return base;
+}
+
+function sanitizePanelCopy(payload, fallback = defaultPanelCopy(), type = 'TYPE_A') {
+  const base = {
+    ...defaultPanelCopy(type),
+    ...(fallback || {}),
+  };
+  PANEL_COPY_KEYS.forEach((key) => {
+    const incoming = payload[key];
+    const current = base[key] || { title: '', subtitle: '' };
+    const title =
+      typeof incoming?.title === 'string'
+        ? incoming.title.trim()
+        : typeof current.title === 'string'
+          ? current.title
+          : '';
+    const subtitle =
+      typeof incoming?.subtitle === 'string'
+        ? incoming.subtitle.trim()
+        : typeof current.subtitle === 'string'
+          ? current.subtitle
+          : '';
+    base[key] = { title, subtitle };
+  });
   return base;
 }
 

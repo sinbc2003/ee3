@@ -469,6 +469,30 @@
           ],
         };
 
+        const PANEL_COPY_KEYS = [
+          'prompt',
+          'prewriting',
+          'ai',
+          'draft',
+          'memo',
+          'peer',
+          'stage4',
+          'final',
+          'stage5',
+        ];
+
+        function createEmptyPanelCopy(){
+          return PANEL_COPY_KEYS.reduce((acc, key) => {
+            acc[key] = { title: '', subtitle: '' };
+            return acc;
+          }, {});
+        }
+
+        const DEFAULT_PANEL_COPY_BY_TYPE = {
+          [TYPE_KEYS.TYPE_A]: createEmptyPanelCopy(),
+          [TYPE_KEYS.TYPE_B]: createEmptyPanelCopy(),
+        };
+
         function normalizeApiBaseUrl(path){
           if (!path) return `${window.location.origin}/api/`;
           const trimmed = String(path).trim();
@@ -669,6 +693,10 @@
             [TYPE_KEYS.TYPE_A]: DEFAULT_STAGE_PROMPTS_BY_TYPE[TYPE_KEYS.TYPE_A].map((prompt) => ({ ...prompt })),
             [TYPE_KEYS.TYPE_B]: DEFAULT_STAGE_PROMPTS_BY_TYPE[TYPE_KEYS.TYPE_B].map((prompt) => ({ ...prompt })),
           },
+          panelCopyByType: {
+            [TYPE_KEYS.TYPE_A]: clonePanelCopyDefaults(TYPE_KEYS.TYPE_A),
+            [TYPE_KEYS.TYPE_B]: clonePanelCopyDefaults(TYPE_KEYS.TYPE_B),
+          },
         };
 
         function normalizeStageLabels(list, fallbackList){
@@ -729,6 +757,49 @@
                     : '',
             };
           });
+        }
+
+        function clonePanelCopyDefaults(typeKey){
+          const source = DEFAULT_PANEL_COPY_BY_TYPE[typeKey] || {};
+          return PANEL_COPY_KEYS.reduce((acc, key) => {
+            const entry = source[key] || { title: '', subtitle: '' };
+            acc[key] = { title: entry.title || '', subtitle: entry.subtitle || '' };
+            return acc;
+          }, {});
+        }
+
+        function normalizePanelCopy(map, fallback){
+          return PANEL_COPY_KEYS.reduce((acc, key) => {
+            const incoming = map && typeof map[key] === 'object' ? map[key] : null;
+            const fallbackEntry =
+              (fallback && typeof fallback[key] === 'object' && fallback[key]) || { title: '', subtitle: '' };
+            acc[key] = {
+              title:
+                typeof incoming?.title === 'string'
+                  ? incoming.title
+                  : typeof fallbackEntry.title === 'string'
+                    ? fallbackEntry.title
+                    : '',
+              subtitle:
+                typeof incoming?.subtitle === 'string'
+                  ? incoming.subtitle
+                  : typeof fallbackEntry.subtitle === 'string'
+                    ? fallbackEntry.subtitle
+                    : '',
+            };
+            return acc;
+          }, {});
+        }
+
+        function getPanelCopyEntry(panelKey){
+          const typeKey = state.typeMode || TYPE_KEYS.TYPE_A;
+          const store = publicConfig.panelCopyByType[typeKey] || {};
+          const entry = store[panelKey];
+          const fallback = (DEFAULT_PANEL_COPY_BY_TYPE[typeKey] || {})[panelKey] || { title: '', subtitle: '' };
+          return {
+            title: typeof entry?.title === 'string' ? entry.title : fallback.title || '',
+            subtitle: typeof entry?.subtitle === 'string' ? entry.subtitle : fallback.subtitle || '',
+          };
         }
 
         function getStagePromptsForType(typeKey){
@@ -1176,17 +1247,27 @@
           const isTypeB = state.typeMode === TYPE_KEYS.TYPE_B;
           const stage1 = getStageLabel(1);
           if (stage1) {
-            setText('promptStageTitle', combine(stage1, '2차시 · 토론 관련 발문', { headlineOnly: isTypeB }));
-            setText('promptStageSubtitle', stage1.description || '논제 이해를 위해 핵심 발문을 확인하세요.');
-            setText('prewritingTitle', combine(stage1, '2차시 · 메모장'));
-            setText('prewritingInfo', stage1.description || '인터넷 검색으로 찬성·반대 근거를 수집하며 메모를 남기세요.');
-            setText('aiStageTitle', stage1.headline || stage1.name || 'AI 피드백');
-            setText('aiStageSubtitle', stage1.description || 'AI와 토론 연습을 진행하세요.');
+            const promptCopy = getPanelCopyEntry('prompt');
+            setText('promptStageTitle', promptCopy.title || combine(stage1, '2차시 · 토론 관련 발문', { headlineOnly: isTypeB }));
+            setText(
+              'promptStageSubtitle',
+              promptCopy.subtitle || stage1.description || '논제 이해를 위해 핵심 발문을 확인하세요.'
+            );
+            const prewritingCopy = getPanelCopyEntry('prewriting');
+            setText('prewritingTitle', prewritingCopy.title || combine(stage1, '2차시 · 메모장'));
+            setText(
+              'prewritingInfo',
+              prewritingCopy.subtitle || stage1.description || '인터넷 검색으로 찬성·반대 근거를 수집하며 메모를 남기세요.'
+            );
+            const aiCopy = getPanelCopyEntry('ai');
+            setText('aiStageTitle', aiCopy.title || stage1.headline || stage1.name || 'AI 피드백');
+            setText('aiStageSubtitle', aiCopy.subtitle || stage1.description || 'AI와 토론 연습을 진행하세요.');
           }
           const stage2 = getStageLabel(2);
           if (stage2) {
-            setText('draftTitle', combine(stage2, '3-1차시 · 토론 메모'));
-            setText('draftInfo', stage2.description || 'ChatGPT와 모의 토론 중 떠오른 생각을 정리하세요.');
+            const draftCopy = getPanelCopyEntry('draft');
+            setText('draftTitle', draftCopy.title || combine(stage2, '3-1차시 · 토론 메모'));
+            setText('draftInfo', draftCopy.subtitle || stage2.description || 'ChatGPT와 모의 토론 중 떠오른 생각을 정리하세요.');
             const transcriptHeading = $('stage3TranscriptHeading');
             if (transcriptHeading) {
               transcriptHeading.textContent = (stage2.name || '3-1차시') + ' 토론 기록';
@@ -1194,24 +1275,36 @@
           }
           const stage3 = getStageLabel(3);
           if (stage3) {
-            setText('memoStage3Title', combine(stage3, '3-2차시 · 동료 토론 메모'));
-            setText('memoStage3Info', stage3.description || '동료에게 받은 피드백을 메모하세요.');
-            setText('peerStageTitle', stage3.headline || stage3.name || '동료 피드백');
-            setText('peerStageSubtitle', stage3.description || '동료와 상호작용하며 피드백을 주고받으세요.');
+            const memoCopy = getPanelCopyEntry('memo');
+            setText('memoStage3Title', memoCopy.title || combine(stage3, '3-2차시 · 동료 토론 메모'));
+            const memoSubtitle = memoCopy.subtitle || stage3.description || '동료에게 받은 피드백을 메모하세요.';
+            setText('memoStage3Info', memoSubtitle);
+            const peerCopy = getPanelCopyEntry('peer');
+            setText('peerStageTitle', peerCopy.title || stage3.headline || stage3.name || '동료 피드백');
+            setText(
+              'peerStageSubtitle',
+              peerCopy.subtitle || stage3.description || '동료와 상호작용하며 피드백을 주고받으세요.'
+            );
             const memoInfoEl = $('memoStage3Info');
-            if (memoInfoEl) memoInfoEl.dataset.baseText = memoInfoEl.textContent || '';
+            if (memoInfoEl) memoInfoEl.dataset.baseText = memoSubtitle;
           }
           const stage4 = getStageLabel(4);
           if (stage4) {
-            setText('stage4Title', combine(stage4, '4차시 · 토론 발문'));
-            setText('stage4Subtitle', stage4.description || '관리자가 입력한 발문을 확인하세요.');
-            setText('finalStageTitle', combine(stage4, 'ChatGPT와 토론 (gpt-4.1-mini)'));
-            setText('finalStageSubtitle', stage4.description || '관리자 시스템 프롬프트를 기반으로 토론을 진행합니다.');
+            const stage4Copy = getPanelCopyEntry('stage4');
+            setText('stage4Title', stage4Copy.title || combine(stage4, '4차시 · 토론 발문'));
+            setText('stage4Subtitle', stage4Copy.subtitle || stage4.description || '관리자가 입력한 발문을 확인하세요.');
+            const finalCopy = getPanelCopyEntry('final');
+            setText('finalStageTitle', finalCopy.title || combine(stage4, 'ChatGPT와 토론 (gpt-4.1-mini)'));
+            setText('finalStageSubtitle', finalCopy.subtitle || stage4.description || '관리자 시스템 프롬프트를 기반으로 토론을 진행합니다.');
           }
           const stage5 = getStageLabel(5);
           if (stage5) {
-            setText('stage5Title', combine(stage5, '5차시 · 정리'));
-            setText('stage5Subtitle', stage5.description || '4-1차시 대화를 요약해 확인하고, 추가로 메모하세요.');
+            const stage5Copy = getPanelCopyEntry('stage5');
+            setText('stage5Title', stage5Copy.title || combine(stage5, '5차시 · 정리'));
+            setText(
+              'stage5Subtitle',
+              stage5Copy.subtitle || stage5.description || '4-1차시 대화를 요약해 확인하고, 추가로 메모하세요.'
+            );
           }
         }
 
@@ -1453,6 +1546,8 @@
           const readonly = $('prewritingReadonly');
           const info = $('prewritingInfo');
           if (!textarea || !readonly || !info) return;
+          const prewritingCopy = getPanelCopyEntry('prewriting');
+          const defaultInfoText = prewritingCopy.subtitle || '사전 글쓰기를 작성하고 제출하세요.';
           const storedText = state.writing.prewriting.text || '';
           const submittedAt = Number(state.writing.prewriting.submittedAt || 0);
           const isStageActive = Number(state.stage || 1) === 1;
@@ -1470,7 +1565,7 @@
           readonly.textContent = completed ? storedText : '';
           const submitBtn = $('btnPreSubmit');
           if (submitBtn) submitBtn.disabled = !isStageActive || completed || !textarea.value.trim();
-          info.textContent = completed ? '제출 시간: ' + formatDate(submittedAt) : '사전 글쓰기를 작성하고 제출하세요.';
+          info.textContent = completed ? '제출 시간: ' + formatDate(submittedAt) : defaultInfoText;
         }
 
         function renderDraftPanel(){
@@ -1481,6 +1576,9 @@
           if (!textarea || !info) return;
           const stage = Number(state.stage || 1);
           const group = (state.group || '').toUpperCase();
+          const draftCopy = getPanelCopyEntry('draft');
+          const overrideTitle = (draftCopy.title || '').trim();
+          const overrideSubtitle = (draftCopy.subtitle || '').trim();
           const editable = stage === 2 && !state.writing.final.submittedAt;
           const savedText = state.writing.draft.text || '';
           if (previewEl) {
@@ -1503,17 +1601,21 @@
             moveBtn.disabled = !hasSaved;
           }
           if (titleEl) {
-            if (group === 'B') titleEl.textContent = '2단계 · 동료 메모';
+            if (overrideTitle) titleEl.textContent = overrideTitle;
+            else if (group === 'B') titleEl.textContent = '2단계 · 동료 메모';
             else titleEl.textContent = '2단계 · 글쓰기 수정 관련 메모';
           }
           const savedAt = Number(state.writing.draft.savedAt || 0);
           if (savedAt) {
             info.textContent = '마지막 메모 저장: ' + formatDate(savedAt);
         } else {
-            if (group === 'B') {
+            if (overrideSubtitle) {
+              info.textContent = overrideSubtitle;
+            } else if (group === 'B') {
               info.textContent = '동료와의 대화에서 얻은 포인트를 기록한 뒤 이동하세요.';
             } else {
-              info.textContent = 'AI 튜터에게 받은 피드백을 참고하여, 글을 어떻게 수정할지에 대한 아이디어를 메모 형태로 자유롭게 정리하세요.';
+              info.textContent =
+                'AI 튜터에게 받은 피드백을 참고하여, 글을 어떻게 수정할지에 대한 아이디어를 메모 형태로 자유롭게 정리하세요.';
             }
           }
           const backBtn = $('btnDraftBack');
@@ -1540,22 +1642,31 @@
           const saveBtn = $('btnNotesSave');
           const nextBtn = $('btnPeerNext');
           if (!notesInput || !saveBtn || !nextBtn) return;
+          const memoCopy = getPanelCopyEntry('memo');
+          const overrideTitle = (memoCopy.title || '').trim();
+          const overrideSubtitle = (memoCopy.subtitle || '').trim();
 
           if (titleEl) {
-          const combined = currentLabel.headline ? `${currentLabel.name || ''} · ${currentLabel.headline}` : (currentLabel.name || '동료 메모');
-            titleEl.textContent = combined;
+            const combined = currentLabel.headline
+              ? `${currentLabel.name || ''} · ${currentLabel.headline}`
+              : currentLabel.name || '동료 메모';
+            titleEl.textContent = overrideTitle || combined;
           }
 
           if (infoEl) {
-            if (!infoEl.dataset.baseText) {
-              infoEl.dataset.baseText = infoEl.textContent || currentLabel.description || '';
-            }
-            let base = infoEl.dataset.baseText || currentLabel.description || infoEl.textContent || '';
+            const baseText =
+              overrideSubtitle ||
+              infoEl.dataset.baseText ||
+              currentLabel.description ||
+              infoEl.textContent ||
+              '';
+            infoEl.dataset.baseText = baseText;
+            let display = baseText;
             const memoSavedAt = Number(state.writing.notes.updatedAt || 0);
             if (memoSavedAt) {
-              base += ' · 마지막 저장: ' + formatDate(memoSavedAt);
+              display += ' · 마지막 저장: ' + formatDate(memoSavedAt);
             }
-            infoEl.textContent = base;
+            infoEl.textContent = display;
           }
 
           const transcriptBlock = document.querySelector('.stage3-transcript-block');
@@ -2801,6 +2912,14 @@
               publicConfig.stagePromptsByType[TYPE_KEYS.TYPE_B] = normalizeStagePrompts(
                 cfg.stagePromptsTypeB,
                 DEFAULT_STAGE_PROMPTS_BY_TYPE[TYPE_KEYS.TYPE_B]
+              );
+              publicConfig.panelCopyByType[TYPE_KEYS.TYPE_A] = normalizePanelCopy(
+                cfg.panelCopy,
+                publicConfig.panelCopyByType[TYPE_KEYS.TYPE_A]
+              );
+              publicConfig.panelCopyByType[TYPE_KEYS.TYPE_B] = normalizePanelCopy(
+                cfg.panelCopyTypeB,
+                publicConfig.panelCopyByType[TYPE_KEYS.TYPE_B]
               );
               state.aiAvatarUrl = publicConfig.aiAvatarUrl || DEFAULT_AI_AVATAR;
               buildStepIndicator();
