@@ -216,6 +216,9 @@
                 <span id="promptStageSubtitle" class="panel-subtext">논제 이해를 위해 핵심 발문을 확인하세요. 필요 시 교사가 제시합니다.</span>
               </div>
               <div id="promptContent" class="text-block">토론 발문이 아직 등록되지 않았습니다.</div>
+              <div class="button-row" id="typeBStage1Actions" style="display: none;">
+                <button id="btnStage1Next" class="primary" type="button">2차시로 이동</button>
+              </div>
             </section>
 
             <section id="panelPrewriting" class="stage-panel" data-step="1">
@@ -900,6 +903,8 @@
             if (state.sessionKey && !confirm('현재 세션을 종료하고 처음 화면으로 돌아가시겠습니까?')) return;
             resetToTypeSelection(true, DEFAULT_TYPE);
           });
+          const stage1NextBtn = $('btnStage1Next');
+          if (stage1NextBtn) stage1NextBtn.addEventListener('click', onTypeBStage1Next);
 
           document.querySelectorAll('[data-type-option]').forEach(function(btn){
             btn.addEventListener('click', function(){
@@ -1324,6 +1329,7 @@
           renderPartnerPanel();
           renderPresence();
           renderDictionaryHistory();
+          updateTypeBStage1Button();
           refreshChatControls();
 
           // AI/peer 채팅은 단계 전환 시 초기화
@@ -1344,6 +1350,18 @@
           if (!peerStageActive) {
             clearChatLog('peer');
           }
+        }
+
+        function updateTypeBStage1Button(){
+          const container = $('typeBStage1Actions');
+          const button = $('btnStage1Next');
+          if (!container || !button) return;
+          const shouldShow =
+            state.typeMode === TYPE_KEYS.TYPE_B &&
+            Number(state.stage || 1) <= 1 &&
+            !!state.sessionKey;
+          container.style.display = shouldShow ? 'flex' : 'none';
+          button.disabled = !shouldShow || state.stageChangePending;
         }
 
         function getPreviousStageNumber(){
@@ -2150,6 +2168,27 @@
         } else {
             setStatus('현재 단계에서는 이동할 수 없습니다.', 'warn');
           }
+        }
+
+        function onTypeBStage1Next(){
+          if (!hasGas) return;
+          if (state.typeMode !== TYPE_KEYS.TYPE_B) return;
+          const stage = Number(state.stage || 1);
+          if (stage > 1) return;
+          if (!state.sessionKey) { setStatus('세션이 활성화되지 않았습니다.', 'error'); return; }
+          const button = $('btnStage1Next');
+          const stage2Name = getStageDisplayName(2);
+          if (!confirm(`${stage2Name}으로 이동하시겠습니까?`)) return;
+          if (button) button.disabled = true;
+          setStatus(`${stage2Name}으로 이동하는 중입니다...`, 'info');
+          google.script.run.withSuccessHandler(function(res){
+            if (button) button.disabled = false;
+            setStatus(`${stage2Name}으로 이동했습니다.`, 'success');
+            syncSessionState(res);
+          }).withFailureHandler(function(err){
+            if (button) button.disabled = false;
+            handleError(err);
+          }).advanceToPeerStage(state.sessionKey);
         }
 
         function onPeerNextStage(){
