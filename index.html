@@ -576,8 +576,9 @@
             advanceToFinalStage: function(sessionKey){
               return request('POST', `session/${encodeURIComponent(sessionKey)}/advance-final`);
             },
-            jumpToStage: function(sessionKey, stage){
-              return request('POST', `session/${encodeURIComponent(sessionKey)}/jump`, { body: { stage } });
+            jumpToStage: function(sessionKey, stage, options){
+              const payload = Object.assign({ stage }, options || {});
+              return request('POST', `session/${encodeURIComponent(sessionKey)}/jump`, { body: payload });
             },
             regressStage: function(sessionKey){
               return request('POST', `session/${encodeURIComponent(sessionKey)}/regress`);
@@ -1509,7 +1510,6 @@
         function canSelectStage(step){
           const desired = Number(step || 0);
           if (!desired || desired < 1) return false;
-          if (desired === 1) return false;
           const typeKey = state.typeMode || TYPE_KEYS.TYPE_A;
           const typeConfig = getTypeConfig(typeKey);
           const template = Array.isArray(typeConfig.stepTemplate) ? typeConfig.stepTemplate : [];
@@ -1545,7 +1545,7 @@
             state.stageChangePending = false;
             updateStepIndicator();
             handleError(err);
-          }).jumpToStage(state.sessionKey, target);
+          }).jumpToStage(state.sessionKey, target, { force: true });
         }
 
         function onStepIndicatorClick(event){

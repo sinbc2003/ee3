@@ -1084,7 +1084,11 @@ function handleAdvanceToFinal(record) {
   ensureStage(record, 4);
 }
 
-function handleJump(record, desired) {
+function handleJump(record, desired, options = {}) {
+  if (options.force) {
+    ensureStage(record, desired);
+    return;
+  }
   const group = String(record.group || '').toUpperCase();
   const currentStage = Number(record.stage || 1);
   if (desired === 3 && !(group === 'A' || group === 'B')) {
@@ -1496,7 +1500,8 @@ router.post('/session/:sessionKey/jump', async (req, res, next) => {
     const record = findSession(key);
     if (!record) throw createHttpError(404, '세션을 찾을 수 없습니다.');
     const desired = Math.min(5, Math.max(1, Number(req.body?.stage || 0) || 1));
-    handleJump(record, desired);
+    const force = Boolean(req.body?.force);
+    handleJump(record, desired, { force });
     await store.saveSessions();
     res.json(buildSessionState(record));
   } catch (err) {
