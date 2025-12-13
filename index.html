@@ -26,7 +26,7 @@
       .type-option strong { font-size: 18px; color: #111827; }
       .type-option span { font-size: 13px; color: #475569; }
       .type-option.active { border-color: #2563eb; box-shadow: 0 12px 24px rgba(37, 99, 235, 0.2); background: #eef2ff; }
-      .login-card { display: none; max-width: 520px; margin: 0 auto; }
+      .login-card { max-width: 520px; margin: 0 auto; }
       .login-header { display: flex; flex-direction: column; gap: 6px; margin-bottom: 18px; }
       .login-group-row { display: flex; align-items: center; gap: 8px; }
       .login-group-row .ghost { padding: 6px 10px; font-size: 12px; }
@@ -161,40 +161,27 @@
   </head>
   <body>
     <div class="page-container">
-      <div id="typeCard" class="card type-card">
-        <h1>학습 Type을 선택하세요</h1>
-        <div class="type-buttons">
-          <button class="type-option active" data-type-option="TYPE_A">
-            <strong>Type A</strong>
-          </button>
-          <button class="type-option" data-type-option="TYPE_B">
-            <strong>Type B</strong>
-          </button>
-        </div>
-      </div>
-
       <div id="loginCard" class="card login-card">
         <div class="login-header">
           <div class="login-group-row">
             <div id="selectedTypeLabel" class="login-group">Type A · 기본</div>
-            <button id="btnChangeType" class="ghost" type="button">타입 변경</button>
           </div>
           <div id="loginMessage" class="login-message">식별번호와 이름을 정확하게 입력해주세요.</div>
-        </div>
+          </div>
         <form id="loginForm">
           <div class="field">
             <label for="studentIdInput">식별 번호</label>
             <input id="studentIdInput" type="text" placeholder="예) A10100" autocomplete="off" />
-          </div>
+        </div>
           <div class="field">
             <label for="studentNameInput">이름</label>
             <input id="studentNameInput" type="text" placeholder="이름을 입력하세요" autocomplete="off" />
-          </div>
+        </div>
           <div class="login-actions">
             <button id="loginSubmit" class="primary" type="submit">실험 시작</button>
-          </div>
-        </form>
       </div>
+        </form>
+    </div>
 
       <div id="workspace" class="workspace">
         <div class="workspace-toolbar">
@@ -213,9 +200,6 @@
                 <span id="promptStageSubtitle" class="panel-subtext">논제 이해를 위해 핵심 발문을 확인하세요. 필요 시 교사가 제시합니다.</span>
               </div>
               <div id="promptContent" class="text-block">토론 발문이 아직 등록되지 않았습니다.</div>
-              <div class="button-row" id="typeBStage1Actions" style="display: none;">
-                <button id="btnStage1Next" class="primary" type="button">2차시로 이동</button>
-              </div>
             </section>
 
             <section id="panelPrewriting" class="stage-panel" data-step="1">
@@ -261,13 +245,13 @@
                   <strong id="stage3TranscriptHeading">3-1차시 토론 기록</strong>
                   <div id="stage3Transcript" class="stage3-transcript-list">
                     <div class="stage3-transcript-line">이전 토론 기록을 불러오는 중입니다.</div>
-                  </div>
-                </div>
+              </div>
+              </div>
                 <div>
                   <label for="notesInput">질문/아이디어 메모</label>
                   <textarea id="notesInput" placeholder="3-1차시 토론을 다시 읽고, 궁금한 점이나 보완할 논거를 메모하세요." disabled></textarea>
                   <p id="stage3MemoHelper" class="stage3-memo-helper">먼저 기록을 보고 핵심 반론·보완점을 정리한 뒤, 오른쪽 AI 평가 패널에 질문을 던져 보세요.</p>
-                </div>
+              </div>
               </div>
               <div class="button-row">
                 <button id="btnStage3Back" class="ghost" type="button">이전 단계로 이동</button>
@@ -303,12 +287,12 @@
             </div>
           </div>
           <div class="prewriting-preview-block" id="stage5SummaryBlock">
-            <strong>4-1차시 토론 요약</strong>
-            <div id="stage5TranscriptSummary" class="text-block">4-1 토론 기록을 불러오는 중입니다. (추후 연동)</div>
-          </div>
-          <div class="button-row">
-            <button id="btnStage5MemoSave" class="secondary" type="button" disabled>5차시 메모 저장</button>
-          </div>
+                <strong>4-1차시 토론 요약</strong>
+                <div id="stage5TranscriptSummary" class="text-block">4-1 토론 기록을 불러오는 중입니다. (추후 연동)</div>
+              </div>
+              <div class="button-row">
+                <button id="btnStage5MemoSave" class="secondary" type="button" disabled>5차시 메모 저장</button>
+              </div>
             </section>
           </div>
 
@@ -374,7 +358,7 @@
         'use strict';
 
         const APP_CONFIG = window.APP_CONFIG || { apiBaseUrl: '/api', apiKey: '' };
-        const TYPE_KEYS = { TYPE_A: 'TYPE_A', TYPE_B: 'TYPE_B' };
+        const TYPE_KEYS = { TYPE_A: 'TYPE_A' };
         const DEFAULT_TYPE = TYPE_KEYS.TYPE_A;
         const TYPE_CONFIGS = {
           [TYPE_KEYS.TYPE_A]: {
@@ -392,41 +376,15 @@
               { badge: '5', stage: 5 },
             ],
           },
-          [TYPE_KEYS.TYPE_B]: {
-            id: TYPE_KEYS.TYPE_B,
-            label: 'Type B · 세분화 흐름',
-            description: '1~5차시 중 3·4차시가 2단계로 분리',
-            group: 'B',
-            aiStages: [2, 3, 4, 5],
-            peerStages: [1, 3],
-            stepTemplate: [
-              { badge: '1', stage: 1, titleOverride: '1차시' },
-              { badge: '2', stage: 2, titleOverride: '2차시' },
-              { badge: '3-1', stage: 3, segment: 'a', titleOverride: '3-1차시' },
-              { badge: '3-2', stage: 4, segment: 'b', titleOverride: '3-2차시' },
-              { badge: '4-1', stage: 5, segment: 'a', titleOverride: '4-1차시' },
-              { badge: '4-2', stage: 5, segment: 'b', titleOverride: '4-2차시' },
-            ],
-          },
         };
-        const DEFAULT_STAGE_LABELS_BY_TYPE = {
-          [TYPE_KEYS.TYPE_A]: [
+        const DEFAULT_STAGE_LABELS = [
           { name: '2차시', headline: '논거 점검', description: '찬·반 입장으로 질문하며 논거를 점검하세요. 정답 생성 대신 토론 연습에 집중합니다.' },
           { name: '3차시-1', headline: 'ChatGPT 모의 토론 (gpt-4.1-mini)', description: 'AI와 토론을 이어가며 핵심 반론과 근거를 정리하세요.' },
           { name: '3차시-2', headline: '동료 토론 평가', description: '3-1차시 AI 대화를 다시 읽고 토론을 평가하세요.' },
           { name: '4차시-1', headline: '4-1차시 토론 발문', description: '관리자가 제공한 발문을 다시 확인하고 논리를 점검하세요.' },
           { name: '4차시-2', headline: '4-2차시 정리', description: '4-1차시 대화를 요약하고 추가 메모를 정리하세요.' },
-          ],
-          [TYPE_KEYS.TYPE_B]: [
-            { name: '1차시', headline: '토론 관련 발문', description: '관리자가 등록한 발문을 읽고 토론을 준비하세요.' },
-            { name: '2차시', headline: '관점 정리', description: '찬성/반대 관점을 나누어 근거를 정리합니다.' },
-            { name: '3차시', headline: '3-1/3-2 토론', description: 'AI와 토론하며 떠오르는 질문을 기록합니다.' },
-            { name: '4차시', headline: '4-1/4-2 평가', description: 'AI 피드백을 바탕으로 논리를 보완합니다.' },
-            { name: '5차시', headline: '최종 정리', description: '핵심 주장과 후속 과제를 정리합니다.' },
-          ],
-        };
-        const DEFAULT_STAGE_PROMPTS_BY_TYPE = {
-          [TYPE_KEYS.TYPE_A]: [
+        ];
+        const DEFAULT_STAGE_PROMPTS = [
           {
             reference: '찬·반 논거를 조사하며 핵심 근거와 반론거리를 메모하세요. AI 웹검색을 활용해 다양한 출처를 탐색해 보세요.',
             aiPrompt: '당신은 학생의 토론 준비를 돕는 AI 웹연구 도우미입니다. 학생이 던지는 질문에 대해, 공정하게 찬성과 반대 측 근거를 모두 제시하고, 신뢰할 만한 출처 정보도 간단히 언급하세요. 답변은 핵심 bullet 2~3개 중심으로, 쉬운 문장으로 작성합니다.',
@@ -444,29 +402,12 @@
             aiPrompt: '당신은 학생의 최종 주장을 검토하는 AI 멘토입니다. 학생의 근거에 비판적 질문을 던지고, 더 정교한 논리를 완성하도록 도와주세요.',
           },
           { reference: '4-1차시 대화를 요약하고, 최종 주장을 정리하세요.', aiPrompt: '' },
-          ],
-          [TYPE_KEYS.TYPE_B]: [
-            {
-              reference: '주제 이해를 위해 핵심 키워드·배경 정보를 정리하세요.',
-              aiPrompt: '학생이 놓친 배경 정보를 제시하고, 더 조사할 지점을 제안해 주세요.',
-            },
-            {
-              reference: '찬/반 주장의 핵심 근거를 각각 2가지 이상 작성하세요.',
-              aiPrompt: '양측 논거의 취약점을 짚고, 보완할 데이터를 제안해 주세요.',
-            },
-            {
-              reference: '3-1/3-2 단계에서 사용할 질문 또는 반론을 메모하세요.',
-              aiPrompt: '학생의 질문을 바탕으로 더 깊은 토론이 이뤄지도록 후속 질문을 던져 주세요.',
-            },
-            {
-              reference: 'AI 피드백을 요약하고, 추가로 확인할 근거를 적어두세요.',
-              aiPrompt: '학생의 주장에 논리적 빈틈이 없도록 점검하고 구체적 수정 방향을 제안하세요.',
-            },
-            {
-              reference: '최종 주장을 요약하고, 다음 활동을 위한 체크리스트를 작성하세요.',
-              aiPrompt: '',
-            },
-          ],
+        ];
+        const DEFAULT_STAGE_LABELS_BY_TYPE = {
+          [TYPE_KEYS.TYPE_A]: DEFAULT_STAGE_LABELS,
+        };
+        const DEFAULT_STAGE_PROMPTS_BY_TYPE = {
+          [TYPE_KEYS.TYPE_A]: DEFAULT_STAGE_PROMPTS,
         };
 
         const PANEL_COPY_KEYS = [
@@ -488,9 +429,9 @@
           }, {});
         }
 
+        const DEFAULT_PANEL_COPY = createEmptyPanelCopy();
         const DEFAULT_PANEL_COPY_BY_TYPE = {
-          [TYPE_KEYS.TYPE_A]: createEmptyPanelCopy(),
-          [TYPE_KEYS.TYPE_B]: createEmptyPanelCopy(),
+          [TYPE_KEYS.TYPE_A]: DEFAULT_PANEL_COPY,
         };
 
         function normalizeApiBaseUrl(path){
@@ -688,15 +629,12 @@
           promptContent: '',
           stageLabelsByType: {
             [TYPE_KEYS.TYPE_A]: DEFAULT_STAGE_LABELS_BY_TYPE[TYPE_KEYS.TYPE_A].map((label) => ({ ...label })),
-            [TYPE_KEYS.TYPE_B]: DEFAULT_STAGE_LABELS_BY_TYPE[TYPE_KEYS.TYPE_B].map((label) => ({ ...label })),
           },
           stagePromptsByType: {
             [TYPE_KEYS.TYPE_A]: DEFAULT_STAGE_PROMPTS_BY_TYPE[TYPE_KEYS.TYPE_A].map((prompt) => ({ ...prompt })),
-            [TYPE_KEYS.TYPE_B]: DEFAULT_STAGE_PROMPTS_BY_TYPE[TYPE_KEYS.TYPE_B].map((prompt) => ({ ...prompt })),
           },
           panelCopyByType: {
             [TYPE_KEYS.TYPE_A]: clonePanelCopyDefaults(TYPE_KEYS.TYPE_A),
-            [TYPE_KEYS.TYPE_B]: clonePanelCopyDefaults(TYPE_KEYS.TYPE_B),
           },
         };
 
@@ -833,7 +771,7 @@
         }
 
         function mapGroupToTypeKey(group){
-          return String(group || '').toUpperCase() === 'B' ? TYPE_KEYS.TYPE_B : TYPE_KEYS.TYPE_A;
+          return TYPE_KEYS.TYPE_A;
         }
 
         function setTypeMode(typeKey, options){
@@ -844,7 +782,6 @@
           state.group = config.group;
           if (!opts.silent || !prevType || prevType !== config.id) {
             updateSelectedTypeLabel();
-            highlightTypeButtons();
           }
           buildStepIndicator();
           if (opts.skipWorkspace) {
@@ -861,25 +798,8 @@
           label.textContent = config.label || 'Type A';
         }
 
-        function highlightTypeButtons(){
-          const current = state.typeMode || TYPE_KEYS.TYPE_A;
-          document.querySelectorAll('[data-type-option]').forEach(function(btn){
-            btn.classList.toggle('active', btn.dataset.typeOption === current);
-          });
-        }
-
-        function showTypeSelection(){
-          const typeCard = $('typeCard');
-          const loginCard = $('loginCard');
-          if (typeCard) typeCard.style.display = 'block';
-          if (loginCard) loginCard.style.display = 'none';
-          highlightTypeButtons();
-        }
-
         function showLoginCard(){
-          const typeCard = $('typeCard');
           const loginCard = $('loginCard');
-          if (typeCard) typeCard.style.display = 'none';
           if (loginCard) {
             loginCard.style.display = 'block';
             const studentIdInput = $('studentIdInput');
@@ -899,28 +819,7 @@
           const restartBtn = $('btnRestart');
           if (restartBtn) restartBtn.addEventListener('click', function(){
             if (state.sessionKey && !confirm('현재 세션을 종료하고 처음 화면으로 돌아가시겠습니까?')) return;
-            resetToTypeSelection(true, DEFAULT_TYPE);
-          });
-          const stage1NextBtn = $('btnStage1Next');
-          if (stage1NextBtn) stage1NextBtn.addEventListener('click', onTypeBStage1Next);
-
-          document.querySelectorAll('[data-type-option]').forEach(function(btn){
-            btn.addEventListener('click', function(){
-              const typeKey = btn.dataset.typeOption;
-              if (!typeKey) return;
-              resetState({ typeMode: typeKey });
-              setTypeMode(typeKey, { skipWorkspace: true });
-              buildStepIndicator();
-              renderWorkspace();
-              showLoginCard();
-              setStatus(`${getTypeConfig(typeKey).label || 'Type'}을 선택했습니다. 식별 번호와 이름을 입력하세요.`, 'info');
-            });
-          });
-
-          const changeTypeBtn = $('btnChangeType');
-          if (changeTypeBtn) changeTypeBtn.addEventListener('click', function(){
-            if (state.sessionKey && !confirm('현재 진행 중인 세션이 종료됩니다. 계속할까요?')) return;
-            resetToTypeSelection(true, state.typeMode || DEFAULT_TYPE);
+            resetToLogin(true);
           });
 
           const prewritingInput = $('prewritingInput');
@@ -951,7 +850,7 @@
             if (!btn) return;
             const stage = Number(state.stage || 1);
             const group = (state.group || '').toUpperCase();
-            const enabled = (stage === 3 && (group === 'A' || group === 'B')) && !state.writing.final.submittedAt;
+            const enabled = (stage === 3 && group === 'A') && !state.writing.final.submittedAt;
             state.localStage3Memo = this.value;
             btn.disabled = !enabled || !this.value.trim();
           });
@@ -1008,14 +907,13 @@
           const peerNextBtn = $('btnPeerNext');
           if (peerNextBtn) peerNextBtn.addEventListener('click', onPeerNextStage);
 
-          highlightTypeButtons();
-          showTypeSelection();
+          resetToLogin();
 
           loadPublicSettings();
           buildStepIndicator();
           renderWorkspace();
           updateSelectedTypeLabel();
-          setStatus('Type을 선택한 뒤 식별 번호와 이름을 입력하세요.', 'info');
+          setStatus('식별 번호와 이름을 입력하세요.', 'info');
 
           if (hasGas) {
             try {
@@ -1077,15 +975,11 @@
           state.aiAvatarUrl = publicConfig.aiAvatarUrl || DEFAULT_AI_AVATAR;
         }
 
-        function resetToTypeSelection(clearInput, nextType){
+        function resetToLogin(clearInput){
           clearAllTimers();
-          if (nextType) {
-            resetState({ typeMode: nextType });
-          } else {
-            resetState();
-          }
+          resetState({ typeMode: DEFAULT_TYPE });
           $('workspace').style.display = 'none';
-          showTypeSelection();
+          showLoginCard();
           if (clearInput) {
             $('studentIdInput').value = '';
             $('studentNameInput').value = '';
@@ -1093,7 +987,7 @@
           buildStepIndicator();
           updateSelectedTypeLabel();
           renderUserInfo();
-          setStatus('Type을 선택한 뒤 식별 번호와 이름을 입력하세요.', 'info');
+          setStatus('식별 번호와 이름을 입력하세요.', 'info');
         }
 
         function onLoginSubmit(e){
@@ -1247,11 +1141,10 @@
             if (label.headline && label.name) return `${label.name} · ${label.headline}`;
             return label.headline || label.name || fallback;
           };
-          const isTypeB = state.typeMode === TYPE_KEYS.TYPE_B;
           const stage1 = getStageLabel(1);
           if (stage1) {
             const promptCopy = getPanelCopyEntry('prompt');
-            setText('promptStageTitle', promptCopy.title || combine(stage1, '2차시 · 토론 관련 발문', { headlineOnly: isTypeB }));
+            setText('promptStageTitle', promptCopy.title || combine(stage1, '2차시 · 토론 관련 발문'));
             setText(
               'promptStageSubtitle',
               promptCopy.subtitle || stage1.description || '논제 이해를 위해 핵심 발문을 확인하세요.'
@@ -1327,7 +1220,6 @@
           renderPartnerPanel();
           renderPresence();
           renderDictionaryHistory();
-          updateTypeBStage1Button();
           refreshChatControls();
 
           // AI/peer 채팅은 단계 전환 시 초기화
@@ -1350,17 +1242,6 @@
           }
         }
 
-        function updateTypeBStage1Button(){
-          const container = $('typeBStage1Actions');
-          const button = $('btnStage1Next');
-          if (!container || !button) return;
-          const shouldShow =
-            state.typeMode === TYPE_KEYS.TYPE_B &&
-            Number(state.stage || 1) <= 1 &&
-            !!state.sessionKey;
-          container.style.display = shouldShow ? 'flex' : 'none';
-          button.disabled = !shouldShow || state.stageChangePending;
-        }
 
         function getPreviousStageNumber(){
           const current = Number(state.stage || 1);
@@ -1480,7 +1361,7 @@
           if (steps.prewriting && steps.prewriting.completed) {
             highest = Math.max(highest, 2);
           }
-          if (group === 'A' || group === 'B') {
+          if (group === 'A') {
             if (steps.draft && steps.draft.saved) {
               highest = Math.max(highest, 3);
             }
@@ -2135,7 +2016,7 @@
           if (!hasGas) return;
           const stage = Number(state.stage || 1);
           const group = (state.group || '').toUpperCase();
-          if (stage === 2 && (group === 'A' || group === 'B')) {
+          if (stage === 2 && group === 'A') {
             if (!confirm('다음 단계로 이동하시겠습니까?')) return;
             $('btnToPeer').disabled = true;
             setStatus('다음 단계를 여는 중입니다...', 'info');
@@ -2162,33 +2043,12 @@
           }
         }
 
-        function onTypeBStage1Next(){
-          if (!hasGas) return;
-          if (state.typeMode !== TYPE_KEYS.TYPE_B) return;
-          const stage = Number(state.stage || 1);
-          if (stage > 1) return;
-          if (!state.sessionKey) { setStatus('세션이 활성화되지 않았습니다.', 'error'); return; }
-          const button = $('btnStage1Next');
-          const stage2Name = getStageDisplayName(2);
-          if (!confirm(`${stage2Name}으로 이동하시겠습니까?`)) return;
-          if (button) button.disabled = true;
-          setStatus(`${stage2Name}으로 이동하는 중입니다...`, 'info');
-          google.script.run.withSuccessHandler(function(res){
-            if (button) button.disabled = false;
-            setStatus(`${stage2Name}으로 이동했습니다.`, 'success');
-            syncSessionState(res);
-          }).withFailureHandler(function(err){
-            if (button) button.disabled = false;
-            handleError(err);
-          }).advanceToPeerStage(state.sessionKey);
-        }
-
         function onPeerNextStage(){
           if (!hasGas) return;
           const stage = Number(state.stage || 1);
           const group = (state.group || '').toUpperCase();
           const btn = $('btnPeerNext');
-          if (stage === 3 && (group === 'A' || group === 'B')) {
+          if (stage === 3 && group === 'A') {
             if (!confirm('최종 단계로 이동하시겠습니까?')) return;
             if (btn) btn.disabled = true;
             setStatus('최종 단계를 여는 중입니다...', 'info');
@@ -2841,7 +2701,7 @@
           if (logEl) logEl.innerHTML = '';
           const chatState = channel === 'ai' ? state.aiChat : state.peerChat;
           if (!opts.keepLastTs) {
-            chatState.lastTs = 0;
+          chatState.lastTs = 0;
           }
           chatState.rendered = {};
           chatState.pending = {};
@@ -2916,25 +2776,13 @@
                 cfg.stageLabels,
                 DEFAULT_STAGE_LABELS_BY_TYPE[TYPE_KEYS.TYPE_A]
               );
-              publicConfig.stageLabelsByType[TYPE_KEYS.TYPE_B] = normalizeStageLabels(
-                cfg.stageLabelsTypeB,
-                DEFAULT_STAGE_LABELS_BY_TYPE[TYPE_KEYS.TYPE_B]
-              );
               publicConfig.stagePromptsByType[TYPE_KEYS.TYPE_A] = normalizeStagePrompts(
                 cfg.stagePrompts,
                 DEFAULT_STAGE_PROMPTS_BY_TYPE[TYPE_KEYS.TYPE_A]
               );
-              publicConfig.stagePromptsByType[TYPE_KEYS.TYPE_B] = normalizeStagePrompts(
-                cfg.stagePromptsTypeB,
-                DEFAULT_STAGE_PROMPTS_BY_TYPE[TYPE_KEYS.TYPE_B]
-              );
               publicConfig.panelCopyByType[TYPE_KEYS.TYPE_A] = normalizePanelCopy(
                 cfg.panelCopy,
                 publicConfig.panelCopyByType[TYPE_KEYS.TYPE_A]
-              );
-              publicConfig.panelCopyByType[TYPE_KEYS.TYPE_B] = normalizePanelCopy(
-                cfg.panelCopyTypeB,
-                publicConfig.panelCopyByType[TYPE_KEYS.TYPE_B]
               );
               state.aiAvatarUrl = publicConfig.aiAvatarUrl || DEFAULT_AI_AVATAR;
               buildStepIndicator();
