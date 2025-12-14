@@ -2649,7 +2649,10 @@
 
         function buildChatMeta(channel, message, ts, pending){
           let name = '';
-          if (message.role === 'ai') name = channel === 'ai' ? 'ChatGPT' : 'AI';
+          if (message.role === 'ai') {
+            const stageNum = Number(state.stage || 1);
+            name = stageNum === 2 ? '토론 상대' : (channel === 'ai' ? 'ChatGPT' : 'AI');
+          }
           else if (message.role === 'system') name = '시스템';
           else name = message.senderName || message.senderId || '사용자';
           return name + ' · ' + (pending ? '전송 중...' : formatTime(ts));
