@@ -287,6 +287,25 @@
               <div id="stage4PromptContent" class="text-block">관리자가 등록한 발문이 여기에 표시됩니다.</div>
             </section>
 
+            <section id="panelStage4Draft" class="stage-panel" data-step="4">
+              <div class="panel-header">
+                <h2 id="stage4DraftTitle">4차시-1 · 토론 메모</h2>
+                <span id="stage4DraftInfo" class="panel-subtext">4차시-1 토론(입장 바꿔 진행) 중 떠오른 주장·근거·반론을 메모하세요.</span>
+              </div>
+              <div class="prewriting-preview-block">
+                <strong>4차시-1 토론 발문</strong>
+                <div id="stage4DraftPromptContent" class="text-block">관리자가 등록한 발문이 여기에 표시됩니다.</div>
+              </div>
+              <div class="prewriting-preview-block">
+                <strong>이전 메모/성찰</strong>
+                <div id="stage4PrevMemoPreview" class="text-block">3-2차시 메모가 아직 저장되지 않았습니다.</div>
+              </div>
+              <textarea id="stage4DraftInput" placeholder="찬성/반대 입장을 바꿔 본 토론에서 떠오른 주장·근거·반론을 메모하세요. (저장 비활성화)"></textarea>
+              <div class="button-row">
+                <button id="btnStage4DraftSave" class="secondary" type="button" disabled>4차시-1 메모 저장</button>
+              </div>
+            </section>
+
             <section id="panelStage5" class="stage-panel" data-step="5">
               <div class="panel-header">
                 <h2 id="stage5Title">5차시 · 4-1 토론 요약 & 메모 (4-2)</h2>
@@ -1272,6 +1291,7 @@
           updateStageVisibility();
           renderPrewritingPanel();
           renderDraftPanel();
+          renderStage4DraftPanel();
           renderPeerPanel();
           renderStagePrompts();
           renderFinalPanel();
@@ -1327,6 +1347,7 @@
           setPanelVisibility('panelDraft', showStage2);
           setPanelVisibility('panelMemoStage3', showStage3);
           setPanelVisibility('panelFinalSummary', showStage4);
+          setPanelVisibility('panelStage4Draft', showStage4);
           setPanelVisibility('panelStage5', showStage5);
         }
 
@@ -1571,6 +1592,61 @@
               backBtn.disabled = true;
               backBtn.textContent = '이전 단계로 이동';
             }
+          }
+        }
+
+        function renderStage4DraftPanel(){
+          const textarea = $('stage4DraftInput');
+          const info = $('stage4DraftInfo');
+          const titleEl = $('stage4DraftTitle');
+          const promptEl = $('stage4DraftPromptContent');
+          const prevMemoEl = $('stage4PrevMemoPreview');
+          if (!textarea || !info || !titleEl || !promptEl || !prevMemoEl) return;
+          const stage = Number(state.stage || 1);
+          const show = stage === 4;
+          if (!show) {
+            textarea.value = '';
+            return;
+          }
+          const stage4Label = getStageLabel(4) || {};
+          const draftCopy = getPanelCopyEntry('draft');
+          const overrideTitle = (draftCopy.title || '').trim();
+          const overrideSubtitle = (draftCopy.subtitle || '').trim();
+          const combinedTitle = stage4Label.headline
+            ? `${stage4Label.name || '4차시-1'} · ${stage4Label.headline}`
+            : (stage4Label.name || '4차시-1 · 토론 메모');
+          if (titleEl) titleEl.textContent = overrideTitle || combinedTitle;
+
+          const stage4Prompt = getStagePromptData(4);
+          setRichText(
+            'stage4DraftPromptContent',
+            stage4Prompt.reference || stage4Label.description || '관리자가 등록한 발문이 여기에 표시됩니다.',
+            '관리자가 등록한 발문이 여기에 표시됩니다.'
+          );
+
+          const prevMemo = (state.writing.notes && state.writing.notes.text) || '';
+          prevMemoEl.textContent = prevMemo ? prevMemo : '3-2차시 메모가 아직 저장되지 않았습니다.';
+
+          // 3-1과 동일하게 입력은 비활성화 (구조 동일성 유지)
+          const savedText = state.writing.draft.text || '';
+          if (savedText) {
+            state.localDraftBuffer = savedText;
+          }
+          const workingText = savedText;
+          if (textarea.value !== workingText) textarea.value = workingText;
+          textarea.style.display = 'none';
+          textarea.disabled = true;
+          const saveBtn = $('btnStage4DraftSave');
+          if (saveBtn) saveBtn.disabled = true;
+
+          const savedAt = Number(state.writing.draft.savedAt || 0);
+          if (savedAt) {
+            info.textContent = '마지막 메모 저장: ' + formatDate(savedAt);
+          } else {
+            info.textContent =
+              overrideSubtitle ||
+              stage4Label.description ||
+              '입장을 바꿔 진행하는 4차시-1 토론에서 떠오른 주장·근거·반론을 점검하세요.';
           }
         }
 
