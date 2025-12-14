@@ -379,7 +379,12 @@
         const DEFAULT_STAGE_LABELS = [
           { name: '2차시', headline: '토론 관련 발문', description: '논제 이해를 위해 핵심 발문을 확인하세요. 필요 시 교사가 제시합니다.' },
           { name: '3차시-1', headline: '토론 관련 발문', description: '토론 관련 발문을 바탕으로 쟁점과 논거를 정리하세요.' },
-          { name: '3차시-2', headline: '동료 토론', description: '동료와 상호 피드백을 주고받으며 논거를 점검하세요.' },
+          {
+            name: '3차시-2',
+            headline: '토론 성찰',
+            description:
+              '토론을 통해 느낀 점과 보완할 점에 대해 자유롭게 성찰한 뒤 작성하세요.\n성찰한 내용을 바탕으로 자신의 생각을 정리해보세요. \n아래 항목을 참고하여 자유롭게 기록하세요.\n- 토론을 통해 새롭게 알게 된 점은 무엇인가?\n- ChatGPT의 반박 중 설득력이 있었다고 느낀 부분은 무엇인가?\n- 내 주장이나 근거에서 잘 대응했다고 느낀 부분은 무엇인가?\n- 내 주장이나 근거에서 보완이 필요하다고 느낀 점은 무엇인가?\n- 논증 방식이나 사고 과정에서 성장했다고 느낀 점은 무엇인가?\n- 다음 토론에서 개선하고 싶은 점은 무엇인가?'
+          },
           { name: '4차시-1', headline: '4-1차시 토론 발문', description: '관리자가 제공한 발문을 다시 확인하고 논리를 점검하세요.' },
           { name: '4차시-2', headline: '4-2차시 정리', description: '4-1차시 대화를 요약하고 추가 메모를 정리하세요.' },
         ];
@@ -1228,8 +1233,13 @@
           const stage3 = getStageLabel(3);
           if (stage3) {
             const memoCopy = getPanelCopyEntry('memo');
-            setText('memoStage3Title', memoCopy.title || combine(stage3, '3-2차시 · 평가 메모'));
-            const memoSubtitle = memoCopy.subtitle || stage3.description || '3-1차시 토론을 다시 읽고 보완 메모를 남기세요.';
+            const memoTitle =
+              memoCopy.title ||
+              '3차시-2 토론 관련 성찰 메모';
+            const memoSubtitle =
+              memoCopy.subtitle ||
+              '토론을 통해 느낀 점과 보완할 점에 대해 자유롭게 성찰한 뒤 작성하세요.\n성찰한 내용을 바탕으로 자신의 생각을 정리해보세요. \n아래 항목을 참고하여 자유롭게 기록하세요.\n- 토론을 통해 새롭게 알게 된 점은 무엇인가?\n- ChatGPT의 반박 중 설득력이 있었다고 느낀 부분은 무엇인가?\n- 내 주장이나 근거에서 잘 대응했다고 느낀 부분은 무엇인가?\n- 내 주장이나 근거에서 보완이 필요하다고 느낀 점은 무엇인가?\n- 논증 방식이나 사고 과정에서 성장했다고 느낀 점은 무엇인가?\n- 다음 토론에서 개선하고 싶은 점은 무엇인가?';
+            setText('memoStage3Title', memoTitle);
             setText('memoStage3Info', memoSubtitle);
             const memoInfoEl = $('memoStage3Info');
             if (memoInfoEl) memoInfoEl.dataset.baseText = memoSubtitle;
