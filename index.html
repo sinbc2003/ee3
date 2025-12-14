@@ -1892,18 +1892,20 @@
 
         function updateAiPanelHeader(stage){
           const label = getStageLabel(stage);
-          if (!label) return;
-          const combined = label.headline ? `${label.name} · ${label.headline}` : label.name;
-          setText('aiStageTitle', combined || 'AI 토론');
-          setText('aiStageSubtitle', label.description || 'AI와 토론을 이어가며 논거를 점검하세요.');
+          const aiCopy = getPanelCopyEntry('ai');
+          if (!label && !aiCopy) return;
+          const combined = label?.headline ? `${label.name} · ${label.headline}` : label?.name;
+          setText('aiStageTitle', aiCopy.title || combined || 'AI 토론');
+          setText('aiStageSubtitle', aiCopy.subtitle || label?.description || 'AI와 토론을 이어가며 논거를 점검하세요.');
         }
 
         function updatePeerPanelHeader(stage){
           const label = getStageLabel(stage);
-          if (!label) return;
-          const combined = label.headline ? `${label.name} · ${label.headline}` : label.name;
-          setText('peerStageTitle', combined || '동료 토론');
-          setText('peerStageSubtitle', label.description || '동료와 상호작용하며 피드백을 주고받으세요.');
+          const peerCopy = getPanelCopyEntry('peer');
+          if (!label && !peerCopy) return;
+          const combined = label?.headline ? `${label.name} · ${label.headline}` : label?.name;
+          setText('peerStageTitle', peerCopy.title || combined || '동료 토론');
+          setText('peerStageSubtitle', peerCopy.subtitle || label?.description || '동료와 상호작용하며 피드백을 주고받으세요.');
         }
 
         function togglePanel(id, visible){
