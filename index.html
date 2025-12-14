@@ -78,8 +78,7 @@
       #panelPrewriting .panel-header h2 { white-space: normal; }
       #panelPrompt .panel-header .panel-subtext,
       #panelPrewriting .panel-header .panel-subtext { line-height: 1.6; }
-      /* 동료 채팅은 비활성화하되, 3-2 메모는 유지 */
-      #rightStage3 { display: none !important; }
+      /* 동료 채팅은 비활성화 */
       .partner-box, .presence-status { display: none !important; }
       /* 3-1차시 메모 패널과 버튼 숨김 */
       #panelDraft { display: none; }
@@ -252,7 +251,7 @@
             <section id="panelMemoStage3" class="stage-panel" data-step="3">
               <div class="panel-header">
                 <h2 id="memoStage3Title">글쓰기 수정 관련 메모</h2>
-                <span id="memoStage3Info" class="panel-subtext">동료의 글을 읽고, 10분 동안 어떤 피드백을 줄지 생각해 보세요. 피드백 내용을 메모 형태로 자유롭게 정리하세요. 동료에게서 받은 피드백을 참고하여, 글을 어떻게 수정할지에 대한 아이디어를 메모 형태로 자유롭게 정리하세요.</span>
+                <span id="memoStage3Info" class="panel-subtext">토론을 통해 느낀 점과 보완할 점에 대해 자유롭게 성찰하세요.</span>
               </div>
               <div class="stage3-preview-grid">
                 <div class="stage3-transcript-block">
@@ -262,9 +261,16 @@
               </div>
               </div>
                 <div>
-                  <label for="notesInput">질문/아이디어 메모</label>
-                  <textarea id="notesInput" placeholder="3-1차시 토론을 다시 읽고, 궁금한 점이나 보완할 논거를 메모하세요." disabled></textarea>
-                  <p id="stage3MemoHelper" class="stage3-memo-helper">먼저 기록을 보고 핵심 반론·보완점을 정리한 뒤, 오른쪽 AI 평가 패널에 질문을 던져 보세요.</p>
+                  <label for="notesInput">3차시-2 토론 관련 성찰 메모</label>
+                  <textarea id="notesInput" placeholder="토론을 통해 느낀 점과 보완할 점을 자유롭게 성찰하고 기록하세요."></textarea>
+                  <p id="stage3MemoHelper" class="stage3-memo-helper">토론을 통해 느낀 점과 보완할 점에 대해 자유롭게 성찰한 뒤 작성하세요. 성찰한 내용을 바탕으로 자신의 생각을 정리해보세요. 
+아래 항목을 참고하여 자유롭게 기록하세요.
+- 토론을 통해 새롭게 알게 된 점은 무엇인가?
+- ChatGPT의 반박 중 설득력이 있었다고 느낀 부분은 무엇인가?
+- 내 주장이나 근거에서 잘 대응했다고 느낀 부분은 무엇인가?
+- 내 주장이나 근거에서 보완이 필요하다고 느낀 점은 무엇인가?
+- 논증 방식이나 사고 과정에서 성장했다고 느낀 점은 무엇인가?
+- 다음 토론에서 개선하고 싶은 점은 무엇인가?</p>
               </div>
               </div>
               <div class="button-row">
@@ -326,27 +332,7 @@
         </div>
             </section>
 
-            <section id="rightStage3" class="right-panel">
-              <div class="panel-header">
-                <h2 id="peerStageTitle">동료 피드백</h2>
-                <span id="peerStageSubtitle" class="panel-subtext">동료와 15분간 상호작용하며 자신의 글에 대한 피드백을 받아 보세요. 동료에게 글을 대신 써달라고 요청하는 것은 안 됩니다.</span>
-              </div>
-               <div class="partner-box">
-                 <h3 id="partnerName">동료 정보를 불러오는 중...</h3>
-                 <div id="partnerInfoBox" class="partner-meta">동료 협업 단계입니다.</div>
-      </div>
-               <div class="presence-status">
-                 <span><span id="selfPresenceDot" class="presence-dot presence-offline"></span>나의 상태: <span id="peerPresenceSelf">확인 중...</span></span>
-                 <span><span id="partnerPresenceDot" class="presence-dot presence-offline"></span>동료 상태: <span id="peerPresencePartner">확인 중...</span></span>
-          </div>
-               <div class="chat-log" id="peerChatLog"></div>
-               <div class="chat-input">
-                 <textarea id="peerInput" placeholder="동료에게 메시지를 보내보세요." disabled></textarea>
-                 <div class="chat-actions">
-                   <button id="btnPeerSend" class="primary" type="button" disabled>전송</button>
-                 </div>
-               </div>
-             </section>
+            <!-- rightStage3 (동료 채팅) 미사용 -->
 
             <section id="rightStage4" class="right-panel">
               <div class="panel-header">
@@ -380,7 +366,7 @@
             label: 'Type A · 기존 흐름',
             description: '2차시~5차시 구성 (AI/동료 토론 통합)',
             group: 'A',
-            aiStages: [1, 2, 4, 5],
+            aiStages: [1, 2, 3, 4, 5],
             peerStages: [],
             stepTemplate: [
               { badge: '1', stage: 1 },
@@ -1895,6 +1881,14 @@
             );
             return;
           }
+          if (stageNumber === 3) {
+            setText('aiStageTitle', '3차시-2 ChatGPT와 토론 성찰');
+            setText(
+              'aiStageSubtitle',
+              '이제 ChatGPT는 토론 상대자가 아닌 토론 성찰을 지원하는 AI입니다.\n\n현재 창에는 ChatGPT와 진행한 토론 기록이 있으며, 성찰 지원 ChatGPT에는 토론 평가 기준이 트레이닝 되어 있습니다.\n\n토론 기록과, 토론 성찰 지원 AI와의 대화를 통해 토론에서 드러난 자신의 강점과 보완점을 함께 점검해 보세요. \n\n이 활동의 목적은 점수 평가가 아니라 다음 토론을 더 잘하기 위한 성찰과 개선 방향 탐색입니다.\n\n예를 들어 다음과 같은 질문을 할 수 있습니다.\n\n- 나의 토론을 평가해주고, 점수를 매겨줄 수 있나요?\n- 어떤 기준으로 토론을 평가하는 건가요?\n- 내 주장은 토론 전반에서 일관되게 유지되었나요?\n- 내가 사용한 근거 중 가장 설득력이 있었던 / 있지 않았던 근거는 무엇인가요?\n- 내가 대응한 반박 중에 논리력이 있었던 / 있지 않았던 것은 무엇인가요?\n- 동일한 반박이 다시 나온다면, 더 나은 재반박 예시를 제안해 줄 수 있나요?\n- 나의 토론을 보완한다면 어떤 것을 보완해야 하나요?'
+            );
+            return;
+          }
           if (!label && !aiCopy) return;
           const combined = label?.headline ? `${label.name} · ${label.headline}` : label?.name;
           const title = stageNumber === 1 ? (aiCopy.title || combined) : (combined || aiCopy.title);
@@ -2651,7 +2645,9 @@
           let name = '';
           if (message.role === 'ai') {
             const stageNum = Number(state.stage || 1);
-            name = stageNum === 2 ? '토론 상대' : (channel === 'ai' ? 'ChatGPT' : 'AI');
+            if (stageNum === 2) name = '토론 상대'; // 3-1차시
+            else if (stageNum === 3) name = 'ChatGPT (성찰)'; // 3-2차시 성찰
+            else name = channel === 'ai' ? 'ChatGPT' : 'AI';
           }
           else if (message.role === 'system') name = '시스템';
           else name = message.senderName || message.senderId || '사용자';
