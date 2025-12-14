@@ -1303,22 +1303,30 @@ adminRouter.post('/sessions/bulk-delete', async (req, res, next) => {
 
 adminRouter.get('/sessions/export', async (req, res, next) => {
   try {
-    const format = String(req.query?.format || 'xlsx').toLowerCase();
-    if (format !== 'xlsx') {
-      throw createHttpError(400, '지원하지 않는 내보내기 형식입니다.');
-    }
+    const format = parseExportFormat(req.query?.format);
     const scopes = parseExportScopes(req.query?.scopes);
+    const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+    if (format === 'csv') {
+      const csv = await buildExportCsv(scopes);
+      res.setHeader(
+        'Content-Disposition',
+        `attachment; filename="writingresearch-export-${stamp}.csv"`
+      );
+      res.setHeader('Content-Type', 'text/csv;charset=utf-8');
+      return res.send(csv);
+    }
     const workbook = await buildExportWorkbook(scopes);
     const buffer = await workbook.xlsx.writeBuffer();
-    const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const extension = format === 'xls' ? 'xls' : 'xlsx';
+    const contentType =
+      format === 'xls'
+        ? 'application/vnd.ms-excel'
+        : 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
     res.setHeader(
       'Content-Disposition',
-      `attachment; filename="writingresearch-export-${stamp}.xlsx"`
+      `attachment; filename="writingresearch-export-${stamp}.${extension}"`
     );
-    res.setHeader(
-      'Content-Type',
-      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-    );
+    res.setHeader('Content-Type', contentType);
     res.send(Buffer.from(buffer));
   } catch (err) {
     next(err);
@@ -1328,22 +1336,30 @@ adminRouter.get('/sessions/export', async (req, res, next) => {
 // 호환용: /api/admin/sessions/export 경로를 일반 라우터에서도 처리 (일부 클라이언트 설정 불일치 대비)
 router.get('/admin/sessions/export', requireAdminAuth, async (req, res, next) => {
   try {
-    const format = String(req.query?.format || 'xlsx').toLowerCase();
-    if (format !== 'xlsx') {
-      throw createHttpError(400, '지원하지 않는 내보내기 형식입니다.');
-    }
+    const format = parseExportFormat(req.query?.format);
     const scopes = parseExportScopes(req.query?.scopes);
+    const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+    if (format === 'csv') {
+      const csv = await buildExportCsv(scopes);
+      res.setHeader(
+        'Content-Disposition',
+        `attachment; filename="writingresearch-export-${stamp}.csv"`
+      );
+      res.setHeader('Content-Type', 'text/csv;charset=utf-8');
+      return res.send(csv);
+    }
     const workbook = await buildExportWorkbook(scopes);
     const buffer = await workbook.xlsx.writeBuffer();
-    const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const extension = format === 'xls' ? 'xls' : 'xlsx';
+    const contentType =
+      format === 'xls'
+        ? 'application/vnd.ms-excel'
+        : 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
     res.setHeader(
       'Content-Disposition',
-      `attachment; filename="writingresearch-export-${stamp}.xlsx"`
+      `attachment; filename="writingresearch-export-${stamp}.${extension}"`
     );
-    res.setHeader(
-      'Content-Type',
-      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-    );
+    res.setHeader('Content-Type', contentType);
     res.send(Buffer.from(buffer));
   } catch (err) {
     next(err);
@@ -1915,7 +1931,14 @@ function collectMessages(sessionId, channel) {
       ts: Number(msg.ts || 0),
       text: msg.text || '',
       senderName: msg.senderName || '',
+      senderId: msg.senderId || '',
       role: msg.role || '',
+      stage:
+        typeof msg?.ext?.stage !== 'undefined'
+          ? Number(msg.ext.stage || 0) || undefined
+          : undefined,
+      channel: msg.channel || channel,
+      metadata: msg.ext || {},
     }));
 }
 
@@ -2016,109 +2039,170 @@ function parseExportScopes(input) {
   return normalized.length ? normalized : ['all'];
 }
 
+function parseExportFormat(input) {
+  const normalized = String(input || 'xlsx').toLowerCase();
+  if (['xlsx', 'xls', 'csv'].includes(normalized)) return normalized;
+  return 'xlsx';
+}
+
 async function buildExportWorkbook(scopes) {
+  const sheets = buildExportSheets(scopes);
   const workbook = new ExcelJS.Workbook();
-  const sessions = (store.sessions || []).map((record) => buildAdminSessionDetail(record));
-  addSummarySheet(workbook, sessions);
-  if (shouldIncludeScope(scopes, 'stage1')) {
-    addStageSheet(workbook, 'Stage1', sessions, (session) => session.writing.prewriting);
-  }
-  if (shouldIncludeScope(scopes, 'stage2')) {
-    addStageSheet(workbook, 'Stage2', sessions, (session) => session.writing.draft);
-  }
-  if (shouldIncludeScope(scopes, 'stage3')) {
-    addStageSheet(workbook, 'Stage3', sessions, (session) => session.writing.notes);
-  }
-  if (shouldIncludeScope(scopes, 'final')) {
-    addStageSheet(workbook, 'Final', sessions, (session) => session.writing.final);
-  }
-  if (shouldIncludeScope(scopes, 'ai-chat')) {
-    addChatSheet(workbook, 'AI Chat', sessions, (session) => ({
-      sessionId: `ai:${session.sessionKey}`,
-      channel: 'ai-feedback',
-    }));
-  }
+  sheets.forEach((sheetDef) => {
+    const sheet = workbook.addWorksheet(sheetDef.name);
+    sheet.columns = sheetDef.columns;
+    sheetDef.rows.forEach((row) => sheet.addRow(row));
+  });
   return workbook;
+}
+
+async function buildExportCsv(scopes) {
+  const sheets = buildExportSheets(scopes);
+  const lines = [];
+  sheets.forEach((sheet, idx) => {
+    lines.push(`# ${sheet.name}`);
+    lines.push(sheet.columns.map((col) => escapeCsvValue(col.header)).join(','));
+    sheet.rows.forEach((row) => {
+      lines.push(sheet.columns.map((col) => escapeCsvValue(row[col.key])).join(','));
+    });
+    if (idx < sheets.length - 1) {
+      lines.push(''); // 빈 줄로 시트 구분
+    }
+  });
+  return lines.join('\r\n');
+}
+
+function buildExportSheets(scopes) {
+  const sessions = (store.sessions || []).map((record) => buildAdminSessionDetail(record));
+  const sheets = [];
+
+  // 요약 시트
+  const summaryRows = sessions.map((session) => ({
+    sessionKey: session.sessionKey,
+    group: session.mode,
+    studentId: session.you?.id || '',
+    studentName: session.you?.name || '',
+    stage: session.stage,
+    stageName: getStageLabelName(session.stage),
+    partner: session.partner ? `${session.partner.name || ''} (${session.partner.id || ''})` : '',
+    updatedAt: session.updatedAt ? formatIso(session.updatedAt) : '',
+  }));
+  sheets.push({
+    name: 'Sessions',
+    columns: [
+      { header: 'Session Key', key: 'sessionKey', width: 24 },
+      { header: 'Group', key: 'group', width: 10 },
+      { header: 'Student ID', key: 'studentId', width: 16 },
+      { header: 'Student Name', key: 'studentName', width: 20 },
+      { header: 'Stage', key: 'stage', width: 10 },
+      { header: 'Stage Name', key: 'stageName', width: 14 },
+      { header: 'Partner', key: 'partner', width: 28 },
+      { header: 'Updated At', key: 'updatedAt', width: 24 },
+    ],
+    rows: summaryRows,
+  });
+
+  // 단계별 메모 시트
+  const stageSheetDefs = [
+    { key: 'stage1', name: 'Stage1 (2차시 메모)', accessor: (s) => s.writing.prewriting, stage: 1 },
+    { key: 'stage2', name: 'Stage2 (3-1차시 메모)', accessor: (s) => s.writing.draft, stage: 2 },
+    { key: 'stage3', name: 'Stage3 (3-2차시 메모)', accessor: (s) => s.writing.notes, stage: 3 },
+    { key: 'final', name: 'Final (4차시 최종 글)', accessor: (s) => s.writing.final, stage: 4 },
+  ];
+
+  stageSheetDefs.forEach((def) => {
+    if (!shouldIncludeScope(scopes, def.key)) return;
+    sheets.push(buildStageSheetData(def.name, sessions, def.accessor, def.stage));
+  });
+
+  // AI 채팅 로그(모든 차시 포함: 2, 3, 3-1, 4, 4-1)
+  if (shouldIncludeScope(scopes, 'ai-chat')) {
+    const chatRows = [];
+    sessions.forEach((session) => {
+      const messages = collectMessages(`ai:${session.sessionKey}`, 'ai-feedback');
+      messages.forEach((msg) => {
+        chatRows.push({
+          sessionKey: session.sessionKey,
+          studentId: session.you?.id || '',
+          studentName: session.you?.name || '',
+          stage: msg.stage || '',
+          stageName: msg.stage ? getStageLabelName(msg.stage) : '',
+          channel: msg.channel || 'ai-feedback',
+          timestamp: msg.ts ? formatIso(msg.ts) : '',
+          sender: msg.senderName || msg.role || '',
+          message: msg.text || '',
+          metadata: JSON.stringify(msg.metadata || {}),
+        });
+      });
+    });
+    sheets.push({
+      name: 'AI Chat Logs',
+      columns: [
+        { header: 'Session Key', key: 'sessionKey', width: 24 },
+        { header: 'Stage', key: 'stage', width: 8 },
+        { header: 'Stage Name', key: 'stageName', width: 14 },
+        { header: 'Channel', key: 'channel', width: 14 },
+        { header: 'Student ID', key: 'studentId', width: 16 },
+        { header: 'Student Name', key: 'studentName', width: 20 },
+        { header: 'Timestamp', key: 'timestamp', width: 24 },
+        { header: 'Sender', key: 'sender', width: 16 },
+        { header: 'Message', key: 'message', width: 80 },
+        { header: 'Metadata', key: 'metadata', width: 50 },
+      ],
+      rows: chatRows,
+    });
+  }
+
+  return sheets;
+}
+
+function buildStageSheetData(name, sessions, accessor, stageNumber) {
+  const rows = [];
+  sessions.forEach((session) => {
+    const block = accessor(session);
+    if (!block) return;
+    const ts = block.submittedAt || block.savedAt || block.updatedAt || 0;
+    rows.push({
+      sessionKey: session.sessionKey,
+      stage: stageNumber || '',
+      stageName: stageNumber ? getStageLabelName(stageNumber) : '',
+      studentId: session.you?.id || '',
+      studentName: session.you?.name || '',
+      timestamp: ts ? formatIso(ts) : '',
+      content: block.text || '',
+    });
+  });
+
+  return {
+    name,
+    columns: [
+      { header: 'Session Key', key: 'sessionKey', width: 24 },
+      { header: 'Stage', key: 'stage', width: 8 },
+      { header: 'Stage Name', key: 'stageName', width: 14 },
+      { header: 'Student ID', key: 'studentId', width: 16 },
+      { header: 'Student Name', key: 'studentName', width: 20 },
+      { header: 'Timestamp', key: 'timestamp', width: 24 },
+      { header: 'Content', key: 'content', width: 80 },
+    ],
+    rows,
+  };
 }
 
 function shouldIncludeScope(scopes, value) {
   return scopes.includes('all') || scopes.includes(value);
 }
 
-function addSummarySheet(workbook, sessions) {
-  const sheet = workbook.addWorksheet('Sessions');
-  sheet.columns = [
-    { header: 'Session Key', key: 'sessionKey', width: 24 },
-    { header: 'Group', key: 'group', width: 10 },
-    { header: 'Student ID', key: 'studentId', width: 16 },
-    { header: 'Student Name', key: 'studentName', width: 20 },
-    { header: 'Stage', key: 'stage', width: 10 },
-    { header: 'Partner', key: 'partner', width: 24 },
-    { header: 'Updated At', key: 'updatedAt', width: 22 },
-  ];
-  sessions.forEach((session) => {
-    sheet.addRow({
-      sessionKey: session.sessionKey,
-      group: session.mode,
-      studentId: session.you?.id || '',
-      studentName: session.you?.name || '',
-      stage: session.stage,
-      partner: session.partner
-        ? `${session.partner.name || ''} (${session.partner.id || ''})`
-        : '',
-      updatedAt: session.updatedAt ? new Date(session.updatedAt).toISOString() : '',
-    });
-  });
+function formatIso(ms) {
+  return new Date(ms).toISOString();
 }
 
-function addStageSheet(workbook, name, sessions, accessor) {
-  const sheet = workbook.addWorksheet(name);
-  sheet.columns = [
-    { header: 'Session Key', key: 'sessionKey', width: 24 },
-    { header: 'Student ID', key: 'studentId', width: 16 },
-    { header: 'Student Name', key: 'studentName', width: 20 },
-    { header: 'Timestamp', key: 'timestamp', width: 22 },
-    { header: 'Content', key: 'content', width: 80 },
-  ];
-  sessions.forEach((session) => {
-    const block = accessor(session);
-    if (!block) return;
-    sheet.addRow({
-      sessionKey: session.sessionKey,
-      studentId: session.you?.id || '',
-      studentName: session.you?.name || '',
-      timestamp: block.submittedAt || block.savedAt || block.updatedAt
-        ? new Date(block.submittedAt || block.savedAt || block.updatedAt).toISOString()
-        : '',
-      content: block.text || '',
-    });
-  });
-}
-
-function addChatSheet(workbook, name, sessions, resolver) {
-  const sheet = workbook.addWorksheet(name);
-  sheet.columns = [
-    { header: 'Session Key', key: 'sessionKey', width: 24 },
-    { header: 'Student ID', key: 'studentId', width: 16 },
-    { header: 'Student Name', key: 'studentName', width: 20 },
-    { header: 'Timestamp', key: 'timestamp', width: 22 },
-    { header: 'Sender', key: 'sender', width: 20 },
-    { header: 'Message', key: 'message', width: 80 },
-  ];
-  sessions.forEach((session) => {
-    const { sessionId, channel } = resolver(session);
-    const messages = collectMessages(sessionId, channel);
-    messages.forEach((msg) => {
-      sheet.addRow({
-        sessionKey: session.sessionKey,
-        studentId: session.you?.id || '',
-        studentName: session.you?.name || '',
-        timestamp: msg.ts ? new Date(msg.ts).toISOString() : '',
-        sender: msg.senderName || msg.role || '',
-        message: msg.text || '',
-      });
-    });
-  });
+function escapeCsvValue(value) {
+  if (value === null || value === undefined) return '';
+  const str = String(value);
+  if (/[",\r\n]/.test(str)) {
+    return `"${str.replace(/"/g, '""')}"`;
+  }
+  return str;
 }
 
 function normalizeRosterPayload(body) {

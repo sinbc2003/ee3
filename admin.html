@@ -501,7 +501,7 @@
 
         <section class="card" id="exportSection">
           <h2>데이터 다운로드</h2>
-          <p class="muted" style="margin-bottom: 12px;">내려받을 항목을 선택한 후 <strong>선택 항목 다운로드</strong> 버튼을 눌러주세요. 파일은 Excel(xlsx) 형식으로 저장됩니다. (Type A 기준: 2차시 메모 · 3-1차시 메모 · 3-2차시 메모 · 4차시 최종 글)</p>
+          <p class="muted" style="margin-bottom: 12px;">2차시 · 3/3-1차시 · 4/4-1차시의 대화 로그, 메모, 최종 글을 내려받을 수 있습니다. 항목을 선택한 뒤 파일 형식을 정하고 <strong>선택 항목 다운로드</strong> 버튼을 눌러주세요. (지원 형식: xls · xlsx · csv)</p>
           <div class="export-options">
             <label class="export-option">
               <input type="checkbox" id="exportScopeAll" data-export-scope value="all" checked />
@@ -529,6 +529,14 @@
             </label>
           </div>
           <div class="match-actions" style="margin-top: 16px; justify-content: flex-end;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <label for="exportFormat" class="muted" style="margin: 0;">파일 형식</label>
+              <select id="exportFormat" style="min-width: 120px;">
+                <option value="xlsx">xlsx (기본)</option>
+                <option value="xls">xls</option>
+                <option value="csv">csv</option>
+              </select>
+            </div>
             <button id="btnDownloadExport" class="primary" type="button">선택 항목 다운로드</button>
           </div>
         </section>
@@ -2866,15 +2874,23 @@
             setStatus('다운로드할 항목을 하나 이상 선택하세요.', 'error');
             return;
           }
+          const formatSelect = $('exportFormat');
+          const format = (formatSelect && formatSelect.value) || 'xlsx';
+          const extension = format === 'xls' ? 'xls' : format === 'csv' ? 'csv' : 'xlsx';
+          const isCsv = extension === 'csv';
           const button = $('btnDownloadExport');
           button.disabled = true;
           try {
             setStatus('선택한 데이터를 준비 중입니다...', '');
             const params = new URLSearchParams();
-            params.set('format', 'xlsx');
+            params.set('format', extension);
             params.set('scopes', scopes.join(','));
             const url = new URL(`sessions/export?${params.toString()}`, API_BASE).toString();
-            const headers = { Accept: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' };
+            const headers = {
+              Accept: isCsv
+                ? 'text/csv'
+                : 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+            };
             if (authToken) headers['Authorization'] = `Bearer ${authToken}`;
             const response = await fetch(url, { headers });
             if (!response.ok) {
@@ -2883,7 +2899,7 @@
             }
             const blob = await response.blob();
             const stamp = new Date().toISOString().replace(/[:.]/g, '-');
-            const fileName = `writingresearch-export-${stamp}.xlsx`;
+            const fileName = `writingresearch-export-${stamp}.${extension}`;
             const blobUrl = URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.href = blobUrl;
