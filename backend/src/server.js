@@ -770,6 +770,10 @@ function buildSessionState(record) {
       text: record.draftText || '',
       savedAt: Number(record.draftSavedAt || 0),
     },
+    notes: {
+      text: record.notesText || '',
+      updatedAt: Number(record.notesUpdatedAt || 0),
+    },
     final: {
       text: record.finalText || '',
       submittedAt: Number(record.finalSubmittedAt || 0),
@@ -1980,6 +1984,9 @@ async function buildExportWorkbook(scopes) {
   }
   if (shouldIncludeScope(scopes, 'stage2')) {
     addStageSheet(workbook, 'Stage2', sessions, (session) => session.writing.draft);
+  }
+  if (shouldIncludeScope(scopes, 'stage3')) {
+    addStageSheet(workbook, 'Stage3', sessions, (session) => session.writing.notes);
   }
   if (shouldIncludeScope(scopes, 'final')) {
     addStageSheet(workbook, 'Final', sessions, (session) => session.writing.final);

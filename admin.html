@@ -520,6 +520,10 @@
               <span>3-1차시 · 토론 메모</span>
             </label>
             <label class="export-option">
+              <input type="checkbox" id="exportScopeStage3" data-export-scope value="stage3" checked />
+              <span>3-2차시 · 평가 메모</span>
+            </label>
+            <label class="export-option">
               <input type="checkbox" id="exportScopeStage4" data-export-scope value="final" checked />
               <span>4차시 · 최종 글</span>
             </label>
@@ -2663,6 +2667,12 @@
               meta: session.writing?.draft?.savedAt ? `저장 시간 · ${formatDateTime(session.writing.draft.savedAt)}` : '저장된 메모가 없습니다.',
               text: session.writing?.draft?.text,
               empty: '3-1차시 메모가 작성되지 않았습니다.'
+            },
+            {
+              title: '3-2차시 · 평가 메모',
+              meta: session.writing?.notes?.updatedAt ? `저장 시간 · ${formatDateTime(session.writing.notes.updatedAt)}` : '작성된 메모가 없습니다.',
+              text: session.writing?.notes?.text,
+              empty: '3-2차시 메모가 작성되지 않았습니다.'
             },
             {
               title: '4차시 · 최종 글',

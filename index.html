@@ -78,10 +78,9 @@
       #panelPrewriting .panel-header h2 { white-space: normal; }
       #panelPrompt .panel-header .panel-subtext,
       #panelPrewriting .panel-header .panel-subtext { line-height: 1.6; }
-      /* 동료 기능 비활성화: 관련 패널 숨김 */
+      /* 동료 채팅은 비활성화하되, 3-2 메모는 유지 */
       #rightStage3 { display: none !important; }
       .partner-box, .presence-status { display: none !important; }
-      #panelMemoStage3 { display: none !important; }
       /* 3-1차시 메모 패널과 버튼 숨김 */
       #panelDraft { display: none; }
       /* 오른쪽 패널은 부제목을 헤더 아래에 세로로 배치 */
@@ -388,6 +387,7 @@
             stepTemplate: [
               { badge: '1', stage: 1 },
               { badge: '2', stage: 2 },
+              { badge: '3', stage: 3 },
               { badge: '4', stage: 4 },
               { badge: '5', stage: 5 },
             ],
@@ -1242,7 +1242,15 @@
               transcriptHeading.textContent = (stage2.name || '3-1차시') + ' 토론 기록';
             }
           }
-          // 동료/3-2차시 단계 미사용
+          const stage3 = getStageLabel(3);
+          if (stage3) {
+            const memoCopy = getPanelCopyEntry('memo');
+            setText('memoStage3Title', memoCopy.title || combine(stage3, '3-2차시 · 평가 메모'));
+            const memoSubtitle = memoCopy.subtitle || stage3.description || '3-1차시 토론을 다시 읽고 보완 메모를 남기세요.';
+            setText('memoStage3Info', memoSubtitle);
+            const memoInfoEl = $('memoStage3Info');
+            if (memoInfoEl) memoInfoEl.dataset.baseText = memoSubtitle;
+          }
           const stage4 = getStageLabel(4);
           if (stage4) {
             const stage4Copy = getPanelCopyEntry('stage4');
