@@ -71,6 +71,15 @@
       .panel-header { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
       .panel-header h2 { font-size: 18px; font-weight: 700; margin: 0; color: #111827; white-space: nowrap; }
       .panel-subtext { font-size: 13px; color: #64748b; }
+      /* 2차시 메모 패널: 제목 아래에 설명 배치 */
+      #panelPrompt .panel-header,
+      #panelPrewriting .panel-header { flex-direction: column; align-items: flex-start; }
+      #panelPrompt .panel-header h2,
+      #panelPrewriting .panel-header h2 { white-space: normal; }
+      #panelPrompt .panel-header .panel-subtext,
+      #panelPrewriting .panel-header .panel-subtext { line-height: 1.6; }
+      /* 3-1차시 메모 패널과 버튼 숨김 */
+      #panelDraft { display: none; }
       /* 오른쪽 패널은 부제목을 헤더 아래에 세로로 배치 */
       .right-panel .panel-header { flex-direction: column; align-items: flex-start; }
       .right-panel .panel-header h2 { white-space: normal; }
