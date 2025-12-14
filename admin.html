@@ -395,26 +395,6 @@
         color: #fff;
         border-color: #2563eb;
       }
-      .editor-nav {
-        display: flex;
-        gap: 10px;
-        flex-wrap: wrap;
-        margin-bottom: 12px;
-      }
-      .editor-nav button {
-        border-radius: 10px;
-        border: 1px solid #cbd5f5;
-        background: #f8fafc;
-        color: #1e3a8a;
-        padding: 10px 14px;
-        font-weight: 600;
-        cursor: pointer;
-      }
-      .editor-nav button.active {
-        background: #2563eb;
-        color: #fff;
-        border-color: #2563eb;
-      }
       .stage-type-tabs {
         display: flex;
         gap: 8px;
@@ -615,17 +595,7 @@
           <div id="promptPreview" class="prompt-preview empty">제시문이 아직 등록되지 않았습니다.</div>
         </section>
 
-        <div class="card" id="editorNavCard">
-          <h2>차시 문구 통합 편집</h2>
-          <p class="muted" style="margin-bottom: 12px;">겹치지 않게 탭으로 전환하며 수정하세요.</p>
-          <div class="editor-nav" id="editorNav">
-            <button type="button" class="active" data-editor-target="stageLabelSection">차시 안내·발문/AI</button>
-            <button type="button" data-editor-target="panelCopySection">차시 패널 제목·설명</button>
-            <button type="button" data-editor-target="uiTextSection">입력칸·버튼·빈 상태 문구</button>
-          </div>
-        </div>
-
-        <section class="card editor-pane" id="stageLabelSection">
+        <section class="card" id="stageLabelSection">
           <h2>차시 안내</h2>
           <p class="muted" style="margin-bottom: 12px;">차시 이름·발문·AI 프롬프트를 수정하세요. 학생 화면 상단과 차시 패널에 즉시 반영됩니다.</p>
           <div class="stage-type-tabs">
@@ -708,7 +678,7 @@
           </div>
         </section>
 
-        <section class="card editor-pane" id="panelCopySection" style="display:none;">
+        <section class="card" id="panelCopySection">
           <h2>차시 박스 제목·설명</h2>
           <p class="muted" style="margin-bottom: 12px;">좌우 패널(제시문, 메모, 챗봇 등)의 제목과 설명을 덮어쓸 수 있습니다. 비워두면 차시 안내 문구가 사용됩니다.</p>
           <div class="stage-type-tabs">
@@ -793,7 +763,7 @@
           </div>
         </section>
 
-        <section class="card editor-pane" id="uiTextSection" style="display:none;">
+        <section class="card" id="uiTextSection">
           <h2>프론트 UI 텍스트(입력칸/버튼/빈 상태)</h2>
           <p class="muted" style="margin-bottom: 12px;">학생 화면에서 보이는 placeholder, 버튼 텍스트, 빈 상태 안내 문구를 수정합니다. 비워두면 기본값이 사용됩니다.</p>
           <div class="stage-type-tabs">
@@ -1624,15 +1594,6 @@
         document.querySelectorAll('#uiTextSection [data-ui-key]').forEach((input) => {
           input.addEventListener('input', handleUiTextInput);
         });
-        const editorNav = document.getElementById('editorNav');
-        if (editorNav) {
-          editorNav.addEventListener('click', (event) => {
-            const btn = event.target.closest('button[data-editor-target]');
-            if (!btn) return;
-            const targetId = btn.dataset.editorTarget;
-            showEditorPane(targetId || 'stageLabelSection');
-          });
-        }
         document.querySelectorAll('[data-stage-type]').forEach((button) => {
           button.addEventListener('click', () => {
             const nextType = button.dataset.stageType;
@@ -1665,7 +1626,6 @@
           $('openaiApiKey').value = '';
           setStatus('OpenAI 키를 삭제하도록 설정했습니다. 저장을 눌러 반영하세요.', '');
         });
-        showEditorPane('stageLabelSection');
 
         $('btnParseBulk').addEventListener('click', () => parseBulkPartnerInput(false));
         $('partnerBulkInput').addEventListener('input', () => parseBulkPartnerInput(true));
@@ -2053,21 +2013,6 @@
               if (subtitleInput.value !== nextValue) subtitleInput.value = nextValue;
             }
           });
-        }
-
-        const EDITOR_PANES = ['stageLabelSection', 'panelCopySection', 'uiTextSection'];
-
-        function showEditorPane(targetId){
-          EDITOR_PANES.forEach((id) => {
-            const el = $(id);
-            if (el) el.style.display = id === targetId ? 'block' : 'none';
-          });
-          const nav = document.getElementById('editorNav');
-          if (nav) {
-            nav.querySelectorAll('button[data-editor-target]').forEach((btn) => {
-              btn.classList.toggle('active', btn.dataset.editorTarget === targetId);
-            });
-          }
         }
 
         function handlePanelCopyInput(event){
