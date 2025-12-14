@@ -661,7 +661,7 @@
               <label for="stageLabelName4">표시 이름</label>
               <input id="stageLabelName4" type="text" data-stage-field="name" data-stage-index="3" placeholder="예: 4차시-1" />
               <label for="stageLabelHeadline4" style="margin-top: 10px;">헤드라인</label>
-              <input id="stageLabelHeadline4" type="text" data-stage-field="headline" data-stage-index="3" placeholder="예: 4-1차시 토론 발문" />
+              <input id="stageLabelHeadline4" type="text" data-stage-field="headline" data-stage-index="3" placeholder="예: 토론 안내" />
               <label for="stageLabelDesc4" style="margin-top: 10px;">설명</label>
               <textarea id="stageLabelDesc4" data-stage-field="description" data-stage-index="3" placeholder="학생 안내 문구를 입력하세요."></textarea>
               <label for="stageLabelReference4" style="margin-top: 10px;">차시 자료·발문</label>
@@ -1078,7 +1078,12 @@
             { name: '2차시', headline: '토론 관련 발문', description: '논제 이해를 위해 핵심 발문을 확인하세요. 필요 시 교사가 제시합니다.' },
             { name: '3차시-1', headline: '토론 관련 발문', description: '토론 관련 발문을 바탕으로 쟁점과 논거를 정리하세요.' },
             { name: '3차시-2', headline: '동료 토론', description: '동료와 상호 피드백을 주고받으며 논거를 점검하세요.' },
-            { name: '4차시-1', headline: '4-1차시 토론 발문', description: '관리자가 제공한 발문을 다시 확인하고 논리를 점검하세요.' },
+            {
+              name: '4차시-1',
+              headline: '토론 안내',
+              description:
+                '이제 ChatGPT는 다시 당신의 입장과 반대되는 관점을 가진 토론 상대자로 설정됩니다.\n이번 차시에서는 이전 차시와 반대 입장에서 토론을 진행합니다.\n당신이 반대 입장이므로, ChatGPT는 찬성 입장에서 토론합니다.\n즉, 이번 차시는 기존에 주장했던 입장을 그대로 반복하는 것이 아니라, 반대 관점을 이해하고 그 입장에서 논증하는 활동입니다.',
+            },
             { name: '4차시-2', headline: '4-2차시 정리', description: '4-1차시 기록을 요약하고 추가 메모를 정리하세요.' },
           ],
           [TYPE_KEYS.TYPE_B]: [
