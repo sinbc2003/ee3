@@ -210,6 +210,26 @@
 
         <div class="workspace-grid">
           <div class="left-column">
+            <section id="panelPrompt" class="stage-panel" data-step="1">
+              <div class="panel-header">
+                <h2 id="promptStageTitle">2차시 · 토론 관련 발문</h2>
+                <span id="promptStageSubtitle" class="panel-subtext">논제 이해를 위해 핵심 발문을 확인하세요. 필요 시 교사가 제시합니다.</span>
+              </div>
+              <div id="promptContent" class="text-block">토론 발문이 아직 등록되지 않았습니다.</div>
+            </section>
+
+            <section id="panelPrewriting" class="stage-panel" data-step="1">
+              <div class="panel-header">
+                <h2 id="prewritingTitle">2차시 · 메모장</h2>
+                <span id="prewritingInfo" class="panel-subtext">인터넷 검색으로 찬성·반대 근거를 수집하며 메모를 남기세요.</span>
+              </div>
+              <textarea id="prewritingInput" placeholder="주장·근거, 출처, 의문점을 자유롭게 적어 두세요."></textarea>
+              <div id="prewritingReadonly" class="readonly-block"></div>
+              <div class="button-row">
+                <button id="btnPreSubmit" class="primary" type="button" disabled>2차시 메모 저장</button>
+              </div>
+            </section>
+
             <section id="panelDraft" class="stage-panel" data-step="2">
               <div class="panel-header">
                 <h2 id="draftTitle">3-1차시 · 토론 메모</h2>
