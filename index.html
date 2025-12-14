@@ -1301,12 +1301,12 @@
         function updateStageVisibility(){
           const stage = Number(state.stage || 1);
           const typeKey = state.typeMode || TYPE_KEYS.TYPE_A;
-          const showStage1 = stage <= 1;
+          const showStage1 = stage <= 2; // 2차시 메모/발문은 3-1차시에서도 열람 가능
           const showStage2 = stage === 2;
           const showStage3 = stage === 3;
           const showStage4 = stage === 4;
           const showStage5 = stage >= 5;
-          setPanelVisibility('panelPrompt', stage === 1);
+          setPanelVisibility('panelPrompt', showStage1);
           setPanelVisibility('panelPrewriting', showStage1 && typeKey === TYPE_KEYS.TYPE_A);
           setPanelVisibility('panelDraft', showStage2);
           setPanelVisibility('panelMemoStage3', showStage3);
