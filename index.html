@@ -1693,6 +1693,15 @@
             inferMissingAiStage() ||
             0;
           if (!stage) return;
+          const text = (message.text || '').trim();
+          if (!text) return;
+          const numericTs = Number(ts || message.ts || 0);
+          // 시스템/웰컴/가이드 메시지는 기록에서 제외
+          const defaultGuideMessages = [
+            '동료와 상호 피드백을 주고받으며 논거를 점검하세요.',
+            '토론 관련 발문을 바탕으로 쟁점과 논거를 정리하세요.'
+          ];
+          if (message.role === 'system' || numericTs <= 0 || defaultGuideMessages.includes(text)) return;
           const key =
             stage +
             ':' +
@@ -1878,7 +1887,6 @@
           togglePanel('rightStage2', showAiChat);
           togglePanel('rightStage3', showPeerChat);
           togglePanel('rightStage4', showFinalChat);
-          if (showAiChat || showFinalChat) ensureAiWelcomeMessage();
         }
 
         function updateAiPanelHeader(stage){
@@ -1965,34 +1973,7 @@
           updatePresenceDot('partnerPresenceDot', partnerInfo && partnerInfo.online);
         }
 
-        function ensureAiWelcomeMessage(){
-          if (!state.aiChat) return;
-          if (state.aiChat.welcomeShown) return;
-          const logEl = $('aiChatLog');
-          if (!logEl) return;
-          if (logEl.querySelector('.chat-line.system[data-welcome="true"]')) {
-            state.aiChat.welcomeShown = true;
-            return;
-          }
-          const label = getStageLabel(state.stage || 1);
-          const welcomeText =
-            (label && label.description) ||
-            'AI 패널에 질문을 던지며 논거와 반론을 점검하세요.';
-          const appended = appendChatMessage(
-            'ai',
-            {
-              ts: 0,
-              role: 'system',
-              senderName: '시스템',
-              text: welcomeText
-            },
-            { pending: false }
-          );
-          if (appended && appended.element) {
-            appended.element.dataset.welcome = 'true';
-          }
-          state.aiChat.welcomeShown = true;
-        }
+        // AI 웰컴 메시지는 사용하지 않습니다.
 
         function setAiPending(waiting){
           if (!state.aiChat) return;
