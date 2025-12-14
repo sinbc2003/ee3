@@ -363,7 +363,7 @@
         const TYPE_CONFIGS = {
           [TYPE_KEYS.TYPE_A]: {
             id: TYPE_KEYS.TYPE_A,
-            label: 'Type A · 기존 흐름',
+            label: 'Type A',
             description: '2차시~5차시 구성 (AI/동료 토론 통합)',
             group: 'A',
             aiStages: [1, 2, 3, 4, 5],
@@ -2056,8 +2056,7 @@
           setStatus('사전 글쓰기를 제출하는 중입니다...', 'info');
           google.script.run.withSuccessHandler(function(res){
             state.stage = Math.max(2, Number(state.stage || 1));
-            const stage2Name = getStageDisplayName(2);
-            setStatus(`사전 글쓰기가 제출되었습니다. ${stage2Name}으로 이동하세요.`, 'success');
+            setStatus('사전 글쓰기를 제출했습니다.', 'success');
             syncSessionState(res);
             if (state.stage < 2) {
               state.stage = 2;
