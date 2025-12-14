@@ -124,6 +124,9 @@
       .chat-line.me .chat-bubble { background: linear-gradient(135deg, #2563eb, #1d4ed8); color: #ffffff; border-bottom-right-radius: 6px; }
       .chat-line.ai .chat-bubble { background: #f8fafc; border: 1px solid #cbd5f5; border-bottom-left-radius: 6px; }
       .chat-line.system .chat-bubble { background: #f1f5f9; color: #475569; border: 1px dashed #cbd5e1; }
+      .chat-bubble a { color: #1d4ed8; font-weight: 600; text-decoration: underline; }
+      .chat-line.me .chat-bubble a { color: #dbeafe; }
+      .chat-bubble a:hover { text-decoration: underline; }
       .chat-meta { font-size: 11px; color: #94a3b8; }
       .chat-line.me .chat-meta { align-self: flex-end; }
       .chat-line.pending .chat-meta::after { content: ' · 전송 중'; color: #f97316; }
@@ -440,7 +443,7 @@
         const DEFAULT_STAGE_PROMPTS = [
           {
             reference: '찬·반 논거를 조사하며 핵심 근거와 반론거리를 메모하세요. AI 웹검색을 활용해 다양한 출처를 탐색해 보세요.',
-            aiPrompt: '당신은 학생의 토론 준비를 돕는 AI 웹연구 도우미입니다. 학생이 던지는 질문에 대해, 공정하게 찬성과 반대 측 근거를 모두 제시하고, 신뢰할 만한 출처 정보도 간단히 언급하세요. 답변은 핵심 bullet 2~3개 중심으로, 쉬운 문장으로 작성합니다.',
+            aiPrompt: '당신은 학생의 토론 준비를 돕는 AI 웹연구 도우미입니다. 학생이 던지는 질문에 대해, 공정하게 찬성과 반대 측 근거를 모두 제시하세요. 각 bullet마다 신뢰할 만한 출처를 1~2개 제안하고, 출처는 반드시 마크다운 링크 형식([출처명](https://...))으로 표시하세요. 답변은 핵심 bullet 2~3개 중심으로, 쉬운 문장으로 작성합니다.',
           },
           {
             reference: 'ChatGPT와 모의 토론을 진행하며 찬성/반대 입장에서 나올 수 있는 반론을 미리 점검하세요.',
@@ -2750,8 +2753,24 @@
           });
         }
 
+        function extractFootnoteLinks(rawText){
+          const footnotes = {};
+          String(rawText || '')
+            .split('\n')
+            .forEach((line) => {
+              const match = line.match(/^\s*\[?(\d+)\]?\s*[:\-–]?\s*(https?:\/\/[^\s)]+[^\s.,;:)\]]?)/i);
+              if (match && match[1] && match[2]) {
+                const num = match[1];
+                const url = match[2].replace(/[)\]]+$/, '');
+                if (url) footnotes[num] = url;
+              }
+            });
+          return footnotes;
+        }
+
         function renderMarkdown(text){
           if (!text) return '';
+          const footnotes = extractFootnoteLinks(text);
           const codeBlocks = [];
           let working = text.replace(/```([\s\S]*?)```/g, function(_match, code){
             const placeholder = `@@CODE_BLOCK_${codeBlocks.length}@@`;
@@ -2771,6 +2790,14 @@
           codeBlocks.forEach((block, idx) => {
             working = working.replace(`@@CODE_BLOCK_${idx}@@`, block);
           });
+          if (Object.keys(footnotes).length) {
+            working = working.replace(/\[([0-9]+)\]/g, function(match, num){
+              const url = footnotes[num];
+              if (!url) return match;
+              const safeUrl = String(url).replace(/"/g, '&quot;');
+              return `<a href="${safeUrl}" target="_blank" rel="noopener noreferrer">[${num}]</a>`;
+            });
+          }
           return working;
         }
 
