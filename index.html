@@ -1895,12 +1895,15 @@
         }
 
         function updateAiPanelHeader(stage){
-          const label = getStageLabel(stage);
+          const stageNumber = Number(stage || 1);
+          const label = getStageLabel(stageNumber);
           const aiCopy = getPanelCopyEntry('ai');
           if (!label && !aiCopy) return;
           const combined = label?.headline ? `${label.name} · ${label.headline}` : label?.name;
-          setText('aiStageTitle', aiCopy.title || combined || 'AI 토론');
-          setText('aiStageSubtitle', aiCopy.subtitle || label?.description || 'AI와 토론을 이어가며 논거를 점검하세요.');
+          const title = stageNumber === 1 ? (aiCopy.title || combined) : (combined || aiCopy.title);
+          const subtitle = stageNumber === 1 ? (aiCopy.subtitle || label?.description) : (label?.description || aiCopy.subtitle);
+          setText('aiStageTitle', title || 'AI 토론');
+          setText('aiStageSubtitle', subtitle || 'AI와 토론을 이어가며 논거를 점검하세요.');
         }
 
         function updatePeerPanelHeader(stage){
