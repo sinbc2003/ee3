@@ -1321,7 +1321,7 @@
         function updateStageVisibility(){
           const stage = Number(state.stage || 1);
           const typeKey = state.typeMode || TYPE_KEYS.TYPE_A;
-          const showStage1 = stage <= 2; // 2차시 메모/발문은 3-1차시에서도 열람 가능
+          const showStage1 = stage === 1; // 2차시는 1단계에서만 입력/표시
           const showStage2 = stage === 2;
           const showStage3 = stage === 3;
           const showStage4 = stage === 4;
@@ -1528,13 +1528,15 @@
           const info = $('draftInfo');
           const titleEl = $('draftTitle');
           const previewEl = $('prewritingPreview');
+          const buttonRow = document.querySelector('#panelDraft .button-row');
           if (!textarea || !info) return;
           const stage = Number(state.stage || 1);
           const group = (state.group || '').toUpperCase();
           const draftCopy = getPanelCopyEntry('draft');
           const overrideTitle = (draftCopy.title || '').trim();
           const overrideSubtitle = (draftCopy.subtitle || '').trim();
-          const editable = stage === 2 && !state.writing.final.submittedAt;
+          // 3-1차시에서는 메모 작성 비활성화
+          const editable = false;
           const savedText = state.writing.draft.text || '';
           if (previewEl) {
             const prewritingText = (state.writing.prewriting && state.writing.prewriting.text) || '';
@@ -1545,16 +1547,9 @@
           }
           const workingText = stage === 2 ? (state.localDraftBuffer || savedText || '') : savedText;
           if (textarea.value !== workingText) textarea.value = workingText;
-          textarea.disabled = !editable;
-          if (editable) state.localDraftBuffer = textarea.value;
-          const saveBtn = $('btnSaveDraft');
-          if (saveBtn) saveBtn.disabled = !editable || !textarea.value.trim();
-          const moveBtn = $('btnToPeer');
-          if (moveBtn) {
-            const hasSaved = !!savedText && Number(state.writing.draft.savedAt || 0) > 0;
-            moveBtn.textContent = '다음 단계로 이동';
-            moveBtn.disabled = !hasSaved;
-          }
+          textarea.style.display = 'none';
+          textarea.disabled = true;
+          if (buttonRow) buttonRow.style.display = 'none';
           if (titleEl && overrideTitle) {
             titleEl.textContent = overrideTitle;
           }
