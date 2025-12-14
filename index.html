@@ -2041,8 +2041,10 @@
           if (aiInput) aiInput.disabled = !aiEnabled || aiPending;
           if (aiBtn) aiBtn.disabled = !aiEnabled || aiPending;
           const peerEnabled = !!state.peerChat.sessionId && isPeerChatStage(stage);
-          $('peerInput').disabled = !peerEnabled;
-          $('btnPeerSend').disabled = !peerEnabled;
+          const peerInput = $('peerInput');
+          const peerBtn = $('btnPeerSend');
+          if (peerInput) peerInput.disabled = !peerEnabled;
+          if (peerBtn) peerBtn.disabled = !peerEnabled;
         }
 
         function onSubmitPrewriting(){
