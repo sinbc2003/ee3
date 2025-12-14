@@ -968,7 +968,7 @@
         let pendingPairings = [];
         let pairingApplyInProgress = false;
         const selectedSessionKeys = new Set();
-        const TYPE_KEYS = { TYPE_A: 'TYPE_A', TYPE_B: 'TYPE_B' };
+        const TYPE_KEYS = { TYPE_A: 'TYPE_A' };
         const PANEL_COPY_KEYS = [
           'prompt',
           'prewriting',
@@ -999,7 +999,6 @@
         }
         const DEFAULT_PANEL_COPY = {
           [TYPE_KEYS.TYPE_A]: createEmptyPanelCopy(),
-          [TYPE_KEYS.TYPE_B]: createEmptyPanelCopy(),
         };
         const UI_TEXT_KEYS = [
           'promptEmptyText',
@@ -1036,24 +1035,6 @@
             finalChatInputPlaceholder: '질문하거나 토론을 이어가세요.',
             finalChatSendButtonText: '전송',
             stage5MemoPlaceholder: '주장·근거, 출처, 의문점을 자유롭게 적어 두세요.',
-            stage5MemoSaveButtonText: '',
-          },
-          [TYPE_KEYS.TYPE_B]: {
-            promptEmptyText: '제시문이 아직 등록되지 않았습니다.',
-            draftPromptEmptyText: '관리자가 등록한 발문이 여기에 표시됩니다.',
-            stage4PromptEmptyText: '관리자가 등록한 발문이 여기에 표시됩니다.',
-            prewritingPlaceholder: '메모를 자유롭게 적어 두세요.',
-            prewritingSaveButtonText: '',
-            draftPlaceholder: '메모를 입력하세요.',
-            draftSaveButtonText: '',
-            notesPlaceholder: '메모를 입력하세요.',
-            aiInputPlaceholder: 'AI에게 질문하거나 피드백을 요청하세요.',
-            aiSendButtonText: '전송',
-            peerInputPlaceholder: '동료에게 메시지를 보내보세요.',
-            peerSendButtonText: '전송',
-            finalChatInputPlaceholder: '질문하거나 토론을 이어가세요.',
-            finalChatSendButtonText: '전송',
-            stage5MemoPlaceholder: '메모를 입력하세요.',
             stage5MemoSaveButtonText: '',
           },
         };
@@ -1126,33 +1107,21 @@
             reference: DEFAULT_STAGE_PROMPTS[TYPE_KEYS.TYPE_A][idx].reference,
             aiPrompt: DEFAULT_STAGE_PROMPTS[TYPE_KEYS.TYPE_A][idx].aiPrompt,
           })),
-          [TYPE_KEYS.TYPE_B]: DEFAULT_STAGE_LABELS[TYPE_KEYS.TYPE_B].map((label, idx) => ({
-            name: label.name,
-            headline: label.headline,
-            description: label.description,
-            reference: DEFAULT_STAGE_PROMPTS[TYPE_KEYS.TYPE_B][idx].reference,
-            aiPrompt: DEFAULT_STAGE_PROMPTS[TYPE_KEYS.TYPE_B][idx].aiPrompt,
-          })),
         };
         let stageContentDirty = {
           [TYPE_KEYS.TYPE_A]: false,
-          [TYPE_KEYS.TYPE_B]: false,
         };
         let panelCopyState = {
           [TYPE_KEYS.TYPE_A]: clonePanelCopy(DEFAULT_PANEL_COPY[TYPE_KEYS.TYPE_A]),
-          [TYPE_KEYS.TYPE_B]: clonePanelCopy(DEFAULT_PANEL_COPY[TYPE_KEYS.TYPE_B]),
         };
         let panelCopyDirty = {
           [TYPE_KEYS.TYPE_A]: false,
-          [TYPE_KEYS.TYPE_B]: false,
         };
         let uiTextState = {
           [TYPE_KEYS.TYPE_A]: { ...(DEFAULT_UI_TEXT[TYPE_KEYS.TYPE_A] || {}) },
-          [TYPE_KEYS.TYPE_B]: { ...(DEFAULT_UI_TEXT[TYPE_KEYS.TYPE_B] || {}) },
         };
         let uiTextDirty = {
           [TYPE_KEYS.TYPE_A]: false,
-          [TYPE_KEYS.TYPE_B]: false,
         };
 
         function normalizeBaseUrl(url){
@@ -1880,11 +1849,9 @@
           stageContentState[typeKey] = entries;
         }
 
-        function populateStageLabelInputs(labelsA, promptsA, labelsB, promptsB){
+        function populateStageLabelInputs(labelsA, promptsA){
           setStageState(TYPE_KEYS.TYPE_A, buildStageEntries(TYPE_KEYS.TYPE_A, labelsA, promptsA));
-          setStageState(TYPE_KEYS.TYPE_B, buildStageEntries(TYPE_KEYS.TYPE_B, labelsB, promptsB));
           stageContentDirty[TYPE_KEYS.TYPE_A] = false;
-          stageContentDirty[TYPE_KEYS.TYPE_B] = false;
           renderStageTypeFields();
           updateStageLabelSaveButton();
         }
@@ -1956,22 +1923,16 @@
           try {
             const labelsPayloadA = buildStageLabelPayload(TYPE_KEYS.TYPE_A);
             const promptsPayloadA = buildStagePromptPayload(TYPE_KEYS.TYPE_A);
-            const labelsPayloadB = buildStageLabelPayload(TYPE_KEYS.TYPE_B);
-            const promptsPayloadB = buildStagePromptPayload(TYPE_KEYS.TYPE_B);
             const response = await apiRequest('public-settings', {
               method: 'POST',
               body: {
                 stageLabels: labelsPayloadA,
                 stagePrompts: promptsPayloadA,
-                stageLabelsTypeB: labelsPayloadB,
-                stagePromptsTypeB: promptsPayloadB,
               },
             });
             populateStageLabelInputs(
               response?.stageLabels || labelsPayloadA,
-              response?.stagePrompts || promptsPayloadA,
-              response?.stageLabelsTypeB || labelsPayloadB,
-              response?.stagePromptsTypeB || promptsPayloadB
+              response?.stagePrompts || promptsPayloadA
             );
             setStatus('차시 안내를 저장했습니다.', 'success');
           } catch (error) {
@@ -2011,11 +1972,9 @@
           return defaults;
         }
 
-        function populatePanelCopyInputs(copyA, copyB){
+        function populatePanelCopyInputs(copyA){
           panelCopyState[TYPE_KEYS.TYPE_A] = buildPanelCopyEntries(copyA, TYPE_KEYS.TYPE_A);
-          panelCopyState[TYPE_KEYS.TYPE_B] = buildPanelCopyEntries(copyB, TYPE_KEYS.TYPE_B);
           panelCopyDirty[TYPE_KEYS.TYPE_A] = false;
-          panelCopyDirty[TYPE_KEYS.TYPE_B] = false;
           renderPanelCopyFields();
           updatePanelCopySaveButton();
         }
@@ -2074,15 +2033,13 @@
           if (btn) btn.disabled = true;
           try {
             const payloadA = buildPanelCopyPayload(TYPE_KEYS.TYPE_A);
-            const payloadB = buildPanelCopyPayload(TYPE_KEYS.TYPE_B);
             const response = await apiRequest('public-settings', {
               method: 'POST',
               body: {
                 panelCopy: payloadA,
-                panelCopyTypeB: payloadB,
               },
             });
-            populatePanelCopyInputs(response?.panelCopy || payloadA, response?.panelCopyTypeB || payloadB);
+            populatePanelCopyInputs(response?.panelCopy || payloadA);
             setStatus('차시 박스 문구를 저장했습니다.', 'success');
           } catch (error) {
             setStatus(error.message || '차시 박스 문구를 저장하지 못했습니다.', 'error');
