@@ -2777,6 +2777,10 @@
             codeBlocks.push(`<pre><code>${escapeHtml(code)}</code></pre>`);
             return placeholder;
           });
+          // 각주 번호를 링크 플레이스홀더로 먼저 치환해, 이후 escape 후에도 복원 가능하게 함
+          working = working.replace(/\[([0-9]+)\]/g, function(match, num){
+            return footnotes[num] ? `@@FOOTNOTE_${num}@@` : match;
+          });
           working = escapeHtml(working);
           working = working.replace(/`([^`]+)`/g, (_match, code) => `<code>${code}</code>`);
           working = working.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
@@ -2790,14 +2794,14 @@
           codeBlocks.forEach((block, idx) => {
             working = working.replace(`@@CODE_BLOCK_${idx}@@`, block);
           });
-          if (Object.keys(footnotes).length) {
-            working = working.replace(/\[([0-9]+)\]/g, function(match, num){
-              const url = footnotes[num];
-              if (!url) return match;
-              const safeUrl = String(url).replace(/"/g, '&quot;');
-              return `<a href="${safeUrl}" target="_blank" rel="noopener noreferrer">[${num}]</a>`;
-            });
-          }
+          Object.keys(footnotes).forEach((num) => {
+            const url = footnotes[num];
+            const safeUrl = String(url).replace(/"/g, '&quot;');
+            working = working.replace(
+              new RegExp(`@@FOOTNOTE_${num}@@`, 'g'),
+              `<a href="${safeUrl}" target="_blank" rel="noopener noreferrer">[${num}]</a>`
+            );
+          });
           return working;
         }
 
