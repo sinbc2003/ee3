@@ -211,6 +211,28 @@ function defaultPanelCopy(_type = 'TYPE_A') {
   return emptyPanelCopy();
 }
 
+function defaultUiText(_type = 'TYPE_A') {
+  // 프론트(index.html)에서 fallback으로 쓰이는 UI 문구들
+  return {
+    promptEmptyText: '토론 발문이 아직 등록되지 않았습니다.',
+    draftPromptEmptyText: '관리자가 등록한 발문이 여기에 표시됩니다.',
+    stage4PromptEmptyText: '관리자가 등록한 발문이 여기에 표시됩니다.',
+    prewritingPlaceholder: '주장·근거, 출처, 의문점을 자유롭게 적어 두세요.',
+    prewritingSaveButtonText: '',
+    draftPlaceholder: '찬성/반대 주장, 근거, 추가 조사할 내용 등을 기록하세요.',
+    draftSaveButtonText: '',
+    notesPlaceholder: '3-1차시 토론을 다시 읽고, 궁금한 점이나 보완할 논거를 메모하세요.',
+    aiInputPlaceholder: 'AI에게 질문하거나 피드백을 요청하세요.',
+    aiSendButtonText: '전송',
+    peerInputPlaceholder: '동료에게 메시지를 보내보세요.',
+    peerSendButtonText: '전송',
+    finalChatInputPlaceholder: '질문하거나 토론을 이어가세요.',
+    finalChatSendButtonText: '전송',
+    stage5MemoPlaceholder: '주장·근거, 출처, 의문점을 자유롭게 적어 두세요.',
+    stage5MemoSaveButtonText: '',
+  };
+}
+
 function defaultPublicSettings() {
   return {
     topLinkUrl: '',
@@ -220,6 +242,12 @@ function defaultPublicSettings() {
     stageLabels: defaultStageLabels(),
     stagePrompts: defaultStagePrompts(),
     panelCopy: defaultPanelCopy('TYPE_A'),
+    // 관리자 페이지는 Type B도 함께 저장/편집할 수 있으므로 확장 필드를 지원
+    stageLabelsTypeB: defaultStageLabelsTypeB(),
+    stagePromptsTypeB: defaultStagePromptsTypeB(),
+    panelCopyTypeB: defaultPanelCopy('TYPE_B'),
+    uiText: defaultUiText('TYPE_A'),
+    uiTextTypeB: defaultUiText('TYPE_B'),
   };
 }
 
@@ -227,18 +255,18 @@ function defaultStageLabels() {
   return [
     {
       name: '2차시',
-      headline: '논거 점검',
-      description: '찬·반 입장으로 질문하며 논거를 점검하세요. 정답 생성 대신 토론 연습에 집중합니다.',
+      headline: '토론 관련 발문',
+      description: '논제 이해를 위해 핵심 발문을 확인하세요. 필요 시 교사가 제시합니다.',
     },
     {
       name: '3차시-1',
-      headline: 'ChatGPT 모의 토론 (gpt-4.1-mini)',
-      description: 'AI와 토론을 이어가며 핵심 반론과 근거를 정리하세요.',
+      headline: '토론 관련 발문',
+      description: '토론 관련 발문을 바탕으로 쟁점과 논거를 정리하세요.',
     },
     {
       name: '3차시-2',
       headline: '동료 토론',
-      description: '동료와 상호 피드백을 주고받으며 글을 다듬으세요.',
+      description: '동료와 상호 피드백을 주고받으며 논거를 점검하세요.',
     },
     {
       name: '4차시-1',
@@ -250,6 +278,16 @@ function defaultStageLabels() {
       headline: '4-2차시 정리',
       description: '4-1차시 기록을 요약하고 추가 메모를 정리하세요.',
     },
+  ];
+}
+
+function defaultStageLabelsTypeB() {
+  return [
+    { name: '1차시', headline: '토론 관련 발문', description: '핵심 발문을 확인하고 배경 지식을 정리하세요.' },
+    { name: '2차시', headline: '동료 간 토론 (사전)', description: '동료와 사전 토론을 진행하며 생각을 공유하세요.' },
+    { name: '3차시', headline: '3-1/3-2 토론', description: '3-1, 3-2 세부 단계에서 질문과 반론을 정리하세요.' },
+    { name: '4차시', headline: '4-1/4-2 평가', description: '4-1, 4-2 단계에서 AI 평가와 보완을 진행하세요.' },
+    { name: '5차시', headline: '최종 정리', description: '모든 토론 내용을 요약하고 마무리합니다.' },
   ];
 }
 
@@ -272,6 +310,31 @@ function defaultStagePrompts() {
     {
       reference:
         '4-1차시 대화를 요약하고, 최종 주장을 정리하세요. 필요한 경우 AI에게 추가 설명을 요청할 수 있습니다.',
+      aiPrompt: '',
+    },
+  ];
+}
+
+function defaultStagePromptsTypeB() {
+  return [
+    {
+      reference: '토론 관련 발문을 확인하고, 핵심 질문을 정리하세요.',
+      aiPrompt: '발문에서 찾은 핵심 이슈를 정리하고, 추가로 조사할 키워드를 제안하세요.',
+    },
+    {
+      reference: '동료와 사전 토론을 진행하며 주요 논점을 메모하세요.',
+      aiPrompt: '',
+    },
+    {
+      reference: '3-1/3-2 단계에서 사용할 질문/반론을 정리하세요.',
+      aiPrompt: '학생의 주장에 후속 질문을 던지고, 부족한 논거를 제안하세요.',
+    },
+    {
+      reference: '4-1/4-2 단계에서 받은 피드백을 요약하고 보완할 사항을 정리하세요.',
+      aiPrompt: '학생의 논리를 평가하고 구체적 수정 방향을 제안하세요.',
+    },
+    {
+      reference: '전체 토론 과정을 정리하고 최종 결론을 도출하세요.',
       aiPrompt: '',
     },
   ];
@@ -1669,6 +1732,17 @@ async function summarizeTranscript(text) {
   });
 }
 
+function sanitizeUiText(payload, fallback = defaultUiText()) {
+  const base = { ...defaultUiText(), ...(fallback || {}) };
+  const input = payload && typeof payload === 'object' ? payload : {};
+  Object.keys(base).forEach((key) => {
+    if (Object.prototype.hasOwnProperty.call(input, key) && typeof input[key] === 'string') {
+      base[key] = input[key];
+    }
+  });
+  return base;
+}
+
 function sanitizePublicSettings(payload, currentSettings = store.publicSettings) {
   const base = {
     ...defaultPublicSettings(),
@@ -1694,6 +1768,21 @@ function sanitizePublicSettings(payload, currentSettings = store.publicSettings)
   }
   if (payload.panelCopy && typeof payload.panelCopy === 'object') {
     base.panelCopy = sanitizePanelCopy(payload.panelCopy, base.panelCopy, 'TYPE_A');
+  }
+  if (Array.isArray(payload.stageLabelsTypeB)) {
+    base.stageLabelsTypeB = normalizeStageLabels(payload.stageLabelsTypeB, base.stageLabelsTypeB);
+  }
+  if (Array.isArray(payload.stagePromptsTypeB)) {
+    base.stagePromptsTypeB = normalizeStagePrompts(payload.stagePromptsTypeB, base.stagePromptsTypeB);
+  }
+  if (payload.panelCopyTypeB && typeof payload.panelCopyTypeB === 'object') {
+    base.panelCopyTypeB = sanitizePanelCopy(payload.panelCopyTypeB, base.panelCopyTypeB, 'TYPE_B');
+  }
+  if (payload.uiText && typeof payload.uiText === 'object') {
+    base.uiText = sanitizeUiText(payload.uiText, base.uiText);
+  }
+  if (payload.uiTextTypeB && typeof payload.uiTextTypeB === 'object') {
+    base.uiTextTypeB = sanitizeUiText(payload.uiTextTypeB, base.uiTextTypeB);
   }
   return base;
 }

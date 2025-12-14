@@ -378,9 +378,9 @@
           },
         };
         const DEFAULT_STAGE_LABELS = [
-          { name: '2차시', headline: '논거 점검', description: '찬·반 입장으로 질문하며 논거를 점검하세요. 정답 생성 대신 토론 연습에 집중합니다.' },
-          { name: '3차시-1', headline: 'ChatGPT 모의 토론 (gpt-4.1-mini)', description: 'AI와 토론을 이어가며 핵심 반론과 근거를 정리하세요.' },
-          { name: '3차시-2', headline: '동료 토론 평가', description: '3-1차시 AI 대화를 다시 읽고 토론을 평가하세요.' },
+          { name: '2차시', headline: '토론 관련 발문', description: '논제 이해를 위해 핵심 발문을 확인하세요. 필요 시 교사가 제시합니다.' },
+          { name: '3차시-1', headline: '토론 관련 발문', description: '토론 관련 발문을 바탕으로 쟁점과 논거를 정리하세요.' },
+          { name: '3차시-2', headline: '동료 토론', description: '동료와 상호 피드백을 주고받으며 논거를 점검하세요.' },
           { name: '4차시-1', headline: '4-1차시 토론 발문', description: '관리자가 제공한 발문을 다시 확인하고 논리를 점검하세요.' },
           { name: '4차시-2', headline: '4-2차시 정리', description: '4-1차시 대화를 요약하고 추가 메모를 정리하세요.' },
         ];
@@ -432,6 +432,25 @@
         const DEFAULT_PANEL_COPY = createEmptyPanelCopy();
         const DEFAULT_PANEL_COPY_BY_TYPE = {
           [TYPE_KEYS.TYPE_A]: DEFAULT_PANEL_COPY,
+        };
+
+        const DEFAULT_UI_TEXT = {
+          promptEmptyText: '토론 발문이 아직 등록되지 않았습니다.',
+          draftPromptEmptyText: '관리자가 등록한 발문이 여기에 표시됩니다.',
+          stage4PromptEmptyText: '관리자가 등록한 발문이 여기에 표시됩니다.',
+          prewritingPlaceholder: '주장·근거, 출처, 의문점을 자유롭게 적어 두세요.',
+          prewritingSaveButtonText: '',
+          draftPlaceholder: '찬성/반대 주장, 근거, 추가 조사할 내용 등을 기록하세요.',
+          draftSaveButtonText: '',
+          notesPlaceholder: '3-1차시 토론을 다시 읽고, 궁금한 점이나 보완할 논거를 메모하세요.',
+          aiInputPlaceholder: 'AI에게 질문하거나 피드백을 요청하세요.',
+          aiSendButtonText: '전송',
+          peerInputPlaceholder: '동료에게 메시지를 보내보세요.',
+          peerSendButtonText: '전송',
+          finalChatInputPlaceholder: '질문하거나 토론을 이어가세요.',
+          finalChatSendButtonText: '전송',
+          stage5MemoPlaceholder: '주장·근거, 출처, 의문점을 자유롭게 적어 두세요.',
+          stage5MemoSaveButtonText: '',
         };
 
         function normalizeApiBaseUrl(path){
@@ -627,6 +646,7 @@
         const publicConfig = {
           aiAvatarUrl: DEFAULT_AI_AVATAR,
           promptContent: '',
+          uiText: { ...DEFAULT_UI_TEXT },
           stageLabelsByType: {
             [TYPE_KEYS.TYPE_A]: DEFAULT_STAGE_LABELS_BY_TYPE[TYPE_KEYS.TYPE_A].map((label) => ({ ...label })),
           },
@@ -637,6 +657,18 @@
             [TYPE_KEYS.TYPE_A]: clonePanelCopyDefaults(TYPE_KEYS.TYPE_A),
           },
         };
+
+        function normalizeUiText(incoming, fallback) {
+          const base = fallback && typeof fallback === 'object' ? fallback : DEFAULT_UI_TEXT;
+          const src = incoming && typeof incoming === 'object' ? incoming : {};
+          const out = { ...DEFAULT_UI_TEXT, ...base };
+          Object.keys(out).forEach(function(key){
+            if (Object.prototype.hasOwnProperty.call(src, key) && typeof src[key] === 'string') {
+              out[key] = src[key];
+            }
+          });
+          return out;
+        }
 
         function normalizeStageLabels(list, fallbackList){
           const baseList =
@@ -764,6 +796,30 @@
             return;
           }
           el.innerHTML = escapeHtml(content).replace(/\n/g, '<br/>');
+        }
+
+        function applyUiText(){
+          const ui = publicConfig.uiText || DEFAULT_UI_TEXT;
+          const setPlaceholder = (id, text) => {
+            const el = $(id);
+            if (!el) return;
+            if (typeof text === 'string' && text) el.setAttribute('placeholder', text);
+          };
+          setPlaceholder('prewritingInput', ui.prewritingPlaceholder || '');
+          setPlaceholder('draftInput', ui.draftPlaceholder || '');
+          setPlaceholder('notesInput', ui.notesPlaceholder || '');
+          setPlaceholder('aiInput', ui.aiInputPlaceholder || '');
+          setPlaceholder('peerInput', ui.peerInputPlaceholder || '');
+          setPlaceholder('finalChatInput', ui.finalChatInputPlaceholder || '');
+          setPlaceholder('stage5MemoInput', ui.stage5MemoPlaceholder || '');
+
+          // 버튼 문구(비어있으면 기존 기본값 유지)
+          if (ui.prewritingSaveButtonText) setText('btnPreSubmit', ui.prewritingSaveButtonText);
+          if (ui.draftSaveButtonText) setText('btnSaveDraft', ui.draftSaveButtonText);
+          if (ui.aiSendButtonText) setText('btnAiSend', ui.aiSendButtonText);
+          if (ui.peerSendButtonText) setText('btnPeerSend', ui.peerSendButtonText);
+          if (ui.finalChatSendButtonText) setText('btnFinalChatSend', ui.finalChatSendButtonText);
+          if (ui.stage5MemoSaveButtonText) setText('btnStage5MemoSave', ui.stage5MemoSaveButtonText);
         }
 
         function getTypeConfig(typeKey){
@@ -1206,6 +1262,7 @@
 
         function renderWorkspace(){
           applyStageLabelsToPanels();
+          applyUiText();
           renderUserInfo();
           updateStepIndicator();
           updateStageVisibility();
@@ -1600,17 +1657,18 @@
         }
 
         function renderStagePrompts(){
+          const ui = publicConfig.uiText || DEFAULT_UI_TEXT;
           const stage1Prompt = getStagePromptData(1);
           setRichText(
             'promptContent',
             stage1Prompt.reference || publicConfig.promptContent,
-            '토론 발문이 아직 등록되지 않았습니다.'
+            ui.promptEmptyText || '토론 발문이 아직 등록되지 않았습니다.'
           );
           const stage2Prompt = getStagePromptData(2);
           setRichText(
             'draftPromptContent',
             stage2Prompt.reference || stage1Prompt.reference || publicConfig.promptContent,
-            '관리자가 등록한 발문이 여기에 표시됩니다.'
+            ui.draftPromptEmptyText || '관리자가 등록한 발문이 여기에 표시됩니다.'
           );
           const stage3Prompt = getStagePromptData(3);
           setRichText(
@@ -1622,7 +1680,7 @@
           setRichText(
             'stage4PromptContent',
             stage4Prompt.reference || publicConfig.promptContent,
-            '관리자가 등록한 발문이 여기에 표시됩니다.'
+            ui.stage4PromptEmptyText || '관리자가 등록한 발문이 여기에 표시됩니다.'
           );
           const stage5Prompt = getStagePromptData(5);
           setRichText(
@@ -2772,6 +2830,7 @@
               if (!cfg) return;
               publicConfig.aiAvatarUrl = cfg.aiAvatarUrl || DEFAULT_AI_AVATAR;
               publicConfig.promptContent = cfg.promptContent || '';
+              publicConfig.uiText = normalizeUiText(cfg.uiText, publicConfig.uiText || DEFAULT_UI_TEXT);
               publicConfig.stageLabelsByType[TYPE_KEYS.TYPE_A] = normalizeStageLabels(
                 cfg.stageLabels,
                 DEFAULT_STAGE_LABELS_BY_TYPE[TYPE_KEYS.TYPE_A]
@@ -2787,6 +2846,7 @@
               state.aiAvatarUrl = publicConfig.aiAvatarUrl || DEFAULT_AI_AVATAR;
               buildStepIndicator();
               applyStageLabelsToPanels();
+              applyUiText();
               renderStagePrompts();
               updateStepIndicator();
               renderRightPanels();
