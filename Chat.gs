@@ -108,7 +108,11 @@
         try { meta = JSON.parse(r[8]); }
         catch (e) { meta = { raw: String(r[8]) }; }
       }
-      if (channel && String((meta && meta.channel) || '') !== String(channel)) continue;
+      // 채널 필터: 메타에 channel이 있을 때만 엄격히 비교, 없으면 허용(레거시 호환)
+      if (channel) {
+        var metaChannel = String((meta && meta.channel) || '');
+        if (metaChannel && metaChannel !== String(channel)) continue;
+      }
       list.push({ ts: ts, sessionId: r[1], roomId: r[2], mode: r[3], senderId: r[4], senderName: r[5], role: r[6], text: r[7], ext: meta });
     }
     return list.sort(function(a,b){ return a.ts - b.ts; });
