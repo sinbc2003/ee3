@@ -71,6 +71,10 @@
       .panel-header { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
       .panel-header h2 { font-size: 18px; font-weight: 700; margin: 0; color: #111827; white-space: nowrap; }
       .panel-subtext { font-size: 13px; color: #64748b; }
+      /* 오른쪽 패널은 부제목을 헤더 아래에 세로로 배치 */
+      .right-panel .panel-header { flex-direction: column; align-items: flex-start; }
+      .right-panel .panel-header h2 { white-space: normal; }
+      .right-panel .panel-header .panel-subtext { line-height: 1.6; }
       .readonly-block { display: none; padding: 12px; border-radius: 10px; border: 1px dashed #cbd5e1; background: #f8fafc; font-size: 14px; line-height: 1.7; color: #1f2937; white-space: pre-wrap; }
       .text-block { padding: 12px; border-radius: 10px; border: 1px solid #d8dee9; background: #f8fafc; font-size: 14px; line-height: 1.7; white-space: pre-wrap; color: #1f2937; }
       .button-row { display: flex; gap: 10px; justify-content: flex-end; }
