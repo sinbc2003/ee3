@@ -2716,7 +2716,13 @@
           if (message.role === 'ai' || message.role === 'system') {
             return renderMarkdown(text);
           }
-          return escapeHtml(text).replace(/\n/g, '<br/>');
+          return linkifyPlainText(text);
+        }
+
+        function linkifyPlainText(str){
+          const escaped = escapeHtml(str || '');
+          const withLinks = escaped.replace(/(https?:\/\/[^\s<]+[^<.,;:)\s])/g, '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>');
+          return withLinks.replace(/\n/g, '<br/>');
         }
 
         function escapeHtml(str){
