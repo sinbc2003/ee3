@@ -596,8 +596,13 @@
         </section>
 
         <section class="card" id="stageLabelSection">
-          <h2>차시 안내</h2>
-          <p class="muted" style="margin-bottom: 12px;">차시 이름·발문·AI 프롬프트를 수정하세요. 학생 화면 상단과 차시 패널에 즉시 반영됩니다.</p>
+          <div style="display:flex; justify-content: space-between; align-items: center; gap: 12px;">
+            <div>
+              <h2 style="margin: 0;">차시 안내</h2>
+              <p class="muted" style="margin: 4px 0 0;">차시 이름·발문·AI 프롬프트를 수정하세요. 학생 화면 상단과 차시 패널에 즉시 반영됩니다.</p>
+            </div>
+            <button id="btnResetPublicCopy" class="secondary" type="button">차시 문구 기본값 복원</button>
+          </div>
           <div class="stage-type-tabs">
             <button type="button" class="stage-type-tab active" data-stage-type="TYPE_A">Type A</button>
           </div>
@@ -1626,6 +1631,8 @@
           $('openaiApiKey').value = '';
           setStatus('OpenAI 키를 삭제하도록 설정했습니다. 저장을 눌러 반영하세요.', '');
         });
+        const resetBtn = $('btnResetPublicCopy');
+        if (resetBtn) resetBtn.addEventListener('click', resetPublicCopyToDefaults);
 
         $('btnParseBulk').addEventListener('click', () => parseBulkPartnerInput(false));
         $('partnerBulkInput').addEventListener('input', () => parseBulkPartnerInput(true));
@@ -2013,6 +2020,42 @@
               if (subtitleInput.value !== nextValue) subtitleInput.value = nextValue;
             }
           });
+        }
+
+        function buildDefaultPayload(){
+          return {
+            stageLabels: DEFAULT_STAGE_LABELS[TYPE_KEYS.TYPE_A].map((x) => ({ ...x })),
+            stagePrompts: DEFAULT_STAGE_PROMPTS[TYPE_KEYS.TYPE_A].map((x) => ({ ...x })),
+            panelCopy: clonePanelCopy(DEFAULT_PANEL_COPY[TYPE_KEYS.TYPE_A]),
+            uiText: { ...(DEFAULT_UI_TEXT[TYPE_KEYS.TYPE_A] || {}) },
+          };
+        }
+
+        async function resetPublicCopyToDefaults(){
+          if (!confirm('차시 이름/헤드라인/설명, 패널 제목/설명, UI 문구를 모두 기본값으로 되돌립니다. 진행할까요?')) return;
+          const btn = $('btnResetPublicCopy');
+          if (btn) btn.disabled = true;
+          try {
+            const defaults = buildDefaultPayload();
+            const response = await apiRequest('public-settings', {
+              method: 'POST',
+              body: defaults,
+            });
+            populateStageLabelInputs(
+              response?.stageLabels || defaults.stageLabels,
+              response?.stagePrompts || defaults.stagePrompts
+            );
+            populatePanelCopyInputs(response?.panelCopy || defaults.panelCopy);
+            populateUiTextInputs(response?.uiText || defaults.uiText);
+            setStatus('기본값으로 복원하고 저장했습니다.', 'success');
+          } catch (error) {
+            setStatus(error.message || '기본값 복원에 실패했습니다.', 'error');
+          } finally {
+            if (btn) btn.disabled = false;
+            updateStageLabelSaveButton();
+            updatePanelCopySaveButton();
+            updateUiTextSaveButton();
+          }
         }
 
         function handlePanelCopyInput(event){
