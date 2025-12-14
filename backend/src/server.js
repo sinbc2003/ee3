@@ -1325,6 +1325,31 @@ adminRouter.get('/sessions/export', async (req, res, next) => {
   }
 });
 
+// 호환용: /api/admin/sessions/export 경로를 일반 라우터에서도 처리 (일부 클라이언트 설정 불일치 대비)
+router.get('/admin/sessions/export', requireAdminAuth, async (req, res, next) => {
+  try {
+    const format = String(req.query?.format || 'xlsx').toLowerCase();
+    if (format !== 'xlsx') {
+      throw createHttpError(400, '지원하지 않는 내보내기 형식입니다.');
+    }
+    const scopes = parseExportScopes(req.query?.scopes);
+    const workbook = await buildExportWorkbook(scopes);
+    const buffer = await workbook.xlsx.writeBuffer();
+    const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="writingresearch-export-${stamp}.xlsx"`
+    );
+    res.setHeader(
+      'Content-Type',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    );
+    res.send(Buffer.from(buffer));
+  } catch (err) {
+    next(err);
+  }
+});
+
 adminRouter.get('/roster', (_req, res) => {
   res.json(store.roster || defaultRoster());
 });
