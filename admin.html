@@ -501,31 +501,31 @@
 
         <section class="card" id="exportSection">
           <h2>데이터 다운로드</h2>
-          <p class="muted" style="margin-bottom: 12px;">내려받을 항목을 선택한 후 <strong>선택 항목 다운로드</strong> 버튼을 눌러주세요. 파일은 Excel(xlsx) 형식으로 저장됩니다.</p>
+          <p class="muted" style="margin-bottom: 12px;">내려받을 항목을 선택한 후 <strong>선택 항목 다운로드</strong> 버튼을 눌러주세요. 파일은 Excel(xlsx) 형식으로 저장됩니다. (Type A 기준: 2차시 메모 · 3-1차시 메모 · 3-2차시 메모 · 4차시 최종 글)</p>
           <div class="export-options">
             <label class="export-option">
               <input type="checkbox" id="exportScopeAll" data-export-scope value="all" checked />
-              <span>세션 전체 (요약 포함)</span>
+              <span>세션 요약(전체)</span>
             </label>
             <label class="export-option">
               <input type="checkbox" id="exportScopeAi" data-export-scope value="ai-chat" checked />
-              <span>AI 피드백 대화</span>
+              <span>AI 대화 로그</span>
             </label>
             <label class="export-option">
               <input type="checkbox" id="exportScopeStage1" data-export-scope value="stage1" checked />
-              <span>1단계 · 사전 글쓰기</span>
+              <span>2차시 · 토론 논제 메모</span>
             </label>
             <label class="export-option">
               <input type="checkbox" id="exportScopeStage2" data-export-scope value="stage2" checked />
-              <span>2단계 · 수정 아이디어 메모</span>
+              <span>3-1차시 · 토론 메모</span>
             </label>
             <label class="export-option">
               <input type="checkbox" id="exportScopeStage3" data-export-scope value="stage3" checked />
-              <span>3단계 · 동료 피드백 메모</span>
+              <span>3-2차시 · 동료 피드백 메모</span>
             </label>
             <label class="export-option">
               <input type="checkbox" id="exportScopeStage4" data-export-scope value="final" checked />
-              <span>최종 글</span>
+              <span>4차시 · 최종 글</span>
             </label>
           </div>
           <div class="match-actions" style="margin-top: 16px; justify-content: flex-end;">
@@ -2666,25 +2666,25 @@
           const list = [];
           const stages = [
             {
-              title: '1단계 · 사전 글쓰기',
-              meta: session.writing?.prewriting?.submittedAt ? `제출 시간 · ${formatDateTime(session.writing.prewriting.submittedAt)}` : '제출되지 않았습니다.',
+              title: '2차시 · 토론 논제 메모',
+              meta: session.writing?.prewriting?.submittedAt ? `제출 시간 · ${formatDateTime(session.writing.prewriting.submittedAt)}` : '저장/제출된 메모가 없습니다.',
               text: session.writing?.prewriting?.text,
-              empty: '사전 글쓰기가 작성되지 않았습니다.'
+              empty: '2차시 메모가 작성되지 않았습니다.'
             },
             {
-              title: '2단계 · 수정 아이디어 메모',
+              title: '3-1차시 · 토론 메모',
               meta: session.writing?.draft?.savedAt ? `저장 시간 · ${formatDateTime(session.writing.draft.savedAt)}` : '저장된 메모가 없습니다.',
               text: session.writing?.draft?.text,
-              empty: '2단계 메모가 작성되지 않았습니다.'
+              empty: '3-1차시 메모가 작성되지 않았습니다.'
             },
             {
-              title: '3단계 · 동료 피드백 메모',
+              title: '3-2차시 · 동료 피드백 메모',
               meta: session.writing?.notes?.updatedAt ? `저장 시간 · ${formatDateTime(session.writing.notes.updatedAt)}` : '작성된 동료 피드백 메모가 없습니다.',
               text: session.writing?.notes?.text,
-              empty: '3단계 메모가 작성되지 않았습니다.'
+              empty: '3-2차시 메모가 작성되지 않았습니다.'
             },
             {
-              title: '4단계 · 최종 글',
+              title: '4차시 · 최종 글',
               meta: session.writing?.final?.submittedAt ? `제출 시간 · ${formatDateTime(session.writing.final.submittedAt)}` : '최종 글이 아직 제출되지 않았습니다.',
               text: session.writing?.final?.text,
               empty: '최종 글이 아직 작성되지 않았습니다.'
