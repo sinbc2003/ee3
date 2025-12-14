@@ -78,6 +78,10 @@
       #panelPrewriting .panel-header h2 { white-space: normal; }
       #panelPrompt .panel-header .panel-subtext,
       #panelPrewriting .panel-header .panel-subtext { line-height: 1.6; }
+      /* 동료 기능 비활성화: 관련 패널 숨김 */
+      #rightStage3 { display: none !important; }
+      .partner-box, .presence-status { display: none !important; }
+      #panelMemoStage3 { display: none !important; }
       /* 3-1차시 메모 패널과 버튼 숨김 */
       #panelDraft { display: none; }
       /* 오른쪽 패널은 부제목을 헤더 아래에 세로로 배치 */
@@ -379,12 +383,11 @@
             label: 'Type A · 기존 흐름',
             description: '2차시~5차시 구성 (AI/동료 토론 통합)',
             group: 'A',
-            aiStages: [1, 2, 3, 4, 5],
-            peerStages: [3],
+            aiStages: [1, 2, 4, 5],
+            peerStages: [],
             stepTemplate: [
               { badge: '1', stage: 1 },
               { badge: '2', stage: 2 },
-              { badge: '3', stage: 3 },
               { badge: '4', stage: 4 },
               { badge: '5', stage: 5 },
             ],
@@ -831,7 +834,6 @@
           setPlaceholder('draftInput', ui.draftPlaceholder || '');
           setPlaceholder('notesInput', ui.notesPlaceholder || '');
           setPlaceholder('aiInput', ui.aiInputPlaceholder || '');
-          setPlaceholder('peerInput', ui.peerInputPlaceholder || '');
           setPlaceholder('finalChatInput', ui.finalChatInputPlaceholder || '');
           setPlaceholder('stage5MemoInput', ui.stage5MemoPlaceholder || '');
 
@@ -958,11 +960,6 @@
           const aiInput = $('aiInput');
           if (aiInput) aiInput.addEventListener('keydown', function(e){ if (e.key === 'Enter' && !e.shiftKey){ e.preventDefault(); sendAiMessage(); } });
 
-          const peerSendBtn = $('btnPeerSend');
-          if (peerSendBtn) peerSendBtn.addEventListener('click', sendPeerMessage);
-          const peerInput = $('peerInput');
-          if (peerInput) peerInput.addEventListener('keydown', function(e){ if (e.key === 'Enter' && !e.shiftKey){ e.preventDefault(); sendPeerMessage(); } });
-
           const stage5MemoInput = $('stage5MemoInput');
           if (stage5MemoInput) stage5MemoInput.addEventListener('input', function(){
             const btn = $('btnStage5MemoSave');
@@ -982,8 +979,6 @@
           if (notesSaveBtn) notesSaveBtn.addEventListener('click', onSavePeerNotes);
           const finalBtn = $('btnFinalSubmit');
           if (finalBtn) finalBtn.addEventListener('click', onSubmitFinalWriting);
-          const peerNextBtn = $('btnPeerNext');
-          if (peerNextBtn) peerNextBtn.addEventListener('click', onPeerNextStage);
 
           resetToLogin();
 
@@ -1247,21 +1242,7 @@
               transcriptHeading.textContent = (stage2.name || '3-1차시') + ' 토론 기록';
             }
           }
-          const stage3 = getStageLabel(3);
-          if (stage3) {
-            const memoCopy = getPanelCopyEntry('memo');
-            setText('memoStage3Title', memoCopy.title || combine(stage3, '3-2차시 · 동료 토론 메모'));
-            const memoSubtitle = memoCopy.subtitle || stage3.description || '동료에게 받은 피드백을 메모하세요.';
-            setText('memoStage3Info', memoSubtitle);
-            const peerCopy = getPanelCopyEntry('peer');
-            setText('peerStageTitle', peerCopy.title || stage3.headline || stage3.name || '동료 피드백');
-            setText(
-              'peerStageSubtitle',
-              peerCopy.subtitle || stage3.description || '동료와 상호작용하며 피드백을 주고받으세요.'
-            );
-            const memoInfoEl = $('memoStage3Info');
-            if (memoInfoEl) memoInfoEl.dataset.baseText = memoSubtitle;
-          }
+          // 동료/3-2차시 단계 미사용
           const stage4 = getStageLabel(4);
           if (stage4) {
             const stage4Copy = getPanelCopyEntry('stage4');
@@ -1290,13 +1271,11 @@
           updateStageVisibility();
           renderPrewritingPanel();
           renderDraftPanel();
-          renderPeerPanel();
           renderStagePrompts();
           renderFinalPanel();
           renderStage5Panel();
-        renderFinalChatPanel();
+          renderFinalChatPanel();
           renderRightPanels();
-          renderPartnerPanel();
           renderPresence();
           renderDictionaryHistory();
           refreshChatControls();

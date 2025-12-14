@@ -520,10 +520,6 @@
               <span>3-1차시 · 토론 메모</span>
             </label>
             <label class="export-option">
-              <input type="checkbox" id="exportScopeStage3" data-export-scope value="stage3" checked />
-              <span>3-2차시 · 동료 피드백 메모</span>
-            </label>
-            <label class="export-option">
               <input type="checkbox" id="exportScopeStage4" data-export-scope value="final" checked />
               <span>4차시 · 최종 글</span>
             </label>
@@ -729,14 +725,6 @@
               <label>설명</label>
               <textarea data-panel-field="subtitle" data-panel-key="memo" placeholder="예: 이전 토론을 읽고 메모하세요."></textarea>
               <p class="muted">3단계 좌측 메모 패널</p>
-            </div>
-            <div class="panel-copy-item" data-panel-key="peer">
-              <h3>3-2차시 · 오른쪽 챗봇</h3>
-              <label>제목</label>
-              <input type="text" data-panel-field="title" data-panel-key="peer" placeholder="예: 동료 피드백" />
-              <label>설명</label>
-              <textarea data-panel-field="subtitle" data-panel-key="peer" placeholder="예: 동료와 상호 질문을 주고받으세요."></textarea>
-              <p class="muted">3단계 오른쪽 챗봇/동료 패널</p>
             </div>
             <div class="panel-copy-item" data-panel-key="stage4">
               <h3>4-1차시 · 발문 카드</h3>
@@ -1462,10 +1450,9 @@
           });
           setStatus(`세션 ${sessionKey} 상세 정보를 불러오는 중입니다.`, '');
           try {
-            const [{ session }, aiChats, peerChats] = await Promise.all([
+            const [{ session }, aiChats] = await Promise.all([
               apiRequest(`sessions/${sessionKey}`),
-              apiRequest(`sessions/${sessionKey}/chats/ai`),
-              apiRequest(`sessions/${sessionKey}/chats/peer`)
+              apiRequest(`sessions/${sessionKey}/chats/ai`)
             ]);
             currentSessionDetail = session;
             sessionCache.set(session.sessionKey, {
@@ -1480,7 +1467,7 @@
             renderSessionDetail(session);
             populatePartnerForm(session);
             renderQuickMatchDetails();
-            renderChatLogs(aiChats?.messages || [], peerChats?.messages || []);
+            renderChatLogs(aiChats?.messages || [], []);
             setStatus(`세션 ${sessionKey} 상세 정보를 불러왔습니다.`, 'success');
           } catch (error) {
             setStatus(error.message || '세션 정보를 불러오지 못했습니다.', 'error');
@@ -2676,12 +2663,6 @@
               meta: session.writing?.draft?.savedAt ? `저장 시간 · ${formatDateTime(session.writing.draft.savedAt)}` : '저장된 메모가 없습니다.',
               text: session.writing?.draft?.text,
               empty: '3-1차시 메모가 작성되지 않았습니다.'
-            },
-            {
-              title: '3-2차시 · 동료 피드백 메모',
-              meta: session.writing?.notes?.updatedAt ? `저장 시간 · ${formatDateTime(session.writing.notes.updatedAt)}` : '작성된 동료 피드백 메모가 없습니다.',
-              text: session.writing?.notes?.text,
-              empty: '3-2차시 메모가 작성되지 않았습니다.'
             },
             {
               title: '4차시 · 최종 글',

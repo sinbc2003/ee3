@@ -32,7 +32,6 @@ const PANEL_COPY_KEYS = [
   'ai',
   'draft',
   'memo',
-  'peer',
   'stage4',
   'final',
   'stage5',
@@ -243,8 +242,6 @@ function defaultUiText(_type = 'TYPE_A') {
     notesPlaceholder: '3-1차시 토론을 다시 읽고, 궁금한 점이나 보완할 논거를 메모하세요.',
     aiInputPlaceholder: 'AI에게 질문하거나 피드백을 요청하세요.',
     aiSendButtonText: '전송',
-    peerInputPlaceholder: '동료에게 메시지를 보내보세요.',
-    peerSendButtonText: '전송',
     finalChatInputPlaceholder: '질문하거나 토론을 이어가세요.',
     finalChatSendButtonText: '전송',
     stage5MemoPlaceholder: '주장·근거, 출처, 의문점을 자유롭게 적어 두세요.',
@@ -727,8 +724,6 @@ function ensureSession(group, studentId, studentName) {
 }
 
 function stepsFromRecord(record) {
-  const upperGroup = String(record.group || '').toUpperCase();
-  const peerEnabled = upperGroup === 'A' || upperGroup === 'B';
   return {
     prewriting: {
       completed: !!record.preText,
@@ -737,10 +732,6 @@ function stepsFromRecord(record) {
     draft: {
       saved: !!record.draftText,
       savedAt: Number(record.draftSavedAt || 0),
-    },
-    peer: {
-      enabled: peerEnabled,
-      completed: peerEnabled ? Number(record.stage || 1) >= 3 : false,
     },
     final: {
       submitted: !!record.finalText,
@@ -764,8 +755,6 @@ function buildSessionState(record) {
     record.studentId,
     record.partnerStudentId
   );
-  const upperGroup = String(record.group || '').toUpperCase();
-  const peerEnabled = upperGroup === 'A' || upperGroup === 'B';
 
   return {
     sessionKey: record.sessionKey,
@@ -781,42 +770,14 @@ function buildSessionState(record) {
       text: record.draftText || '',
       savedAt: Number(record.draftSavedAt || 0),
     },
-    notes: {
-      text: record.notesText || '',
-      updatedAt: Number(record.notesUpdatedAt || 0),
-    },
     final: {
       text: record.finalText || '',
       submittedAt: Number(record.finalSubmittedAt || 0),
     },
     steps: stepsFromRecord(record),
     aiSessionId: `ai:${record.sessionKey}`,
-    peerSessionId: peerEnabled && record.roomId ? `peer:${record.roomId}` : '',
-    partner: partner
-      ? {
-          id: partner.studentId,
-          name: partner.studentName,
-          stage: Number(partner.stage || 1),
-          prewriting: {
-            text: partner.preText || '',
-            submittedAt: Number(partner.preSubmittedAt || 0),
-          },
-          draft: {
-            text: partner.draftText || '',
-            savedAt: Number(partner.draftSavedAt || 0),
-          },
-          notes: {
-            text: partner.notesText || '',
-            updatedAt: Number(partner.notesUpdatedAt || 0),
-          },
-          final: {
-            text: partner.finalText || '',
-            submittedAt: Number(partner.finalSubmittedAt || 0),
-          },
-          presence: presence.partner || null,
-        }
-      : null,
-    presence,
+    partner: null,
+    presence: null,
   };
 }
 
@@ -875,7 +836,6 @@ function buildAdminSessionDetail(record) {
     createdAt: summary.createdAt,
     updatedAt: summary.updatedAt,
     aiSessionId: `ai:${record.sessionKey}`,
-    peerSessionId: record.roomId ? `peer:${record.roomId}` : '',
     you: summary.user,
     partner: summary.partner,
     writing: {
@@ -1282,11 +1242,6 @@ adminRouter.get('/sessions/:sessionKey/chats/:channel', (req, res, next) => {
     if (channel === 'ai') {
       const sessionId = `ai:${record.sessionKey}`;
       return res.json({ messages: collectMessages(sessionId, 'ai-feedback') });
-    }
-    if (channel === 'peer') {
-      const sessionId = record.roomId ? `peer:${record.roomId}` : '';
-      const messages = sessionId ? collectMessages(sessionId, 'peer-chat') : [];
-      return res.json({ messages });
     }
     throw createHttpError(400, '알 수 없는 채널입니다.');
   } catch (err) {
@@ -1979,12 +1934,10 @@ async function deleteSessionsByKeys(keys) {
     return { deleted: 0 };
   }
   const removedSessionIds = new Set();
-  const removedPeerIds = new Set();
   const removedStudentIds = new Set();
   for (const record of store.sessions) {
     if (keySet.has(record.sessionKey)) {
       removedSessionIds.add(`ai:${record.sessionKey}`);
-      if (record.roomId) removedPeerIds.add(`peer:${record.roomId}`);
       removedStudentIds.add(record.studentId);
       presenceMap.delete(`${record.roomId}|${record.studentId}`);
     }
@@ -1997,8 +1950,7 @@ async function deleteSessionsByKeys(keys) {
     }
   });
   store.messages = store.messages.filter(
-    (msg) =>
-      !removedSessionIds.has(msg.sessionId || '') && !removedPeerIds.has(msg.sessionId || '')
+    (msg) => !removedSessionIds.has(msg.sessionId || '')
   );
   await store.saveSessions();
   await store.saveMessages();
@@ -2028,9 +1980,6 @@ async function buildExportWorkbook(scopes) {
   }
   if (shouldIncludeScope(scopes, 'stage2')) {
     addStageSheet(workbook, 'Stage2', sessions, (session) => session.writing.draft);
-  }
-  if (shouldIncludeScope(scopes, 'stage3')) {
-    addStageSheet(workbook, 'Stage3', sessions, (session) => session.writing.notes);
   }
   if (shouldIncludeScope(scopes, 'final')) {
     addStageSheet(workbook, 'Final', sessions, (session) => session.writing.final);
