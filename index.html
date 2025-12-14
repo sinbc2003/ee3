@@ -291,17 +291,19 @@
             <section id="panelStage4Draft" class="stage-panel" data-step="4">
               <div class="panel-header">
                 <h2 id="stage4DraftTitle">4차시-1 · 토론 메모</h2>
-                <span id="stage4DraftInfo" class="panel-subtext">4차시-1 토론(입장 바꿔 진행) 중 떠오른 주장·근거·반론을 메모하세요.</span>
+                <span id="stage4DraftInfo" class="panel-subtext">
+                  2차시 메모를 참고해 4-1차시 토론을 진행합니다. 3-1과 동일한 구조이되, 입장을 바꿔서(반대 입장) 주장·근거·반론을 점검하세요.
+                </span>
               </div>
               <div class="prewriting-preview-block">
                 <strong>4차시-1 토론 발문</strong>
                 <div id="stage4DraftPromptContent" class="text-block">관리자가 등록한 발문이 여기에 표시됩니다.</div>
               </div>
               <div class="prewriting-preview-block">
-                <strong>이전 메모/성찰</strong>
-                <div id="stage4PrevMemoPreview" class="text-block">3-2차시 메모가 아직 저장되지 않았습니다.</div>
+                <strong>2차시 메모</strong>
+                <div id="stage4PrevMemoPreview" class="text-block">2차시 메모가 아직 저장되지 않았습니다.</div>
               </div>
-              <textarea id="stage4DraftInput" placeholder="찬성/반대 입장을 바꿔 본 토론에서 떠오른 주장·근거·반론을 메모하세요. (저장 비활성화)"></textarea>
+              <textarea id="stage4DraftInput" placeholder="입장을 바꾼 4-1차시 토론에서 떠오른 주장·근거·반론을 메모하세요. (저장 비활성화)"></textarea>
               <div class="button-row">
                 <button id="btnStage4DraftSave" class="secondary" type="button" disabled>4차시-1 메모 저장</button>
               </div>
@@ -1625,8 +1627,8 @@
             '관리자가 등록한 발문이 여기에 표시됩니다.'
           );
 
-          const prevMemo = (state.writing.notes && state.writing.notes.text) || '';
-          prevMemoEl.textContent = prevMemo ? prevMemo : '3-2차시 메모가 아직 저장되지 않았습니다.';
+          const prevMemo = (state.writing.prewriting && state.writing.prewriting.text) || '';
+          prevMemoEl.textContent = prevMemo ? prevMemo : '2차시 메모가 아직 저장되지 않았습니다.';
 
           // 3-1과 동일하게 입력은 비활성화 (구조 동일성 유지)
           const savedText = state.writing.draft.text || '';
@@ -1747,6 +1749,11 @@
           const stage4Prompt = getStagePromptData(4);
           setRichText(
             'stage4PromptContent',
+            stage4Prompt.reference || publicConfig.promptContent,
+            ui.stage4PromptEmptyText || '관리자가 등록한 발문이 여기에 표시됩니다.'
+          );
+          setRichText(
+            'stage4DraftPromptContent',
             stage4Prompt.reference || publicConfig.promptContent,
             ui.stage4PromptEmptyText || '관리자가 등록한 발문이 여기에 표시됩니다.'
           );
