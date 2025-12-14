@@ -1333,6 +1333,39 @@ adminRouter.get('/sessions/export', async (req, res, next) => {
   }
 });
 
+// 간편 전체 내보내기 (충돌 우회용): format만 받고 모든 스코프 포함
+adminRouter.get('/export-all', async (req, res, next) => {
+  try {
+    const format = parseExportFormat(req.query?.format);
+    const scopes = ['all', 'ai-chat', 'stage1', 'stage2', 'stage3', 'final'];
+    const stamp = new Date().toISOString().replace(/[:.]/g, '-');
+    if (format === 'csv') {
+      const csv = await buildExportCsv(scopes);
+      res.setHeader(
+        'Content-Disposition',
+        `attachment; filename="writingresearch-export-${stamp}.csv"`
+      );
+      res.setHeader('Content-Type', 'text/csv;charset=utf-8');
+      return res.send(csv);
+    }
+    const workbook = await buildExportWorkbook(scopes);
+    const buffer = await workbook.xlsx.writeBuffer();
+    const extension = format === 'xls' ? 'xls' : 'xlsx';
+    const contentType =
+      format === 'xls'
+        ? 'application/vnd.ms-excel'
+        : 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="writingresearch-export-${stamp}.${extension}"`
+    );
+    res.setHeader('Content-Type', contentType);
+    res.send(Buffer.from(buffer));
+  } catch (err) {
+    next(err);
+  }
+});
+
 // 호환용: /api/admin/sessions/export 경로를 일반 라우터에서도 처리 (일부 클라이언트 설정 불일치 대비)
 router.get('/admin/sessions/export', requireAdminAuth, async (req, res, next) => {
   try {

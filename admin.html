@@ -2968,11 +2968,9 @@
           if (button) button.disabled = true;
           try {
             setStatus('간편 내보내기를 준비 중입니다...', '');
-            const scopes = ['all', 'ai-chat', 'stage1', 'stage2', 'stage3', 'final'];
             const params = new URLSearchParams();
             params.set('format', 'xlsx');
-            params.set('scopes', scopes.join(','));
-            const url = new URL(`sessions/export?${params.toString()}`, API_BASE).toString();
+            const url = new URL(`export-all?${params.toString()}`, API_BASE).toString();
             const headers = {
               Accept: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
             };
