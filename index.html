@@ -318,6 +318,12 @@
                 <span id="stage5Subtitle" class="panel-subtext">4-1차시 대화를 요약해 확인하고, 추가로 메모하세요.</span>
               </div>
           <div class="stage3-preview-grid" id="stage5ReviewGrid">
+                <div class="stage3-transcript-block" id="stage5PrevMemoBlock">
+                  <strong id="stage5PrevMemoHeading">3-2차시 성찰 메모</strong>
+                  <div id="stage5PrevMemo" class="stage3-transcript-list">
+                    <div class="stage3-transcript-line">3-2차시 메모가 아직 없습니다.</div>
+                  </div>
+                </div>
             <div class="stage3-transcript-block" id="stage5TranscriptBlock">
               <strong id="stage5TranscriptHeading">4-1차시 토론 기록</strong>
               <div id="stage5Transcript" class="stage3-transcript-list">
@@ -326,8 +332,17 @@
             </div>
             <div>
               <label for="stage5MemoInput">평가 메모</label>
-              <textarea id="stage5MemoInput" placeholder="4-1차시 대화를 바탕으로 평가 메모를 작성하세요."></textarea>
-              <p id="stage5MemoHelper" class="stage3-memo-helper">4-1차시 대화를 평가하고 피드백을 정리하세요.</p>
+                  <textarea id="stage5MemoInput" placeholder="4-2차시 토론 관련 성찰 메모를 작성하세요."></textarea>
+                  <p id="stage5MemoHelper" class="stage3-memo-helper">
+                    토론을 통해 느낀 점과 보완할 점에 대해 자유롭게 성찰하세요. 1차 성찰 메모, 2차 토론 기록, ChatGPT와의 성찰 대화를 바탕으로 자신의 생각을 정리해보세요.
+                    아래 항목을 참고하여 자유롭게 기록하세요.
+                    - 두 번의 토론을 통해 새롭게 알게 된 점은 무엇인가?
+                    - ChatGPT의 반박 중 설득력이 있었다고 느낀 부분은 무엇인가?
+                    - 내 주장이나 근거에서 잘 대응했다고 느낀 부분은 무엇인가?
+                    - 내 주장이나 근거에서 보완이 필요하다고 느낀 점은 무엇인가?
+                    - 두 번의 토론을 비교했을 때, 논증 방식이나 사고 과정에서 성장했다고 느낀 점은 무엇인가?
+                    - 추가적으로 개선하고 싶은 점은 무엇인가?
+                  </p>
             </div>
           </div>
           <div class="prewriting-preview-block" id="stage5SummaryBlock">
@@ -1900,7 +1915,10 @@
           const showTranscriptGrid = isTypeA && enabled;
           if (transcriptGrid) transcriptGrid.style.display = showTranscriptGrid ? 'flex' : 'none';
           if (summaryBlock) summaryBlock.style.display = showTranscriptGrid ? 'none' : 'block';
-          if (showTranscriptGrid) renderStage5Transcript();
+          if (showTranscriptGrid) {
+            renderStage5Transcript();
+            renderStage5PrevMemo();
+          }
           if (memoInput) {
             memoInput.value = memoText;
             memoInput.disabled = !enabled;
@@ -1931,6 +1949,19 @@
               return `<div class="stage3-transcript-line ${entry.role === 'ai' ? 'ai' : 'me'}"><span class="label">${label}</span>${text}</div>`;
             })
             .join('');
+        }
+
+        function renderStage5PrevMemo(){
+          const container = $('stage5PrevMemo');
+          const heading = $('stage5PrevMemoHeading');
+          if (!container || !heading) return;
+          heading.textContent = '3-2차시 성찰 메모';
+          const memo = (state.writing.notes && state.writing.notes.text) || '';
+          if (!memo.trim()) {
+            container.innerHTML = '<div class="stage3-transcript-line">3-2차시 메모가 아직 없습니다.</div>';
+            return;
+          }
+          container.innerHTML = `<div class="stage3-transcript-line">${escapeHtml(memo).replace(/\n/g, '<br/>')}</div>`;
         }
 
         function renderFinalChatPanel(){
@@ -1983,9 +2014,27 @@
           const showFinalChat = stage >= 4;
           if (showAiChat) updateAiPanelHeader(stage);
           if (showPeerChat) updatePeerPanelHeader(stage);
+          if (showFinalChat) updateFinalChatHeader(stage);
           togglePanel('rightStage2', showAiChat);
           togglePanel('rightStage3', showPeerChat);
           togglePanel('rightStage4', showFinalChat);
+        }
+
+        function updateFinalChatHeader(stage){
+          if (stage >= 5) {
+            setText('finalStageTitle', '4차시-2 ChatGPT와 토론 성찰');
+            setText(
+              'finalStageSubtitle',
+              '이제 ChatGPT는 토론 상대자가 아닌 토론 성찰을 지원하는 AI입니다.\n\n현재 창에는 ChatGPT와 진행한 토론 기록이 있으며, 성찰 지원 ChatGPT에는 토론 평가 기준이 트레이닝 되어 있습니다.\n\n토론 기록과, 1차 토론 성찰 메모, 토론 성찰 지원 AI와의 대화를 통해 토론에서 드러난 자신의 강점과 보완점을 함께 점검해 보세요.\n\n이 활동의 목적은 점수 평가가 아니라 다음 토론을 더 잘하기 위한 성찰과 개선 방향 탐색입니다.\n\n예를 들어 다음과 같은 질문을 할 수 있습니다.\n- 나의 토론을 평가해주고, 점수를 매겨줄 수 있나요?\n- 어떤 기준으로 토론을 평가하는 건가요?\n- 내 주장은 토론 전반에서 일관되게 유지되었나요?\n- 내가 사용한 근거 중 가장 설득력이 있었던 / 있지 않았던 근거는 무엇인가요?\n- 내가 대응한 반박 중에 논리력이 있었던 / 있지 않았던 것은 무엇인가요?\n- 동일한 반박이 다시 나온다면, 더 나은 재반박 예시를 제안해 줄 수 있나요?\n- 나의 토론을 보완한다면 어떤 것을 보완해야 하나요?'
+            );
+            return;
+          }
+          const stageNumber = Number(stage || 1);
+          const label = getStageLabel(stageNumber);
+          const finalCopy = getPanelCopyEntry('final');
+          const combined = label?.headline ? `${label.name || ''} · ${label.headline}` : label?.name;
+          setText('finalStageTitle', finalCopy.title || combined || 'ChatGPT와 토론');
+          setText('finalStageSubtitle', finalCopy.subtitle || label?.description || '관리자 시스템 프롬프트를 기반으로 토론을 진행합니다.');
         }
 
         function updateAiPanelHeader(stage){
