@@ -1281,7 +1281,7 @@
             }
             state.currentAiStage = 0;
           } else if (state.currentAiStage !== numericStage) {
-            clearChatLog('ai', { keepLastTs: true });
+            clearChatLog('ai', { keepLastTs: false }); // 단계 전환 시 전체 기록을 다시 불러오도록 lastTs도 리셋
             state.aiChat.welcomeShown = false;
             state.currentAiStage = numericStage;
           }
