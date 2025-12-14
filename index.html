@@ -1938,12 +1938,18 @@
         }
 
         function renderPresence(){
+          const selfEl = $('peerPresenceSelf');
+          const partnerEl = $('peerPresencePartner');
+          const selfDot = $('selfPresenceDot');
+          const partnerDot = $('partnerPresenceDot');
+          // 우측 동료 패널이 없는 상태라면 스킵
+          if (!selfEl || !partnerEl || !selfDot || !partnerDot) return;
           const selfInfo = state.presence && state.presence.self;
           const partnerInfo = state.presence && state.presence.partner;
           const selfText = describePresence(selfInfo);
           const partnerText = describePresence(partnerInfo);
-          $('peerPresenceSelf').textContent = selfText;
-          $('peerPresencePartner').textContent = partnerText;
+          selfEl.textContent = selfText;
+          partnerEl.textContent = partnerText;
           updatePresenceDot('selfPresenceDot', selfInfo && selfInfo.online);
           updatePresenceDot('partnerPresenceDot', partnerInfo && partnerInfo.online);
         }
