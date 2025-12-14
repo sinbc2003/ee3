@@ -1025,6 +1025,12 @@
         const DEFAULT_PANEL_COPY = {
           [TYPE_KEYS.TYPE_A]: createEmptyPanelCopy(),
         };
+        // AI/웹검색 패널 기본 문구를 지정해 두어, 비어 있어도 의도한 안내가 노출되도록 함
+        DEFAULT_PANEL_COPY[TYPE_KEYS.TYPE_A].ai = {
+          title: '2차시 토론 논제 관련 ChatGPT 활용',
+          subtitle:
+            '토론을 준비하기 위해 관련된 내용을 ChatGPT에게 질문해 보세요.\n\n예를 들어 다음을 물어볼 수 있습니다:\n- 이 논제의 찬성/반대 대표 논거는 무엇인가요?\n- 구체적 논거는 어디에서 찾을 수 있나요?\n- 관련 통계·연구·사례에는 무엇이 있나요?\n- 반대 입장에서 가장 먼저 제기할 반박은?\n- 흔한 논리적 오류나 오해는 무엇인가요?\n\nChatGPT는 상호작용적 학습 도구이며, 본 시스템의 ChatGPT는 ChatGPT-5와 동일하게 동작합니다.',
+        };
         const UI_TEXT_KEYS = [
           'promptEmptyText',
           'draftPromptEmptyText',

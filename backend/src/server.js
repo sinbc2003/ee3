@@ -208,7 +208,26 @@ function emptyPanelCopy() {
 
 function defaultPanelCopy(_type = 'TYPE_A') {
   // 현재는 타입별 기본값 차이가 없지만, 향후 필요 시 분기 추가
-  return emptyPanelCopy();
+  const base = emptyPanelCopy();
+  if (_type === 'TYPE_A') {
+    base.ai = {
+      title: '2차시 토론 논제 관련 ChatGPT 활용',
+      subtitle:
+        [
+          '토론을 준비하기 위해 관련된 내용을 ChatGPT에게 질문해 보세요.',
+          '',
+          '예를 들어 다음을 물어볼 수 있습니다:',
+          '- 이 논제의 찬성/반대 대표 논거는 무엇인가요?',
+          '- 구체적 논거는 어디에서 찾을 수 있나요?',
+          '- 관련 통계·연구·사례에는 무엇이 있나요?',
+          '- 반대 입장에서 가장 먼저 제기할 반박은?',
+          '- 흔한 논리적 오류나 오해는 무엇인가요?',
+          '',
+          'ChatGPT는 상호작용적 학습 도구이며, 본 시스템의 ChatGPT는 ChatGPT-5와 동일하게 동작합니다.',
+        ].join('\n'),
+    };
+  }
+  return base;
 }
 
 function defaultUiText(_type = 'TYPE_A') {
