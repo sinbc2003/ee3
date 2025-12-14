@@ -261,9 +261,10 @@
               </div>
               </div>
                 <div>
-                  <label for="notesInput">3차시-2 토론 관련 성찰 메모</label>
-                  <textarea id="notesInput" placeholder="토론을 통해 느낀 점과 보완할 점을 자유롭게 성찰하고 기록하세요."></textarea>
-                  <p id="stage3MemoHelper" class="stage3-memo-helper">토론을 통해 느낀 점과 보완할 점에 대해 자유롭게 성찰한 뒤 작성하세요. 성찰한 내용을 바탕으로 자신의 생각을 정리해보세요. 
+              <label for="notesInput">3차시-2 토론 관련 성찰 메모</label>
+              <textarea id="notesInput" placeholder="토론을 통해 느낀 점과 보완할 점에 대해 자유롭게 성찰한 뒤 작성하세요."></textarea>
+              <p id="stage3MemoHelper" class="stage3-memo-helper">토론을 통해 느낀 점과 보완할 점에 대해 자유롭게 성찰한 뒤 작성하세요.
+성찰한 내용을 바탕으로 자신의 생각을 정리해보세요. 
 아래 항목을 참고하여 자유롭게 기록하세요.
 - 토론을 통해 새롭게 알게 된 점은 무엇인가?
 - ChatGPT의 반박 중 설득력이 있었다고 느낀 부분은 무엇인가?
@@ -274,9 +275,7 @@
               </div>
               </div>
               <div class="button-row">
-                <button id="btnStage3Back" class="ghost" type="button">이전 단계로 이동</button>
                 <button id="btnNotesSave" class="secondary" type="button" disabled>3단계 메모 저장</button>
-                <button id="btnPeerNext" class="primary" type="button" disabled>최종 단계로 이동</button>
               </div>
             </section>
 
@@ -1574,7 +1573,7 @@
           const saveBtn = $('btnNotesSave');
           const nextBtn = $('btnPeerNext');
           // 새 DOM 구조가 없을 때 안전 종료
-          if (!titleEl || !infoEl || !notesInput || !saveBtn || !nextBtn) return;
+          if (!titleEl || !infoEl || !notesInput || !saveBtn) return;
           const memoCopy = getPanelCopyEntry('memo');
           const overrideTitle = (memoCopy.title || '').trim();
           const overrideSubtitle = (memoCopy.subtitle || '').trim();
@@ -1621,24 +1620,15 @@
           if (memoEnabled) state.localStage3Memo = notesInput.value;
           saveBtn.disabled = !memoEnabled || !notesInput.value.trim();
 
-          nextBtn.textContent = '최종 단계로 이동';
-          const hasSaved = !!(state.writing.notes.text && state.writing.notes.updatedAt);
-          nextBtn.disabled = !isMemoStage || !hasSaved;
+          if (nextBtn) {
+            nextBtn.textContent = '최종 단계로 이동';
+            const hasSaved = !!(state.writing.notes.text && state.writing.notes.updatedAt);
+            nextBtn.disabled = !isMemoStage || !hasSaved;
+          }
 
           renderStage3Transcript();
 
-          const backBtn = $('btnStage3Back');
-          if (backBtn) {
-            const prevStage = getPreviousStageNumber();
-            const currentStage = Number(state.stage || 1);
-            if (prevStage < currentStage) {
-              backBtn.disabled = false;
-              backBtn.textContent = '← ' + (formatStageName(prevStage) || (prevStage + '단계')) + '로 이동';
-            } else {
-              backBtn.disabled = true;
-              backBtn.textContent = '이전 단계로 이동';
-            }
-          }
+          // 이전/다음 단계 이동 버튼은 제거됨
         }
 
         function renderFinalPanel(){
@@ -1662,8 +1652,9 @@
           const stage3Prompt = getStagePromptData(3);
           setRichText(
             'stage3MemoHelper',
-            stage3Prompt.reference || '먼저 3-1차시 기록을 읽고, 보완하고 싶은 근거·질문을 메모하세요.',
-            '먼저 3-1차시 기록을 읽고, 보완하고 싶은 근거·질문을 메모하세요.'
+            stage3Prompt.reference ||
+              '토론을 통해 느낀 점과 보완할 점에 대해 자유롭게 성찰한 뒤 작성하세요.\n성찰한 내용을 바탕으로 자신의 생각을 정리해보세요. \n아래 항목을 참고하여 자유롭게 기록하세요.\n- 토론을 통해 새롭게 알게 된 점은 무엇인가?\n- ChatGPT의 반박 중 설득력이 있었다고 느낀 부분은 무엇인가?\n- 내 주장이나 근거에서 잘 대응했다고 느낀 부분은 무엇인가?\n- 내 주장이나 근거에서 보완이 필요하다고 느낀 점은 무엇인가?\n- 논증 방식이나 사고 과정에서 성장했다고 느낀 점은 무엇인가?\n- 다음 토론에서 개선하고 싶은 점은 무엇인가?',
+            '토론을 통해 느낀 점과 보완할 점에 대해 자유롭게 성찰한 뒤 작성하세요.\n성찰한 내용을 바탕으로 자신의 생각을 정리해보세요. \n아래 항목을 참고하여 자유롭게 기록하세요.\n- 토론을 통해 새롭게 알게 된 점은 무엇인가?\n- ChatGPT의 반박 중 설득력이 있었다고 느낀 부분은 무엇인가?\n- 내 주장이나 근거에서 잘 대응했다고 느낀 부분은 무엇인가?\n- 내 주장이나 근거에서 보완이 필요하다고 느낀 점은 무엇인가?\n- 논증 방식이나 사고 과정에서 성장했다고 느낀 점은 무엇인가?\n- 다음 토론에서 개선하고 싶은 점은 무엇인가?'
           );
           const stage4Prompt = getStagePromptData(4);
           setRichText(
@@ -1905,7 +1896,7 @@
             setText('aiStageTitle', '3차시-2 ChatGPT와 토론 성찰');
             setText(
               'aiStageSubtitle',
-              '이제 ChatGPT는 토론 상대자가 아닌 토론 성찰을 지원하는 AI입니다.\n\n현재 창에는 ChatGPT와 진행한 토론 기록이 있으며, 성찰 지원 ChatGPT에는 토론 평가 기준이 트레이닝 되어 있습니다.\n\n토론 기록과, 토론 성찰 지원 AI와의 대화를 통해 토론에서 드러난 자신의 강점과 보완점을 함께 점검해 보세요. \n\n이 활동의 목적은 점수 평가가 아니라 다음 토론을 더 잘하기 위한 성찰과 개선 방향 탐색입니다.\n\n예를 들어 다음과 같은 질문을 할 수 있습니다.\n\n- 나의 토론을 평가해주고, 점수를 매겨줄 수 있나요?\n- 어떤 기준으로 토론을 평가하는 건가요?\n- 내 주장은 토론 전반에서 일관되게 유지되었나요?\n- 내가 사용한 근거 중 가장 설득력이 있었던 / 있지 않았던 근거는 무엇인가요?\n- 내가 대응한 반박 중에 논리력이 있었던 / 있지 않았던 것은 무엇인가요?\n- 동일한 반박이 다시 나온다면, 더 나은 재반박 예시를 제안해 줄 수 있나요?\n- 나의 토론을 보완한다면 어떤 것을 보완해야 하나요?'
+              '이제 ChatGPT는 토론 상대자가 아닌 토론 성찰을 지원하는 AI입니다.\n\n현재 창에는 ChatGPT와 진행한 토론 기록이 있으며, 성찰 지원 ChatGPT에는 토론 평가 기준이 트레이닝 되어 있습니다.\n\n토론 기록과, 토론 성찰 지원 AI와의 대화를 통해 토론에서 드러난 자신의 강점과 보완점을 함께 점검해 보세요. \n\n이 활동의 목적은 점수 평가가 아니라 다음 토론을 더 잘하기 위한 성찰과 개선 방향 탐색입니다.\n\n예를 들어 다음과 같은 질문을 할 수 있습니다.\n\n- 나의 토론을 평가해주고, 점수를 매겨줄 수 있나요?\n- 어떤 기준으로 토론을 평가하는 건가요?\n- 내 주장은 토론 전반에서 일관되게 유지되었나요? \n- 내가 사용한 근거 중 가장 설득력이 있었던 / 있지 않았던 근거는 무엇인가요?\n- 내가 대응한 반박 중에 논리력이 있었던 / 있지 않았던 것은 무엇인가요?\n- 동일한 반박이 다시 나온다면, 더 나은 재반박 예시를 제안해 줄 수 있나요?\n- 나의 토론을 보완한다면 어떤 것을 보완해야 하나요?'
             );
             return;
           }
