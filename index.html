@@ -1573,7 +1573,8 @@
           const notesInput = $('notesInput');
           const saveBtn = $('btnNotesSave');
           const nextBtn = $('btnPeerNext');
-          if (!notesInput || !saveBtn || !nextBtn) return;
+          // 새 DOM 구조가 없을 때 안전 종료
+          if (!titleEl || !infoEl || !notesInput || !saveBtn || !nextBtn) return;
           const memoCopy = getPanelCopyEntry('memo');
           const overrideTitle = (memoCopy.title || '').trim();
           const overrideSubtitle = (memoCopy.subtitle || '').trim();
@@ -1900,10 +1901,13 @@
         function updatePeerPanelHeader(stage){
           const label = getStageLabel(stage);
           const peerCopy = getPanelCopyEntry('peer');
+          const titleEl = $('peerStageTitle');
+          const subtitleEl = $('peerStageSubtitle');
+          if (!titleEl || !subtitleEl) return;
           if (!label && !peerCopy) return;
           const combined = label?.headline ? `${label.name} · ${label.headline}` : label?.name;
-          setText('peerStageTitle', peerCopy.title || combined || '동료 토론');
-          setText('peerStageSubtitle', peerCopy.subtitle || label?.description || '동료와 상호작용하며 피드백을 주고받으세요.');
+          setText('peerStageTitle', (peerCopy.title || combined || '동료 토론'));
+          setText('peerStageSubtitle', (peerCopy.subtitle || label?.description || '동료와 상호작용하며 피드백을 주고받으세요.'));
         }
 
         function togglePanel(id, visible){
