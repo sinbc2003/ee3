@@ -1561,7 +1561,7 @@
               info.textContent = overrideSubtitle;
             } else {
               info.textContent =
-                'AI 튜터에게 받은 피드백을 참고하여, 글을 어떻게 수정할지에 대한 아이디어를 메모 형태로 자유롭게 정리하세요.';
+                'ChatGPT에게 받은 피드백을 참고하여, 글을 어떻게 수정할지에 대한 아이디어를 메모 형태로 자유롭게 정리하세요.';
             }
           }
           const backBtn = $('btnDraftBack');
@@ -1887,6 +1887,14 @@
           const stageNumber = Number(stage || 1);
           const label = getStageLabel(stageNumber);
           const aiCopy = getPanelCopyEntry('ai');
+          if (stageNumber === 2) {
+            setText('aiStageTitle', 'ChatGPT와 토론');
+            setText(
+              'aiStageSubtitle',
+              '이제 ChatGPT는 당신의 입장과 반대되는 관점을 가진 토론 상대자로 설정됩니다.\n\n당신이 찬성 입장이므로, ChatGPT는 반대 입장에서 토론합니다. \n\nChatGPT의 질문과 반박에 대해 주장–근거–재반박의 구조를 의식하며 충분히 토론을 진행해 보세요.'
+            );
+            return;
+          }
           if (!label && !aiCopy) return;
           const combined = label?.headline ? `${label.name} · ${label.headline}` : label?.name;
           const title = stageNumber === 1 ? (aiCopy.title || combined) : (combined || aiCopy.title);
@@ -2641,7 +2649,7 @@
 
         function buildChatMeta(channel, message, ts, pending){
           let name = '';
-          if (message.role === 'ai') name = channel === 'ai' ? 'AI 튜터' : 'AI';
+          if (message.role === 'ai') name = channel === 'ai' ? 'ChatGPT' : 'AI';
           else if (message.role === 'system') name = '시스템';
           else name = message.senderName || message.senderId || '사용자';
           return name + ' · ' + (pending ? '전송 중...' : formatTime(ts));
