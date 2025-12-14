@@ -49,6 +49,7 @@
     var ext = opt.ext || {};
     if (opt.channel) ext.channel = opt.channel;
     if (opt.sessionKey) ext.sessionKey = opt.sessionKey;
+    if (opt.stage) ext.stage = opt.stage;
     if (opt.meta && typeof opt.meta === 'object') {
       for (var k in opt.meta) {
         if (opt.meta.hasOwnProperty(k)) ext[k] = opt.meta[k];

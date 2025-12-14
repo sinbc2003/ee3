@@ -1690,6 +1690,7 @@
             Number(message?.ext?.stage) ||
             Number(message?.stage) ||
             Number(message?.metadata?.stage) ||
+            Number(state.currentAiStage || state.stage || 0) ||
             0;
           if (!stage) return;
           const key =
