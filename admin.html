@@ -577,13 +577,13 @@
 
         <section class="card" id="stageLabelSection">
           <h2>차시 안내</h2>
-          <p class="muted" style="margin-bottom: 12px;">단계 이름·발문·AI 프롬프트를 수정하세요. 학생 화면 상단과 단계 패널에 즉시 반영됩니다.</p>
+          <p class="muted" style="margin-bottom: 12px;">차시 이름·발문·AI 프롬프트를 수정하세요. 학생 화면 상단과 차시 패널에 즉시 반영됩니다.</p>
           <div class="stage-type-tabs">
             <button type="button" class="stage-type-tab active" data-stage-type="TYPE_A">Type A</button>
           </div>
           <div class="stage-label-grid">
             <div class="stage-label-item">
-              <h3>단계 1</h3>
+              <h3>2차시</h3>
               <label for="stageLabelName1">표시 이름</label>
               <input id="stageLabelName1" type="text" data-stage-field="name" data-stage-index="0" placeholder="예: 2차시" />
               <label for="stageLabelHeadline1" style="margin-top: 10px;">헤드라인</label>
@@ -599,7 +599,7 @@
               </div>
             </div>
             <div class="stage-label-item">
-              <h3>단계 2</h3>
+              <h3>3-1차시</h3>
               <label for="stageLabelName2">표시 이름</label>
               <input id="stageLabelName2" type="text" data-stage-field="name" data-stage-index="1" placeholder="예: 3차시-1" />
               <label for="stageLabelHeadline2" style="margin-top: 10px;">헤드라인</label>
@@ -615,7 +615,7 @@
               </div>
             </div>
             <div class="stage-label-item">
-              <h3>단계 3</h3>
+              <h3>3-2차시</h3>
               <label for="stageLabelName3">표시 이름</label>
               <input id="stageLabelName3" type="text" data-stage-field="name" data-stage-index="2" placeholder="예: 3차시-2" />
               <label for="stageLabelHeadline3" style="margin-top: 10px;">헤드라인</label>
@@ -626,7 +626,7 @@
               <textarea id="stageLabelReference3" data-stage-field="reference" data-stage-index="2" placeholder="학생에게 보여줄 발문, 자료 요약 등을 입력하세요."></textarea>
             </div>
             <div class="stage-label-item">
-              <h3>단계 4</h3>
+              <h3>4-1차시</h3>
               <label for="stageLabelName4">표시 이름</label>
               <input id="stageLabelName4" type="text" data-stage-field="name" data-stage-index="3" placeholder="예: 4차시-1" />
               <label for="stageLabelHeadline4" style="margin-top: 10px;">헤드라인</label>
@@ -642,7 +642,7 @@
               </div>
             </div>
             <div class="stage-label-item">
-              <h3>단계 5</h3>
+              <h3>4-2차시</h3>
               <label for="stageLabelName5">표시 이름</label>
               <input id="stageLabelName5" type="text" data-stage-field="name" data-stage-index="4" placeholder="예: 4차시-2" />
               <label for="stageLabelHeadline5" style="margin-top: 10px;">헤드라인</label>
@@ -666,7 +666,7 @@
           </div>
           <div class="panel-copy-grid">
             <div class="panel-copy-item" data-panel-key="prompt">
-              <h3>1단계 · 제시문 카드</h3>
+              <h3>2차시 · 제시문 카드</h3>
               <label>제목</label>
               <input type="text" data-panel-field="title" data-panel-key="prompt" placeholder="예: 2차시 · 토론 관련 발문" />
               <label>설명</label>
@@ -674,7 +674,7 @@
               <p class="muted">학생 화면 좌측 상단 발문 카드</p>
             </div>
             <div class="panel-copy-item" data-panel-key="prewriting">
-              <h3>1단계 · 메모장</h3>
+              <h3>2차시 · 메모장</h3>
               <label>제목</label>
               <input type="text" data-panel-field="title" data-panel-key="prewriting" placeholder="예: 2차시 · 메모장" />
               <label>설명</label>
@@ -682,7 +682,7 @@
               <p class="muted">사전 메모 입력 패널</p>
             </div>
             <div class="panel-copy-item" data-panel-key="ai">
-              <h3>1단계 · AI/웹검색 패널</h3>
+              <h3>2차시 · AI/웹검색 패널</h3>
               <label>제목</label>
               <input type="text" data-panel-field="title" data-panel-key="ai" placeholder="예: AI 웹검색" />
               <label>설명</label>
@@ -690,7 +690,7 @@
               <p class="muted">학생 화면 오른쪽 AI 챗봇</p>
             </div>
             <div class="panel-copy-item" data-panel-key="draft">
-              <h3>2단계 · 토론 메모</h3>
+              <h3>3-1차시 · 토론 메모</h3>
               <label>제목</label>
               <input type="text" data-panel-field="title" data-panel-key="draft" placeholder="예: 3-1차시 · 토론 메모" />
               <label>설명</label>
@@ -698,7 +698,7 @@
               <p class="muted">왼쪽 2단계 메모 패널</p>
             </div>
             <div class="panel-copy-item" data-panel-key="memo">
-              <h3>3단계 · 평가 메모</h3>
+              <h3>3-2차시 · 평가 메모</h3>
               <label>제목</label>
               <input type="text" data-panel-field="title" data-panel-key="memo" placeholder="예: 3-2차시 · 평가 메모" />
               <label>설명</label>
@@ -706,7 +706,7 @@
               <p class="muted">3단계 좌측 메모 패널</p>
             </div>
             <div class="panel-copy-item" data-panel-key="peer">
-              <h3>3단계 · 오른쪽 챗봇</h3>
+              <h3>3-2차시 · 오른쪽 챗봇</h3>
               <label>제목</label>
               <input type="text" data-panel-field="title" data-panel-key="peer" placeholder="예: 동료 피드백" />
               <label>설명</label>
@@ -714,7 +714,7 @@
               <p class="muted">3단계 오른쪽 챗봇/동료 패널</p>
             </div>
             <div class="panel-copy-item" data-panel-key="stage4">
-              <h3>4단계 · 발문 카드</h3>
+              <h3>4-1차시 · 발문 카드</h3>
               <label>제목</label>
               <input type="text" data-panel-field="title" data-panel-key="stage4" placeholder="예: 4차시 · 토론 발문" />
               <label>설명</label>
@@ -722,7 +722,7 @@
               <p class="muted">왼쪽 4단계 발문 패널</p>
             </div>
             <div class="panel-copy-item" data-panel-key="final">
-              <h3>4단계 · 평가 챗봇</h3>
+              <h3>4-1차시 · 평가 챗봇</h3>
               <label>제목</label>
               <input type="text" data-panel-field="title" data-panel-key="final" placeholder="예: AI 평가 챗봇" />
               <label>설명</label>
@@ -730,7 +730,7 @@
               <p class="muted">4단계 오른쪽 챗봇</p>
             </div>
             <div class="panel-copy-item" data-panel-key="stage5">
-              <h3>5단계 · 정리 카드</h3>
+              <h3>4-2차시 · 정리 카드</h3>
               <label>제목</label>
               <input type="text" data-panel-field="title" data-panel-key="stage5" placeholder="예: 5차시 · 최종 정리" />
               <label>설명</label>
@@ -756,12 +756,12 @@
               <input type="text" data-ui-key="promptEmptyText" placeholder="예: 토론 발문이 아직 등록되지 않았습니다." />
             </div>
             <div class="panel-copy-item">
-              <h3>3-1 발문 미리보기(빈 상태)</h3>
+              <h3>3-1차시 발문 미리보기(빈 상태)</h3>
               <label>문구</label>
               <input type="text" data-ui-key="draftPromptEmptyText" placeholder="예: 관리자가 등록한 발문이 여기에 표시됩니다." />
             </div>
             <div class="panel-copy-item">
-              <h3>4-1 발문 카드(빈 상태)</h3>
+              <h3>4-1차시 발문 카드(빈 상태)</h3>
               <label>문구</label>
               <input type="text" data-ui-key="stage4PromptEmptyText" placeholder="예: 관리자가 등록한 발문이 여기에 표시됩니다." />
             </div>
