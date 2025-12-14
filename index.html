@@ -749,16 +749,20 @@
             const incoming = map && typeof map[key] === 'object' ? map[key] : null;
             const fallbackEntry =
               (fallback && typeof fallback[key] === 'object' && fallback[key]) || { title: '', subtitle: '' };
+            const incomingTitle =
+              typeof incoming?.title === 'string' && incoming.title.trim() !== '' ? incoming.title : null;
+            const incomingSubtitle =
+              typeof incoming?.subtitle === 'string' && incoming.subtitle.trim() !== '' ? incoming.subtitle : null;
             acc[key] = {
               title:
-                typeof incoming?.title === 'string'
-                  ? incoming.title
+                incomingTitle !== null
+                  ? incomingTitle
                   : typeof fallbackEntry.title === 'string'
                     ? fallbackEntry.title
                     : '',
               subtitle:
-                typeof incoming?.subtitle === 'string'
-                  ? incoming.subtitle
+                incomingSubtitle !== null
+                  ? incomingSubtitle
                   : typeof fallbackEntry.subtitle === 'string'
                     ? fallbackEntry.subtitle
                     : '',

@@ -1814,15 +1814,17 @@ function sanitizePanelCopy(payload, fallback = defaultPanelCopy(), type = 'TYPE_
   PANEL_COPY_KEYS.forEach((key) => {
     const incoming = payload[key];
     const current = base[key] || { title: '', subtitle: '' };
+    const incomingTitle = typeof incoming?.title === 'string' ? incoming.title.trim() : '';
+    const incomingSubtitle = typeof incoming?.subtitle === 'string' ? incoming.subtitle.trim() : '';
     const title =
-      typeof incoming?.title === 'string'
-        ? incoming.title.trim()
+      incomingTitle !== ''
+        ? incomingTitle
         : typeof current.title === 'string'
           ? current.title
           : '';
     const subtitle =
-      typeof incoming?.subtitle === 'string'
-        ? incoming.subtitle.trim()
+      incomingSubtitle !== ''
+        ? incomingSubtitle
         : typeof current.subtitle === 'string'
           ? current.subtitle
           : '';

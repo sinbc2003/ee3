@@ -1998,8 +1998,14 @@
           PANEL_COPY_KEYS.forEach((key) => {
             const incoming = source[key];
             defaults[key] = {
-              title: typeof incoming?.title === 'string' ? incoming.title : defaults[key].title,
-              subtitle: typeof incoming?.subtitle === 'string' ? incoming.subtitle : defaults[key].subtitle,
+              title:
+                typeof incoming?.title === 'string' && incoming.title.trim() !== ''
+                  ? incoming.title
+                  : defaults[key].title,
+              subtitle:
+                typeof incoming?.subtitle === 'string' && incoming.subtitle.trim() !== ''
+                  ? incoming.subtitle
+                  : defaults[key].subtitle,
             };
           });
           return defaults;
