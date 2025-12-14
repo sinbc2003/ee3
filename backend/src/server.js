@@ -898,20 +898,31 @@ async function generateAiFeedback(userMessage, group, contextText, options = {})
   const historyBlock = recentTranscript ? `<대화기록>\n${recentTranscript}\n</대화기록>` : '';
   const baseContext = [contextText || '', historyBlock].filter(Boolean).join('\n\n');
 
-  // 3-2 차시: gpt-4.1로 평가, 이전 대화 요약 포함
+  // 3-2 차시: gpt-4.1로 평가, 이전 대화 요약/원문 포함
   if (stage >= 3) {
-    const transcript = await buildTranscriptText(sessionId);
+    const previousStage = Math.max(1, stage - 1);
+    const transcriptStage2 = await buildTranscriptText(sessionId, { stage: previousStage });
+    const transcript = transcriptStage2 || (await buildTranscriptText(sessionId));
     const summary =
       transcript.trim() === ''
         ? ''
         : await summarizeTranscript(transcript).catch(() => '');
     const wrapped = `<이전토론대화>${summary || transcript || '대화 없음'}</이전토론대화>`;
     const mergedContext = [baseContext || '', wrapped].filter(Boolean).join('\n\n');
+    const mergedSystemPrompt = [
+      stageSystemPrompt || evalPrompt || config.systemPrompt,
+      transcriptStage2
+        ? '아래는 3-1차시(이전 단계) 학생과 AI의 상세 대화 기록입니다. 이 기록을 토대로 학생에게 토론 피드백을 제공합니다.\n' +
+          `<3-1차시 대화기록>\n${transcriptStage2}\n</3-1차시 대화기록>`
+        : '',
+    ]
+      .filter(Boolean)
+      .join('\n\n');
     return callOpenAiChat({
       message: trimmed,
       contextText: mergedContext,
       model: 'gpt-4.1',
-      systemPrompt: stageSystemPrompt || evalPrompt || config.systemPrompt,
+      systemPrompt: mergedSystemPrompt,
     });
   }
 
@@ -1684,6 +1695,10 @@ function buildTranscriptText(sessionId, options = {}) {
   let list = (store.messages || []).filter(
     (m) => m.channel === 'ai-feedback' && m.sessionId === sessionId
   );
+  const targetStage = Number(options.stage || 0);
+  if (targetStage) {
+    list = list.filter((m) => Number(m.ext?.stage || 0) === targetStage);
+  }
   if (!list.length) return '';
   const limit = Number(options.limit || 0);
   list = list.sort((a, b) => Number(a.ts || 0) - Number(b.ts || 0));
