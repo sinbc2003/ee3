@@ -1977,7 +1977,8 @@
 
         function renderRightPanels(){
           const stage = Number(state.stage || 1);
-          const showAiChat = isAiChatStage(stage);
+          // 4-1차시(스테이지 4)에서는 단일 챗봇(rightStage4)만 사용
+          const showAiChat = isAiChatStage(stage) && stage < 4;
           const showPeerChat = isPeerChatStage(stage);
           const showFinalChat = stage >= 4;
           if (showAiChat) updateAiPanelHeader(stage);
