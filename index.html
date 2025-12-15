@@ -2722,15 +2722,25 @@
           return linkifyPlainText(text);
         }
 
+        function cleanAnchorArtifacts(str){
+          let working = String(str || '');
+          // 제거: 모델이 삽입한 불필요한 target/rel 속성 조각
+          working = working.replace(/"\s*target="_blank"[^>]*>/gi, '');
+          // 제거: URL 뒤에 남은 따옴표/속성 꼬리
+          working = working.replace(/(https?:\/\/[^\s<>"']+)"[^\s<>"']*/g, '$1');
+          return working;
+        }
+
         function linkifyPlainText(str){
-          const escaped = escapeHtml(str || '');
-          const withLinks = escaped.replace(/(https?:\/\/[^\s<]+[^<.,;:)\s])/g, '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>');
+          const escaped = escapeHtml(cleanAnchorArtifacts(str || ''));
+          const withLinks = escaped.replace(/(https?:\/\/[^\s<>"']+[^\s<>"'.,;:)\]])/g, '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>');
           return withLinks.replace(/\n/g, '<br/>');
         }
 
         function linkifyHtml(str){
           if (!str) return '';
-          return str.replace(/(https?:\/\/[^\s<]+[^<.,;:)\s])/g, '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>');
+          const cleaned = cleanAnchorArtifacts(str);
+          return cleaned.replace(/(https?:\/\/[^\s<>"']+[^\s<>"'.,;:)\]])/g, '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>');
         }
 
         function escapeHtml(str){
@@ -2770,9 +2780,10 @@
 
         function renderMarkdown(text){
           if (!text) return '';
-          const footnotes = extractFootnoteLinks(text);
+          const cleaned = cleanAnchorArtifacts(text);
+          const footnotes = extractFootnoteLinks(cleaned);
           const codeBlocks = [];
-          let working = text.replace(/```([\s\S]*?)```/g, function(_match, code){
+          let working = cleaned.replace(/```([\s\S]*?)```/g, function(_match, code){
             const placeholder = `@@CODE_BLOCK_${codeBlocks.length}@@`;
             codeBlocks.push(`<pre><code>${escapeHtml(code)}</code></pre>`);
             return placeholder;
