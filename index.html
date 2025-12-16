@@ -999,6 +999,10 @@
           if (aiSendBtn) aiSendBtn.addEventListener('click', sendAiMessage);
           const aiInput = $('aiInput');
           if (aiInput) aiInput.addEventListener('keydown', function(e){ if (e.key === 'Enter' && !e.shiftKey){ e.preventDefault(); sendAiMessage(); } });
+          const finalSendBtn = $('btnFinalChatSend');
+          if (finalSendBtn) finalSendBtn.addEventListener('click', sendAiMessage);
+          const finalInput = $('finalChatInput');
+          if (finalInput) finalInput.addEventListener('keydown', function(e){ if (e.key === 'Enter' && !e.shiftKey){ e.preventDefault(); sendAiMessage(); } });
 
           const stage5MemoInput = $('stage5MemoInput');
           if (stage5MemoInput) stage5MemoInput.addEventListener('input', function(){
@@ -2181,8 +2185,12 @@
           const aiPending = state.aiChat && state.aiChat.awaitingResponse;
           const aiInput = $('aiInput');
           const aiBtn = $('btnAiSend');
-          if (aiInput) aiInput.disabled = !aiEnabled || aiPending;
-          if (aiBtn) aiBtn.disabled = !aiEnabled || aiPending;
+          const finalInput = $('finalChatInput');
+          const finalBtn = $('btnFinalChatSend');
+          if (aiInput) aiInput.disabled = !aiEnabled || aiPending || stage >= 4;
+          if (aiBtn) aiBtn.disabled = !aiEnabled || aiPending || stage >= 4;
+          if (finalInput) finalInput.disabled = !aiEnabled || aiPending || stage < 4;
+          if (finalBtn) finalBtn.disabled = !aiEnabled || aiPending || stage < 4;
           const peerEnabled = !!state.peerChat.sessionId && isPeerChatStage(stage);
           const peerInput = $('peerInput');
           const peerBtn = $('btnPeerSend');
@@ -2525,7 +2533,7 @@
             setStatus('AI 피드백 단계에서만 사용할 수 있습니다.', 'warn');
             return;
           }
-          const input = $('aiInput');
+          const { input } = getAiUiRefs();
           if (!input || input.disabled) return;
           const text = input.value.trim();
           if (!text) return;
@@ -2564,10 +2572,11 @@
         }
 
         function setAiLoading(flag){
-          const loader = $('aiChatLoader');
+          const { loader } = getAiUiRefs();
           if (loader) loader.style.display = flag ? 'flex' : 'none';
           if (flag) {
-            $('btnAiSend').disabled = true;
+            const { sendBtn } = getAiUiRefs();
+            if (sendBtn) sendBtn.disabled = true;
           } else {
             refreshChatControls();
           }
@@ -2605,7 +2614,15 @@
 
         function appendChatMessage(channel, message, options){
           const chatState = channel === 'ai' ? state.aiChat : state.peerChat;
-          const logEl = $(channel === 'ai' ? 'aiChatLog' : 'peerChatLog');
+          const messageStage =
+            Number(message?.ext?.stage) ||
+            Number(message?.stage) ||
+            Number(message?.metadata?.stage) ||
+            0;
+          const logEl =
+            channel === 'ai'
+              ? getAiLogElementForStage(messageStage || state.stage)
+              : $('peerChatLog');
           if (!chatState || !logEl) return null;
           const isPending = options && options.pending;
           const ts = Number(message.ts || Date.now());
@@ -2741,6 +2758,24 @@
           if (!str) return '';
           const cleaned = cleanAnchorArtifacts(str);
           return cleaned.replace(/(https?:\/\/[^\s<>"']+[^\s<>"'.,;:)\]])/g, '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>');
+        }
+
+        function getAiLogElementForStage(stage){
+          const s = Number(stage || state.stage || 1);
+          return $(s >= 4 ? 'finalChatLog' : 'aiChatLog');
+        }
+
+        function getAiUiRefs(){
+          const stage = Number(state.stage || 1);
+          const isFinal = stage >= 4;
+          return {
+            stage,
+            isFinal,
+            input: $(isFinal ? 'finalChatInput' : 'aiInput'),
+            sendBtn: $(isFinal ? 'btnFinalChatSend' : 'btnAiSend'),
+            loader: $(isFinal ? 'finalChatLoader' : 'aiChatLoader'),
+            logEl: getAiLogElementForStage(stage),
+          };
         }
 
         function escapeHtml(str){
@@ -2971,10 +3006,6 @@
           const isPeerStage = isPeerChatStage(stage);
           if (isAiStage && state.aiChat.sessionId) startAiPolling(); else stopAiPolling();
           if (isPeerStage && state.peerChat.sessionId) startPeerPolling(); else stopPeerPolling();
-          if (stage >= 4) {
-            stopAiPolling();
-            stopPeerPolling();
-          }
         }
 
         function clearAllTimers(){
@@ -2988,8 +3019,15 @@
 
         function clearChatLog(channel, options){
           const opts = options || {};
-          const logEl = $(channel === 'ai' ? 'aiChatLog' : 'peerChatLog');
-          if (logEl) logEl.innerHTML = '';
+          if (channel === 'ai') {
+            const aiLog = $('aiChatLog');
+            const finalLog = $('finalChatLog');
+            if (aiLog) aiLog.innerHTML = '';
+            if (finalLog) finalLog.innerHTML = '';
+          } else {
+            const logEl = $('peerChatLog');
+            if (logEl) logEl.innerHTML = '';
+          }
           const chatState = channel === 'ai' ? state.aiChat : state.peerChat;
           if (!opts.keepLastTs) {
           chatState.lastTs = 0;

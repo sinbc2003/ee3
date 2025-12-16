@@ -124,7 +124,7 @@
     // PVP 레거시 모드에서만 AI를 사용하지 않습니다.
     if (m === 'PVP') return { skipped: true };
     var settings = getSettings_();
-    var useModel = (m === 'B' || m === 'CUSTOM') ? (settings.customModel || settings.defaultModel || 'gpt-4o-mini') : (settings.defaultModel || 'gpt-4o-mini');
+    var useModel = (m === 'B' || m === 'CUSTOM') ? (settings.customModel || settings.defaultModel || 'gpt-4.1') : (settings.defaultModel || 'gpt-4.1');
     var systemPrompt = settings.aiTutorSystemPrompt || settings.customSystemPrompt || '';
     var sessionKey = options && options.sessionKey;
     if (sessionKey) {
@@ -263,7 +263,7 @@
   function llmGenerateOpenAI_(apiKey, model, systemPrompt, messages) {
     if (!apiKey) throw new Error('OpenAI API 키가 설정되지 않았습니다.');
     var payload = {
-      model: model || 'gpt-4o-mini',
+      model: model || 'gpt-4.1',
       messages: [],
       temperature: 0.7,
       stream: false
