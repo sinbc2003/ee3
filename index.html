@@ -514,6 +514,24 @@
           stage5MemoSaveButtonText: '4차시-2 메모 저장',
         };
 
+        function buildAiGuideHtml(){
+          const headline = '<strong><u>토론을 준비하기 위해 관련된 내용을 ChatGPT에게 질문해보세요.</u></strong>';
+          const lead = '예를 들어 다음과 같은 질문을 할 수 있습니다.';
+          const bullets = [
+            '이 논제에 대한 찬성/반대 대표 논거에는 어떤 것들이 있나요?',
+            '구체적인 논거는 어디에서 찾을 수 있나요?',
+            '이 논제와 관련된 통계 자료나 연구 결과나 사례에는 어떤 것들이 있나요?',
+            '반대 입장에서 가장 먼저 제기할 수 있는 반박은 무엇인가요?',
+            '이 논제에서 흔히 나타나는 논리적 오류나 오해에는 어떤 것들이 있나요?',
+          ];
+          const list = `<ul style="margin:6px 0 0 18px; padding-left:0; line-height:1.55;">${bullets
+            .map((item) => `<li style="list-style: disc; margin-left:0;">${item}</li>`)
+            .join('')}</ul>`;
+          const tail =
+            'ChatGPT는 여러분의 토론 준비를 돕는 상호작용적 학습 도구가 될 수 있습니다. 본 시스템의 ChatGPT는 ChatGPT-5와 동일한 방식으로 작동합니다';
+          return [headline, lead, list, tail].join('<br/>');
+        }
+
         function buildPrewritingGuideHtml(){
           const headline = '<strong><u>토론을 준비하기 위해 논제와 관련된 정보를 조사하고 정리해 보세요.</u></strong>';
           const lead =
@@ -1290,7 +1308,8 @@
             if (prewritingInfo) prewritingInfo.innerHTML = buildPrewritingGuideHtml();
             const aiCopy = getPanelCopyEntry('ai');
             setText('aiStageTitle', aiCopy.title || stage1.headline || stage1.name || 'AI 피드백');
-            setText('aiStageSubtitle', aiCopy.subtitle || stage1.description || 'AI와 토론 연습을 진행하세요.');
+            const aiSubtitle = $('aiStageSubtitle');
+            if (aiSubtitle) aiSubtitle.innerHTML = buildAiGuideHtml();
           }
           const stage2 = getStageLabel(2);
           if (stage2) {
