@@ -1262,15 +1262,15 @@
           if (stage1) {
             const promptCopy = getPanelCopyEntry('prompt');
             setText('promptStageTitle', promptCopy.title || combine(stage1, '2차시 · 토론 관련 발문'));
-            const emphasisLine = '<strong><u>토론을 준비하기 위해 논제와 관련된 정보를 조사하고 정리해 보세요.</u></strong>';
+            const topicLine1 = '<strong><u>다음을 읽고, 토론 논제를 이해해 보세요.</u></strong>';
+            const topicLine2 = '<strong><u>교육감 선거 선거권 연령을 16세로 하향하여야 한다.</u></strong>';
             const promptBase = promptCopy.subtitle || stage1.description || '논제 이해를 위해 핵심 발문을 확인하세요.';
             const promptSub = $('promptStageSubtitle');
-            if (promptSub) promptSub.innerHTML = `${promptBase}<br/>${emphasisLine}`;
+            if (promptSub) promptSub.innerHTML = `${topicLine1}<br/>${topicLine2}`;
             const prewritingCopy = getPanelCopyEntry('prewriting');
             setText('prewritingTitle', prewritingCopy.title || combine(stage1, '2차시 · 메모장'));
-            const prewritingBase = prewritingCopy.subtitle || stage1.description || '인터넷 검색으로 찬성·반대 근거를 수집하며 메모를 남기세요.';
             const prewritingInfo = $('prewritingInfo');
-            if (prewritingInfo) prewritingInfo.innerHTML = `${prewritingBase}<br/>${emphasisLine}`;
+            if (prewritingInfo) prewritingInfo.innerHTML = `${topicLine1}<br/>${topicLine2}`;
             const aiCopy = getPanelCopyEntry('ai');
             setText('aiStageTitle', aiCopy.title || stage1.headline || stage1.name || 'AI 피드백');
             setText('aiStageSubtitle', aiCopy.subtitle || stage1.description || 'AI와 토론 연습을 진행하세요.');
