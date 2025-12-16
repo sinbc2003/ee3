@@ -1977,14 +1977,7 @@
           const sendBtn = $('btnFinalChatSend');
           const stage = Number(state.stage || 1);
           const aiEnabled = !!state.aiChat.sessionId && stage >= 4;
-          if (logEl) {
-            logEl.innerHTML = '';
-            // reuse existing ai chat log data: render last known messages for ai channel
-            const messages = Object.keys(state.aiChat.rendered || {}).length
-              ? []
-              : [];
-            // 단순 초기화만 수행 (기존 채팅 렌더는 pollAiMessages에서 처리)
-          }
+          // 로그는 초기화하지 않고 유지해, 자동 새로고침 시 대화가 사라지지 않도록 함
           if (inputEl) inputEl.disabled = !aiEnabled || (state.aiChat && state.aiChat.awaitingResponse);
           if (sendBtn) sendBtn.disabled = !aiEnabled || (state.aiChat && state.aiChat.awaitingResponse);
         }
