@@ -78,8 +78,6 @@
       #panelPrewriting .panel-header h2 { white-space: normal; }
       #panelPrompt .panel-header .panel-subtext,
       #panelPrewriting .panel-header .panel-subtext { line-height: 1.6; }
-      .panel-subtext .prewriting-guidelines { margin: 8px 0 0 18px; padding-left: 2px; line-height: 1.65; }
-      .panel-subtext .prewriting-guidelines li { list-style: disc; }
       /* 동료 채팅은 비활성화 */
       .partner-box, .presence-status { display: none !important; }
       /* 3-1차시 메모 패널과 버튼 숨김 */
@@ -1264,26 +1262,16 @@
           if (stage1) {
             const promptCopy = getPanelCopyEntry('prompt');
             setText('promptStageTitle', promptCopy.title || combine(stage1, '2차시 · 토론 관련 발문'));
-            const stage1GuidanceHtml = [
-              '<strong><u>다음을 읽고, 토론 논제를 이해해 보세요.</u></strong>',
-              '<strong><u>논제에 대한 기초적인 이해와 자신의 초기 입장 정리에 집중해보세요.</u></strong>',
-              '<strong><u>토론을 준비하기 위해 논제와 관련된 정보를 조사하고 정리해 보세요.</u></strong>',
-              '<strong><u>인터넷 검색, 뉴스 기사, 보고서, 오른쪽 창에 있는 ChatGPT 등을 활용하여 논제에 대한 다양한 관점과 자료를 탐색할 수 있습니다.</u></strong>',
-              '<ul class="prewriting-guidelines">',
-              '<li>아래 항목을 참고하여 자유롭게 기록하세요.</li>',
-              '<li>자신의 주장(찬성 또는 반대)</li>',
-              '<li>주장을 뒷받침하는 근거 (사례, 통계, 논리 등)</li>',
-              '<li>참고한 출처 (기사 제목, 기관명 등 간단히)</li>',
-              '<li>조사 과정에서 생긴 의문점이나 반박 가능성</li>',
-              '<li>이 메모는 이후 ChatGPT과의 토론 및 성찰 활동시 자료로 활용할 예정입니다.</li>',
-              '</ul>',
-            ].join('<br/>');
-            const promptSub = $('promptStageSubtitle');
-            if (promptSub) promptSub.innerHTML = stage1GuidanceHtml;
+            setText(
+              'promptStageSubtitle',
+              promptCopy.subtitle || stage1.description || '논제 이해를 위해 핵심 발문을 확인하세요.'
+            );
             const prewritingCopy = getPanelCopyEntry('prewriting');
             setText('prewritingTitle', prewritingCopy.title || combine(stage1, '2차시 · 메모장'));
-            const prewritingInfo = $('prewritingInfo');
-            if (prewritingInfo) prewritingInfo.innerHTML = stage1GuidanceHtml;
+            setText(
+              'prewritingInfo',
+              prewritingCopy.subtitle || stage1.description || '인터넷 검색으로 찬성·반대 근거를 수집하며 메모를 남기세요.'
+            );
             const aiCopy = getPanelCopyEntry('ai');
             setText('aiStageTitle', aiCopy.title || stage1.headline || stage1.name || 'AI 피드백');
             setText('aiStageSubtitle', aiCopy.subtitle || stage1.description || 'AI와 토론 연습을 진행하세요.');
