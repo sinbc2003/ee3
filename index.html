@@ -1586,7 +1586,11 @@
           readonly.textContent = completed ? storedText : '';
           const submitBtn = $('btnPreSubmit');
           if (submitBtn) submitBtn.disabled = !isStageActive || completed || !textarea.value.trim();
-          info.textContent = completed ? '제출 시간: ' + formatDate(submittedAt) : defaultInfoText;
+          if (completed) {
+            info.textContent = '제출 시간: ' + formatDate(submittedAt);
+          } else {
+            info.innerHTML = defaultInfoText;
+          }
         }
 
         function renderDraftPanel(){
