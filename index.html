@@ -2079,12 +2079,14 @@
           const stageNumber = Number(stage || 1);
           const label = getStageLabel(stageNumber);
           const aiCopy = getPanelCopyEntry('ai');
-          if (stageNumber === 2) {
-            setText('aiStageTitle', 'ChatGPT와 토론');
+          // 2차시(내부 스테이지 번호 1)에서는 고정된 가이드 HTML을 사용해 관리자 설정과 무관하게 서식을 유지
+          if (stageNumber === 1) {
+            setText('aiStageTitle', '2차시 토론 논제 관련 ChatGPT 활용');
             const aiSubtitle = $('aiStageSubtitle');
             if (aiSubtitle) aiSubtitle.innerHTML = buildAiGuideHtml();
             return;
           }
+          // 3차시-2(내부 스테이지 번호 3) 안내
           if (stageNumber === 3) {
             setText('aiStageTitle', '3차시-2 ChatGPT와 토론 성찰');
             setText(
