@@ -1001,8 +1001,8 @@
           if (aiInput) aiInput.addEventListener('keydown', function(e){ if (e.key === 'Enter' && !e.shiftKey){ e.preventDefault(); sendAiMessage(); } });
           const finalSendBtn = $('btnFinalChatSend');
           if (finalSendBtn) finalSendBtn.addEventListener('click', sendAiMessage);
-          const finalInput = $('finalChatInput');
-          if (finalInput) finalInput.addEventListener('keydown', function(e){ if (e.key === 'Enter' && !e.shiftKey){ e.preventDefault(); sendAiMessage(); } });
+          const finalChatInput = $('finalChatInput');
+          if (finalChatInput) finalChatInput.addEventListener('keydown', function(e){ if (e.key === 'Enter' && !e.shiftKey){ e.preventDefault(); sendAiMessage(); } });
 
           const stage5MemoInput = $('stage5MemoInput');
           if (stage5MemoInput) stage5MemoInput.addEventListener('input', function(){
