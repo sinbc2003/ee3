@@ -504,7 +504,7 @@
           draftPlaceholder: '찬성/반대 주장, 근거, 추가 조사할 내용 등을 기록하세요.',
           draftSaveButtonText: '',
           notesPlaceholder: '3-1차시 토론을 다시 읽고, 궁금한 점이나 보완할 논거를 메모하세요.',
-          aiInputPlaceholder: 'AI에게 질문하거나 피드백을 요청하세요.',
+          aiInputPlaceholder: 'AI에게 토론 준비와 관련된 질문을 하세요.',
           aiSendButtonText: '전송',
           peerInputPlaceholder: '동료에게 메시지를 보내보세요.',
           peerSendButtonText: '전송',
@@ -2084,6 +2084,15 @@
             setText('aiStageTitle', '2차시 토론 논제 관련 ChatGPT 활용');
             const aiSubtitle = $('aiStageSubtitle');
             if (aiSubtitle) aiSubtitle.innerHTML = buildAiGuideHtml();
+            return;
+          }
+          // 3차시-1(내부 스테이지 번호 2): 토론 집중 가이드 고정 적용
+          if (stageNumber === 2) {
+            setText('aiStageTitle', '3차시-1 ChatGPT와 토론');
+            const aiSubtitle = $('aiStageSubtitle');
+            const focusLine = '<strong><u>이번 차시부터는 논제에 대한 정보 탐색이 아니라, 찬성의 입장에서 실제 토론에 집중해보세요.</u></strong>';
+            const followLine = '2차시에서 정리한 자료와 생각을 바탕으로 자신의 주장을 논리적으로 설명하고, 반박에 대응해 보세요.';
+            if (aiSubtitle) aiSubtitle.innerHTML = `${focusLine}<br/>${followLine}`;
             return;
           }
           // 3차시-2(내부 스테이지 번호 3) 안내
