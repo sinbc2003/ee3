@@ -1269,8 +1269,21 @@
             if (promptSub) promptSub.innerHTML = `${topicLine1}<br/>${topicLine2}`;
             const prewritingCopy = getPanelCopyEntry('prewriting');
             setText('prewritingTitle', prewritingCopy.title || combine(stage1, '2차시 · 메모장'));
+            const memoHeadline = '<strong><u>토론을 준비하기 위해 논제와 관련된 정보를 조사하고 정리해 보세요.</u></strong>';
+            const memoLead =
+              '인터넷 검색, 뉴스 기사, 보고서, 오른쪽 창에 있는 ChatGPT 등을 활용하여 논제에 대한 다양한 관점과 자료를 탐색할 수 있습니다. 아래 항목을 참고하여 자유롭게 기록하세요.';
+            const memoBullets = [
+              '자신의 주장(찬성 또는 반대)',
+              '주장을 뒷받침하는 근거 (사례, 통계, 논리 등)',
+              '참고한 출처 (기사 제목, 기관명 등 간단히)',
+              '조사 과정에서 생긴 의문점이나 반박 가능성',
+            ];
+            const memoListHtml = `<ul style="margin:6px 0 0 18px; padding-left:0; line-height:1.55;">${memoBullets
+              .map((item) => `<li style="list-style: disc; margin-left:0;">${item}</li>`)
+              .join('')}</ul>`;
+            const memoTail = '이 메모는 이후 ChatGPT과의 토론 및 성찰 활동시 자료로 활용할 예정입니다.';
             const prewritingInfo = $('prewritingInfo');
-            if (prewritingInfo) prewritingInfo.innerHTML = `${topicLine1}<br/>${topicLine2}`;
+            if (prewritingInfo) prewritingInfo.innerHTML = [memoHeadline, memoLead, memoListHtml, memoTail].join('<br/>');
             const aiCopy = getPanelCopyEntry('ai');
             setText('aiStageTitle', aiCopy.title || stage1.headline || stage1.name || 'AI 피드백');
             setText('aiStageSubtitle', aiCopy.subtitle || stage1.description || 'AI와 토론 연습을 진행하세요.');
