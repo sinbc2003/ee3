@@ -504,7 +504,7 @@
           draftPlaceholder: '찬성/반대 주장, 근거, 추가 조사할 내용 등을 기록하세요.',
           draftSaveButtonText: '',
           notesPlaceholder: '3-1차시 토론을 다시 읽고, 궁금한 점이나 보완할 논거를 메모하세요.',
-          aiInputPlaceholder: 'AI와 토론을 진행하세요.',
+          aiInputPlaceholder: 'AI에게 토론 준비와 관련된 질문을 하세요.',
           aiSendButtonText: '전송',
           peerInputPlaceholder: '동료에게 메시지를 보내보세요.',
           peerSendButtonText: '전송',
@@ -1313,14 +1313,14 @@
           }
           const stage2 = getStageLabel(2);
           if (stage2) {
-            // 3차시-1 고정 안내 (관리자 설정 무시)
-            setText('draftTitle', '3차시-1 ChatGPT와의 토론');
+            const draftCopy = getPanelCopyEntry('draft');
+            const draftTitle = draftCopy.title || '3차시-1 토론 안내';
+            const focusLine = '<strong><u>이번 차시부터는 논제에 대한 정보 탐색이 아니라, 찬성의 입장에서 실제 토론에 집중해보세요.</u></strong>';
+            const followLine = '2차시에서 정리한 자료와 생각을 바탕으로 자신의 주장을 논리적으로 설명하고, 반박에 대응해 보세요.';
+            setText('draftTitle', draftTitle);
             const draftInfoEl = $('draftInfo');
             if (draftInfoEl) {
-              const line1 = '이제 ChatGPT는 당신의 입장과 반대되는 관점을 가진 토론 상대로 설정됩니다.';
-              const line2 = '<strong><u>당신이 찬성 입장이므로, ChatGPT는 반대 입장에서 토론합니다.</u></strong>';
-              const line3 = 'ChatGPT의 질문과 반박에 대해 주장-근거-재반박의 구조를 의식하며 충분히 토론을 진행해 보세요.';
-              const html = [line1, line2, line3].join('<br/><br/>');
+              const html = `${focusLine}<br/>${followLine}`;
               draftInfoEl.innerHTML = html;
               draftInfoEl.dataset.baseHtml = html;
             }
