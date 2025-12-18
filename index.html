@@ -1331,17 +1331,24 @@
           }
           const stage3 = getStageLabel(3);
           if (stage3) {
-            const memoCopy = getPanelCopyEntry('memo');
-            const memoTitle =
-              memoCopy.title ||
-              '3차시-2 토론 관련 성찰 메모';
-            const memoSubtitle =
-              memoCopy.subtitle ||
-              '토론을 통해 느낀 점과 보완할 점에 대해 자유롭게 성찰한 뒤 작성하세요.\n성찰한 내용을 바탕으로 자신의 생각을 정리해보세요. \n아래 항목을 참고하여 자유롭게 기록하세요.\n- 토론을 통해 새롭게 알게 된 점은 무엇인가?\n- ChatGPT의 반박 중 설득력이 있었다고 느낀 부분은 무엇인가?\n- 내 주장이나 근거에서 잘 대응했다고 느낀 부분은 무엇인가?\n- 내 주장이나 근거에서 보완이 필요하다고 느낀 점은 무엇인가?\n- 논증 방식이나 사고 과정에서 성장했다고 느낀 점은 무엇인가?\n- 다음 토론에서 개선하고 싶은 점은 무엇인가?';
-            setText('memoStage3Title', memoTitle);
-            setText('memoStage3Info', memoSubtitle);
+            // 3차시-2 안내를 고정 문구로 지정 (관리자 설정 무시)
+            setText('memoStage3Title', '3차시-2 · 토론 성찰');
             const memoInfoEl = $('memoStage3Info');
-            if (memoInfoEl) memoInfoEl.dataset.baseText = memoSubtitle;
+            if (memoInfoEl) {
+              const headline = '<strong><u>토론을 통해 느낀 점과 보완할 점에 대해 자유롭게 성찰한 뒤 작성하세요. 아래 항목을 참고하세요.</u></strong>';
+              const bullets = [
+                '토론을 통해 새롭게 알게 된 점은 무엇인가?',
+                'ChatGPT의 반박 중 설득력이 있었다고 느낀 부분은 무엇인가?',
+                '내 주장이나 근거에서 잘 대응했다고 느낀 부분은 무엇인가?',
+                '내 주장이나 근거에서 보완이 필요하다고 느낀 점은 무엇인가?',
+                '논증 방식이나 사고 과정에서 성장했다고 느낀 점은 무엇인가?',
+                '다음 토론에서 개선하고 싶은 점은 무엇인가?'
+              ];
+              const list = `<ul style="margin:8px 0 0 18px; padding-left:0; line-height:1.55;">${bullets.map((item) => `<li style="list-style: disc; margin-left:0;">${item}</li>`).join('')}</ul>`;
+              const html = `${headline}${list}`;
+              memoInfoEl.innerHTML = html;
+              memoInfoEl.dataset.baseText = html;
+            }
           }
           const stage4 = getStageLabel(4);
           if (stage4) {
