@@ -120,7 +120,7 @@
       .chat-line.me { align-self: flex-end; text-align: right; }
       .chat-line.ai, .chat-line.other { align-self: flex-start; }
       .chat-line.system { align-self: center; max-width: 100%; text-align: center; }
-      .chat-bubble { padding: 10px 14px; border-radius: 14px; line-height: 1.6; background: #eef2ff; color: #1f2937; box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08); }
+      .chat-bubble { padding: 10px 14px; border-radius: 14px; line-height: 1.6; background: #eef2ff; color: #1f2937; box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08); font-size: 13px; }
       .chat-line.me .chat-bubble { background: linear-gradient(135deg, #2563eb, #1d4ed8); color: #ffffff; border-bottom-right-radius: 6px; }
       .chat-line.ai .chat-bubble { background: #f8fafc; border: 1px solid #cbd5f5; border-bottom-left-radius: 6px; }
       .chat-line.system .chat-bubble { background: #f1f5f9; color: #475569; border: 1px dashed #cbd5e1; }
@@ -2091,6 +2091,10 @@
             setText('aiStageTitle', '2차시 토론 논제 관련 ChatGPT 활용');
             const aiSubtitle = $('aiStageSubtitle');
             if (aiSubtitle) aiSubtitle.innerHTML = buildAiGuideHtml();
+            const aiInput = $('aiInput');
+            if (aiInput) {
+              aiInput.setAttribute('placeholder', 'AI에게 토론 준비와 관련된 질문을 하세요.');
+            }
             return;
           }
           // 3차시-1(내부 스테이지 번호 2)도 관리자 설정을 무시하고 고정 문구 적용
