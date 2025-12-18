@@ -1320,7 +1320,7 @@
               const line1 = '이제 ChatGPT는 당신의 입장과 반대되는 관점을 가진 토론 상대로 설정됩니다.';
               const line2 = '<strong><u>당신이 찬성 입장이므로, ChatGPT는 반대 입장에서 토론합니다.</u></strong>';
               const line3 = 'ChatGPT의 질문과 반박에 대해 주장-근거-재반박의 구조를 의식하며 충분히 토론을 진행해 보세요.';
-              const html = [line1, line2, line3].join('<br/><br/>');
+              const html = [line1, line2, line3].join('<br/>');
               draftInfoEl.innerHTML = html;
               draftInfoEl.dataset.baseHtml = html;
             }
@@ -1821,9 +1821,8 @@
           const stage3Prompt = getStagePromptData(3);
           setRichText(
             'stage3MemoHelper',
-            stage3Prompt.reference ||
-              '토론을 통해 느낀 점과 보완할 점에 대해 자유롭게 성찰한 뒤 작성하세요.\n성찰한 내용을 바탕으로 자신의 생각을 정리해보세요. \n아래 항목을 참고하여 자유롭게 기록하세요.\n- 토론을 통해 새롭게 알게 된 점은 무엇인가?\n- ChatGPT의 반박 중 설득력이 있었다고 느낀 부분은 무엇인가?\n- 내 주장이나 근거에서 잘 대응했다고 느낀 부분은 무엇인가?\n- 내 주장이나 근거에서 보완이 필요하다고 느낀 점은 무엇인가?\n- 논증 방식이나 사고 과정에서 성장했다고 느낀 점은 무엇인가?\n- 다음 토론에서 개선하고 싶은 점은 무엇인가?',
-            '토론을 통해 느낀 점과 보완할 점에 대해 자유롭게 성찰한 뒤 작성하세요.\n성찰한 내용을 바탕으로 자신의 생각을 정리해보세요. \n아래 항목을 참고하여 자유롭게 기록하세요.\n- 토론을 통해 새롭게 알게 된 점은 무엇인가?\n- ChatGPT의 반박 중 설득력이 있었다고 느낀 부분은 무엇인가?\n- 내 주장이나 근거에서 잘 대응했다고 느낀 부분은 무엇인가?\n- 내 주장이나 근거에서 보완이 필요하다고 느낀 점은 무엇인가?\n- 논증 방식이나 사고 과정에서 성장했다고 느낀 점은 무엇인가?\n- 다음 토론에서 개선하고 싶은 점은 무엇인가?'
+            '', // 3차시-2 하단 안내 문구 제거 (관리자 설정 무시)
+            ''
           );
           const stage4Prompt = getStagePromptData(4);
           setRichText(
@@ -2105,7 +2104,7 @@
               const line1 = '이제 ChatGPT는 당신의 입장과 반대되는 관점을 가진 토론 상대로 설정됩니다.';
               const line2 = '<strong><u>당신이 찬성 입장이므로, ChatGPT는 반대 입장에서 토론합니다.</u></strong>';
               const line3 = 'ChatGPT의 질문과 반박에 대해 주장-근거-재반박의 구조를 의식하며 충분히 토론을 진행해 보세요.';
-              aiSubtitle.innerHTML = [line1, line2, line3].join('<br/><br/>');
+              aiSubtitle.innerHTML = [line1, line2, line3].join('<br/>');
             }
             return;
           }
