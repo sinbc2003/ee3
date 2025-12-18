@@ -2973,7 +2973,7 @@
           if (message.role === 'ai') {
             const stageNum = Number(state.stage || 1);
             if (stageNum === 2) name = '토론 상대'; // 3-1차시
-            else if (stageNum === 3) name = 'ChatGPT (성찰)'; // 3-2차시 성찰
+            else if (stageNum === 3) name = '토론 성찰 지원 AI'; // 3-2차시 성찰
             else name = channel === 'ai' ? 'ChatGPT' : 'AI';
           }
           else if (message.role === 'system') name = '시스템';
