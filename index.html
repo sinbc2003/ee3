@@ -285,7 +285,7 @@
             </section>
 
             <section id="panelFinalSummary" class="stage-panel" data-step="4">
-              <div class="panel-header">
+              <div class="panel-header memo-stacked">
                 <h2 id="stage4Title">4차시-1 토론 안내</h2>
                 <span id="stage4Subtitle" class="panel-subtext">
                   이제 ChatGPT는 다시 당신의 입장과 반대되는 관점을 가진 토론 상대자로 설정됩니다.<br/>
@@ -1358,7 +1358,7 @@
           const stage4 = getStageLabel(4);
           if (stage4) {
             // 4차시-1 제목/설명을 고정 (관리자 설정 무시)
-            setText('stage4Title', '4차시-1 · 토론');
+            setText('stage4Title', '4차시-1 · 토론 안내');
             const stage4Sub = $('stage4Subtitle');
             if (stage4Sub) {
               const line1 = '<strong><u>이번 차시에는, 반대의 입장에서 실제 토론에 집중해보세요.</u></strong>';
@@ -1367,7 +1367,7 @@
             }
 
             const finalCopy = getPanelCopyEntry('final');
-            setText('finalStageTitle', '4차시-1 · 토론');
+            setText('finalStageTitle', '4차시-1 · 토론 안내');
             const finalSub = $('finalStageSubtitle');
             if (finalSub) {
               // 우측 챗봇 헤더에는 간단 안내만 남겨 중복 표시를 피함
@@ -2102,7 +2102,7 @@
           }
           const stageNumber = Number(stage || 1);
           if (stageNumber === 4) {
-            setText('finalStageTitle', '4차시-1 · 토론');
+            setText('finalStageTitle', '4차시-1 · 토론 안내');
             const finalSub = $('finalStageSubtitle');
             if (finalSub) {
               // 우측 챗봇 헤더는 간단히 비워 중복 안내를 피함
