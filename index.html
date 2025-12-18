@@ -1385,12 +1385,23 @@
           }
           const stage5 = getStageLabel(5);
           if (stage5) {
-            const stage5Copy = getPanelCopyEntry('stage5');
-            setText('stage5Title', stage5Copy.title || combine(stage5, '5차시 · 정리'));
-            setText(
-              'stage5Subtitle',
-              stage5Copy.subtitle || stage5.description || '4-1차시 대화를 요약해 확인하고, 추가로 메모하세요.'
-            );
+            // 4차시-2 안내를 고정 문구로 지정 (관리자 설정 무시)
+            setText('stage5Title', '4차시-2 · 토론 성찰');
+            const stage5Sub = $('stage5Subtitle');
+            if (stage5Sub) {
+              const lines = [
+                '토론을 통해 느낀 점과 보완할 점에 대해 자유롭게 성찰한 뒤 작성하세요.',
+                '3차시-2 토론 성찰 메모, 4차시-1 토론 기록 등을 바탕으로 자신의 생각을 정리해보세요.',
+                '<strong><u>아래 항목을 참고하여 자유롭게 기록하세요.</u></strong>',
+                '• 두 번의 토론을 통해 새롭게 알게 된 점은 무엇인가?',
+                '• 내 주장이나 근거에서 잘 대응했다고 느낀 부분은 무엇인가?',
+                '• 내 주장이나 근거에서 보완이 필요하다고 느낀 점은 무엇인가?',
+                '• 두 번의 토론을 비교했을 때, 논증 방식이나 사고 과정에서 성장했다고 느낀 점은 무엇인가?',
+                '• 추가적으로 개선하고 싶은 점은 무엇인가?'
+              ].join('<br/>');
+              stage5Sub.innerHTML = lines;
+              stage5Sub.dataset.baseHtml = lines;
+            }
           }
         }
 
