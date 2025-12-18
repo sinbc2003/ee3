@@ -2102,11 +2102,13 @@
           }
           const stageNumber = Number(stage || 1);
           if (stageNumber === 4) {
-            setText('finalStageTitle', '4차시-1 · 토론 안내');
+            setText('finalStageTitle', '4차시-1 ChatGPT와 토론');
             const finalSub = $('finalStageSubtitle');
             if (finalSub) {
-              // 우측 챗봇 헤더는 간단히 비워 중복 안내를 피함
-              finalSub.innerHTML = '';
+              const line1 = '<strong><u>이번 차시에서는 이전 차시와 \'반대입장\'에서 토론을 진행합니다.</u></strong>';
+              const line2 =
+                '당신이 반대입장이므로, ChatGPT는 찬성입장에서 토론합니다. 즉, 이번 차시는 기존에 주장했던 입장을 그대로 반복하는 것이 아니라, 반대 관점을 이해하고, 그 입장에서 논증하는 활동입니다.';
+              finalSub.innerHTML = [line1, line2].join('<br/>');
             }
             return;
           }
