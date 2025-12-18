@@ -2093,6 +2093,18 @@
             if (aiSubtitle) aiSubtitle.innerHTML = buildAiGuideHtml();
             return;
           }
+          // 3차시-1(내부 스테이지 번호 2)도 관리자 설정을 무시하고 고정 문구 적용
+          if (stageNumber === 2) {
+            setText('aiStageTitle', '3차시-1 ChatGPT와의 토론');
+            const aiSubtitle = $('aiStageSubtitle');
+            if (aiSubtitle) {
+              const line1 = '이제 ChatGPT는 당신의 입장과 반대되는 관점을 가진 토론 상대로 설정됩니다.';
+              const line2 = '<strong><u>당신이 찬성 입장이므로, ChatGPT는 반대 입장에서 토론합니다.</u></strong>';
+              const line3 = 'ChatGPT의 질문과 반박에 대해 주장-근거-재반박의 구조를 의식하며 충분히 토론을 진행해 보세요.';
+              aiSubtitle.innerHTML = [line1, line2, line3].join('<br/><br/>');
+            }
+            return;
+          }
           // 3차시-2(내부 스테이지 번호 3) 안내
           if (stageNumber === 3) {
             setText('aiStageTitle', '3차시-2 ChatGPT와 토론 성찰');
