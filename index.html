@@ -2114,10 +2114,24 @@
         function updateFinalChatHeader(stage){
           if (stage >= 5) {
             setText('finalStageTitle', '4차시-2 ChatGPT와 토론 성찰');
-            setText(
-              'finalStageSubtitle',
-              '이제 ChatGPT는 토론 상대자가 아닌 토론 성찰을 지원하는 AI입니다.\n\n현재 창에는 ChatGPT와 진행한 토론 기록이 있으며, 성찰 지원 ChatGPT에는 토론 평가 기준이 트레이닝 되어 있습니다.\n\n토론 기록과, 1차 토론 성찰 메모, 토론 성찰 지원 AI와의 대화를 통해 토론에서 드러난 자신의 강점과 보완점을 함께 점검해 보세요.\n\n이 활동의 목적은 점수 평가가 아니라 다음 토론을 더 잘하기 위한 성찰과 개선 방향 탐색입니다.\n\n예를 들어 다음과 같은 질문을 할 수 있습니다.\n- 나의 토론을 평가해주고, 점수를 매겨줄 수 있나요?\n- 어떤 기준으로 토론을 평가하는 건가요?\n- 내 주장은 토론 전반에서 일관되게 유지되었나요?\n- 내가 사용한 근거 중 가장 설득력이 있었던 / 있지 않았던 근거는 무엇인가요?\n- 내가 대응한 반박 중에 논리력이 있었던 / 있지 않았던 것은 무엇인가요?\n- 동일한 반박이 다시 나온다면, 더 나은 재반박 예시를 제안해 줄 수 있나요?\n- 나의 토론을 보완한다면 어떤 것을 보완해야 하나요?'
-            );
+            const finalSub = $('finalStageSubtitle');
+            if (finalSub) {
+              const lead1 = '이제 다시 ChatGPT는 토론 상대자가 아닌 토론 성찰을 지원하는 AI입니다.';
+              const lead2 =
+                '<strong><u>토론 기록과, 토론 성찰 지원 AI와의 대화를 통해 토론에서 드러난 자신의 강점과 보완점을 함께 점검해 보세요.</u></strong> 예를 들어 다음과 같은 질문을 할 수 있습니다.';
+              const bullets = [
+                '나의 토론을 평가해주고, 점수를 매겨줄 수 있나요?',
+                '내가 사용한 근거 중 가장 설득력이 있었던 / 있지 않았던 근거는 무엇인가요?',
+                '내가 대응한 반박 중에 논리력이 있었던 / 있지 않았던 것은 무엇인가요?',
+                '나의 토론을 보완한다면 어떤 것을 보완해야 하나요?'
+              ];
+              const list = `<ul style="margin:8px 0 0 18px; padding-left:0; line-height:1.55;">${bullets
+                .map((item) => `<li style="list-style: disc; margin-left:0;">${item}</li>`)
+                .join('')}</ul>`;
+              const html = [lead1, lead2, list].join('<br/>');
+              finalSub.innerHTML = html;
+              finalSub.dataset.baseHtml = html;
+            }
             return;
           }
           const stageNumber = Number(stage || 1);
