@@ -310,6 +310,10 @@
                 <strong>2차시 메모</strong>
                 <div id="stage4PrevMemoPreview" class="text-block">2차시 메모가 아직 저장되지 않았습니다.</div>
               </div>
+              <div class="prewriting-preview-block">
+                <strong>3차시-2 성찰 메모</strong>
+                <div id="stage4Stage3MemoPreview" class="text-block">3차시-2 성찰 메모가 아직 없습니다.</div>
+              </div>
               <textarea id="stage4DraftInput" placeholder="입장을 바꾼 4-1차시 토론에서 떠오른 주장·근거·반론을 메모하세요. (저장 비활성화)" style="display:none;"></textarea>
               <div class="button-row" style="display:none;">
                 <button id="btnStage4DraftSave" class="secondary" type="button" disabled>4차시-1 메모 저장</button>
@@ -1366,9 +1370,8 @@
             setText('finalStageTitle', '4차시-1 · 토론');
             const finalSub = $('finalStageSubtitle');
             if (finalSub) {
-              const line1 = '<strong><u>이번 차시에는, 반대의 입장에서 실제 토론에 집중해보세요.</u></strong>';
-              const line2 = '2차시에 정리한 자료, 3차시 성찰메모를 바탕으로 자신의 주장을 논리적으로 설명하고, 반박에 대응해보세요.';
-              finalSub.innerHTML = [line1, line2].join('<br/>');
+              // 우측 챗봇 헤더에는 간단 안내만 남겨 중복 표시를 피함
+              finalSub.innerHTML = '';
             }
           }
           const stage5 = getStageLabel(5);
@@ -1702,6 +1705,7 @@
           const titleEl = $('stage4DraftTitle');
           const promptEl = $('stage4DraftPromptContent');
           const prevMemoEl = $('stage4PrevMemoPreview');
+          const stage3MemoEl = $('stage4Stage3MemoPreview');
           if (!textarea || !info || !titleEl || !promptEl || !prevMemoEl) return;
           const stage = Number(state.stage || 1);
           const show = stage === 4;
@@ -1727,6 +1731,10 @@
 
           const prevMemo = (state.writing.prewriting && state.writing.prewriting.text) || '';
           prevMemoEl.textContent = prevMemo ? prevMemo : '2차시 메모가 아직 저장되지 않았습니다.';
+          if (stage3MemoEl) {
+            const memo = (state.writing.notes && state.writing.notes.text) || '';
+            stage3MemoEl.textContent = memo ? memo : '3차시-2 성찰 메모가 아직 없습니다.';
+          }
 
           // 3-1과 동일하게 입력은 비활성화 (구조 동일성 유지)
           const savedText = state.writing.draft.text || '';
@@ -2097,10 +2105,8 @@
             setText('finalStageTitle', '4차시-1 · 토론');
             const finalSub = $('finalStageSubtitle');
             if (finalSub) {
-              const line1 = '<strong><u>이번 차시에는, 반대의 입장에서 실제 토론에 집중해보세요.</u></strong>';
-              const line2 =
-                '2차시에 정리한 자료, 3차시 성찰메모를 바탕으로 자신의 주장을 논리적으로 설명하고, 반박에 대응해보세요.';
-              finalSub.innerHTML = [line1, line2].join('<br/>');
+              // 우측 챗봇 헤더는 간단히 비워 중복 안내를 피함
+              finalSub.innerHTML = '';
             }
             return;
           }
