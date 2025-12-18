@@ -2120,22 +2120,14 @@
             return;
           }
           const stageNumber = Number(stage || 1);
-          if (stageNumber === 4) {
-            setText('finalStageTitle', '4차시-1 ChatGPT와 토론');
-            const finalSub = $('finalStageSubtitle');
-            if (finalSub) {
-              const line1 = '<strong><u>이번 차시에서는 이전 차시와 \'반대입장\'에서 토론을 진행합니다.</u></strong>';
-              const line2 =
-                '당신이 반대입장이므로, ChatGPT는 찬성입장에서 토론합니다. 즉, 이번 차시는 기존에 주장했던 입장을 그대로 반복하는 것이 아니라, 반대 관점을 이해하고, 그 입장에서 논증하는 활동입니다.';
-              finalSub.innerHTML = [line1, line2].join('<br/>');
-            }
-            return;
-          }
           const label = getStageLabel(stageNumber);
           const finalCopy = getPanelCopyEntry('final');
           const combined = label?.headline ? `${label.name || ''} · ${label.headline}` : label?.name;
           setText('finalStageTitle', finalCopy.title || combined || 'ChatGPT와 토론');
-          setText('finalStageSubtitle', finalCopy.subtitle || label?.description || '관리자 시스템 프롬프트를 기반으로 토론을 진행합니다.');
+          const finalSub = $('finalStageSubtitle');
+          if (finalSub) {
+            finalSub.innerHTML = finalCopy.subtitle || label?.description || '관리자 시스템 프롬프트를 기반으로 토론을 진행합니다.';
+          }
         }
 
         function updateAiPanelHeader(stage){
