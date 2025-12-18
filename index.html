@@ -350,16 +350,6 @@
             <div>
               <label for="stage5MemoInput">4차시-2 토론관련 성찰메모</label>
                   <textarea id="stage5MemoInput" placeholder="4차시-2 토론관련 성찰메모를 작성하세요."></textarea>
-                  <p id="stage5MemoHelper" class="stage3-memo-helper">
-                    토론을 통해 느낀 점과 보완할 점에 대해 자유롭게 성찰하세요. 1차 성찰 메모, 2차 토론 기록, ChatGPT와의 성찰 대화를 바탕으로 자신의 생각을 정리해보세요.
-                    아래 항목을 참고하여 자유롭게 기록하세요.
-                    - 두 번의 토론을 통해 새롭게 알게 된 점은 무엇인가?
-                    - ChatGPT의 반박 중 설득력이 있었다고 느낀 부분은 무엇인가?
-                    - 내 주장이나 근거에서 잘 대응했다고 느낀 부분은 무엇인가?
-                    - 내 주장이나 근거에서 보완이 필요하다고 느낀 점은 무엇인가?
-                    - 두 번의 토론을 비교했을 때, 논증 방식이나 사고 과정에서 성장했다고 느낀 점은 무엇인가?
-                    - 추가적으로 개선하고 싶은 점은 무엇인가?
-                  </p>
             </div>
           </div>
           <div class="prewriting-preview-block" id="stage5SummaryBlock">
@@ -1887,11 +1877,6 @@
             'stage5TranscriptSummary',
             stage5Prompt.reference || '4-1 토론 기록을 불러오는 중입니다. (추후 연동)',
             '4-1 토론 기록을 불러오는 중입니다. (추후 연동)'
-          );
-          setRichText(
-            'stage5MemoHelper',
-            stage5Prompt.reference || '4-1차시 대화를 평가하고 피드백을 정리하세요.',
-            '4-1차시 대화를 평가하고 피드백을 정리하세요.'
           );
         }
 
