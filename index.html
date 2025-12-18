@@ -65,7 +65,7 @@
       .step-item.active .step-number { background: #2563eb; color: #ffffff; }
       .step-item.completed { border-color: #bbf7d0; }
       .step-item.completed .step-number { background: #10b981; color: #ffffff; }
-      .workspace-grid { display: grid; gap: 16px; grid-template-columns: 1.1fr 0.9fr; flex: 1; min-height: 0; height: 100%; }
+      .workspace-grid { display: grid; gap: 16px; grid-template-columns: 1.1fr 0.9fr; flex: 1; min-height: 0; height: 100%; align-items: stretch; }
       .left-column, .right-column { display: flex; flex-direction: column; gap: 14px; min-height: 0; height: 100%; overflow-y: auto; padding-right: 6px; }
       .stage-panel { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px; display: flex; flex-direction: column; gap: 12px; }
       .panel-header { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
@@ -91,7 +91,7 @@
       .text-block { padding: 12px; border-radius: 10px; border: 1px solid #d8dee9; background: #f8fafc; font-size: 14px; line-height: 1.7; white-space: pre-wrap; color: #1f2937; }
       .button-row { display: flex; gap: 10px; justify-content: flex-end; }
       .meta-info { font-size: 12px; color: #64748b; }
-      .right-panel { display: none; flex-direction: column; gap: 12px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px; min-height: 360px; flex: none; overflow: visible; }
+      .right-panel { display: none; flex-direction: column; gap: 12px; background: #ffffff; border: 1px solid #e2e8f0; border-radius: 12px; padding: 18px; min-height: 360px; flex: 1; overflow: visible; }
       .dictionary-search { display: flex; gap: 10px; }
       .dictionary-result { padding: 14px; border-radius: 10px; border: 1px solid #cbd5e1; background: #f8fafc; display: flex; flex-direction: column; gap: 8px; }
       .dict-word { font-size: 18px; font-weight: 700; color: #111827; }
@@ -116,7 +116,7 @@
       .stage3-transcript-line.ai { background: #eef2ff; border-color: #c7d2fe; }
       .stage3-transcript-line .label { display: block; font-weight: 600; color: #4338ca; margin-bottom: 4px; font-size: 12px; }
       .stage3-memo-helper { font-size: 12px; color: #6b7280; margin: -4px 0 0; }
-      .chat-log { flex: 1; min-height: 320px; max-height: 320px; border: 1px solid #d0d7e3; border-radius: 12px; background: radial-gradient(circle at top, #f8fafc 0%, #ffffff 48%); padding: 12px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
+      .chat-log { flex: 1; min-height: 240px; max-height: none; border: 1px solid #d0d7e3; border-radius: 12px; background: radial-gradient(circle at top, #f8fafc 0%, #ffffff 48%); padding: 12px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
       .chat-line { display: flex; flex-direction: column; gap: 4px; max-width: 80%; word-break: break-word; }
       .chat-line.me { align-self: flex-end; text-align: right; }
       .chat-line.ai, .chat-line.other { align-self: flex-start; }
