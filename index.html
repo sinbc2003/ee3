@@ -71,6 +71,7 @@
       .panel-header { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
       .panel-header h2 { font-size: 18px; font-weight: 700; margin: 0; color: #111827; white-space: nowrap; }
       .panel-subtext { font-size: 13px; color: #64748b; }
+      .panel-header.memo-stacked { flex-direction: column; align-items: flex-start; gap: 6px; }
       /* 2차시 메모 패널: 제목 아래에 설명 배치 */
       #panelPrompt .panel-header,
       #panelPrewriting .panel-header { flex-direction: column; align-items: flex-start; }
@@ -1762,19 +1763,19 @@
           }
 
           if (infoEl) {
-            const baseText =
+            const baseHtml =
               overrideSubtitle ||
               infoEl.dataset.baseText ||
               currentLabel.description ||
-              infoEl.textContent ||
+              infoEl.innerHTML ||
               '';
-            infoEl.dataset.baseText = baseText;
-            let display = baseText;
+            infoEl.dataset.baseText = baseHtml;
+            let displayHtml = baseHtml;
             const memoSavedAt = Number(state.writing.notes.updatedAt || 0);
             if (memoSavedAt) {
-              display += ' · 마지막 저장: ' + formatDate(memoSavedAt);
+              displayHtml += `<div class="muted" style="margin-top:4px;">마지막 저장: ${formatDate(memoSavedAt)}</div>`;
             }
-            infoEl.textContent = display;
+            infoEl.innerHTML = displayHtml;
           }
 
           const transcriptBlock = document.querySelector('.stage3-transcript-block');
