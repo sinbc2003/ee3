@@ -1240,67 +1240,7 @@ adminRouter.get('/sessions', (_req, res) => {
   res.json({ sessions });
 });
 
-adminRouter.get('/sessions/:sessionKey', (req, res, next) => {
-  try {
-    const record = findSession(req.params.sessionKey);
-    if (!record) throw createHttpError(404, '세션을 찾을 수 없습니다.');
-    res.json({ session: buildAdminSessionDetail(record) });
-  } catch (err) {
-    next(err);
-  }
-});
-
-adminRouter.get('/sessions/:sessionKey/chats/:channel', (req, res, next) => {
-  try {
-    const record = findSession(req.params.sessionKey);
-    if (!record) throw createHttpError(404, '세션을 찾을 수 없습니다.');
-    const channel = req.params.channel;
-    if (channel === 'ai') {
-      const sessionId = `ai:${record.sessionKey}`;
-      return res.json({ messages: collectMessages(sessionId, 'ai-feedback') });
-    }
-    throw createHttpError(400, '알 수 없는 채널입니다.');
-  } catch (err) {
-    next(err);
-  }
-});
-
-adminRouter.post('/sessions/:sessionKey/partner', async (req, res, next) => {
-  try {
-    const sessionKey = req.params.sessionKey;
-    const record = findSession(sessionKey);
-    if (!record) throw createHttpError(404, '세션을 찾을 수 없습니다.');
-    await assignPartnerRecord(record, req.body || {});
-    await store.saveSessions();
-    res.json({ session: buildAdminSessionDetail(record) });
-  } catch (err) {
-    next(err);
-  }
-});
-
-adminRouter.delete('/sessions/:sessionKey/partner', async (req, res, next) => {
-  try {
-    const record = findSession(req.params.sessionKey);
-    if (!record) throw createHttpError(404, '세션을 찾을 수 없습니다.');
-    await clearPartnerRecord(record);
-    await store.saveSessions();
-    res.json({ session: buildAdminSessionDetail(record) });
-  } catch (err) {
-    next(err);
-  }
-});
-
-adminRouter.post('/sessions/bulk-delete', async (req, res, next) => {
-  try {
-    const keys = Array.isArray(req.body?.sessionKeys) ? req.body.sessionKeys : [];
-    if (!keys.length) throw createHttpError(400, '삭제할 세션이 없습니다.');
-    const result = await deleteSessionsByKeys(keys);
-    res.json(result);
-  } catch (err) {
-    next(err);
-  }
-});
-
+// ⚠️ export 라우트는 /sessions/:sessionKey 보다 먼저 선언해야 함
 adminRouter.get('/sessions/export', async (req, res, next) => {
   try {
     const format = parseExportFormat(req.query?.format);
@@ -1365,6 +1305,68 @@ adminRouter.get('/export-all', async (req, res, next) => {
     next(err);
   }
 });
+
+adminRouter.get('/sessions/:sessionKey', (req, res, next) => {
+  try {
+    const record = findSession(req.params.sessionKey);
+    if (!record) throw createHttpError(404, '세션을 찾을 수 없습니다.');
+    res.json({ session: buildAdminSessionDetail(record) });
+  } catch (err) {
+    next(err);
+  }
+});
+
+adminRouter.get('/sessions/:sessionKey/chats/:channel', (req, res, next) => {
+  try {
+    const record = findSession(req.params.sessionKey);
+    if (!record) throw createHttpError(404, '세션을 찾을 수 없습니다.');
+    const channel = req.params.channel;
+    if (channel === 'ai') {
+      const sessionId = `ai:${record.sessionKey}`;
+      return res.json({ messages: collectMessages(sessionId, 'ai-feedback') });
+    }
+    throw createHttpError(400, '알 수 없는 채널입니다.');
+  } catch (err) {
+    next(err);
+  }
+});
+
+adminRouter.post('/sessions/:sessionKey/partner', async (req, res, next) => {
+  try {
+    const sessionKey = req.params.sessionKey;
+    const record = findSession(sessionKey);
+    if (!record) throw createHttpError(404, '세션을 찾을 수 없습니다.');
+    await assignPartnerRecord(record, req.body || {});
+    await store.saveSessions();
+    res.json({ session: buildAdminSessionDetail(record) });
+  } catch (err) {
+    next(err);
+  }
+});
+
+adminRouter.delete('/sessions/:sessionKey/partner', async (req, res, next) => {
+  try {
+    const record = findSession(req.params.sessionKey);
+    if (!record) throw createHttpError(404, '세션을 찾을 수 없습니다.');
+    await clearPartnerRecord(record);
+    await store.saveSessions();
+    res.json({ session: buildAdminSessionDetail(record) });
+  } catch (err) {
+    next(err);
+  }
+});
+
+adminRouter.post('/sessions/bulk-delete', async (req, res, next) => {
+  try {
+    const keys = Array.isArray(req.body?.sessionKeys) ? req.body.sessionKeys : [];
+    if (!keys.length) throw createHttpError(400, '삭제할 세션이 없습니다.');
+    const result = await deleteSessionsByKeys(keys);
+    res.json(result);
+  } catch (err) {
+    next(err);
+  }
+});
+
 
 // 호환용: /api/admin/sessions/export 경로를 일반 라우터에서도 처리 (일부 클라이언트 설정 불일치 대비)
 router.get('/admin/sessions/export', requireAdminAuth, async (req, res, next) => {
