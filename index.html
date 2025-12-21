@@ -1071,17 +1071,6 @@
           updateSelectedTypeLabel();
           setStatus('식별 번호와 이름을 입력하세요.', 'info');
 
-          if (hasGas) {
-            try {
-        google.script.run.withSuccessHandler(function(info){
-                if (!info) return;
-                if (!info.teacherSheetId) {
-                  $('loginMessage').textContent = '⚠️ 관리자: 교사 시트 ID가 설정되지 않았습니다.';
-                }
-        }).getServerDiag();
-            } catch (e) { console.error(e); }
-          }
-
           window.addEventListener('beforeunload', function(){
             if (!hasGas) return;
             try {
