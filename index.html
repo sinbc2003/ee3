@@ -2642,6 +2642,16 @@
           if (!text) return;
           const contextText = buildAiFeedbackContext(stage);
           input.value = '';
+          // 전송 후에도 입력창 포커스를 유지해 연속 입력이 가능하도록 함
+          if (typeof requestAnimationFrame === 'function') {
+            requestAnimationFrame(() => {
+              if (input && !input.disabled) {
+                input.focus();
+              }
+            });
+          } else if (!input.disabled) {
+            input.focus();
+          }
           const localMessage = {
             ts: Date.now(),
             role: 'user',
